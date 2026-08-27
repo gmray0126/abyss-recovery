@@ -12,6 +12,20 @@ const defaultMeta=()=>({money:3200,visionLevel:3,equipment:{primary:null,seconda
 let meta=defaultMeta();try{const s=localStorage.getItem(SAVE_KEY);if(s)meta={...defaultMeta(),...JSON.parse(s)}}catch{}
 if(!meta.equipment)meta.equipment=defaultMeta().equipment;if(!Array.isArray(meta.inventory))meta.inventory=[];if(!Array.isArray(meta.stash))meta.stash=[];
 const save=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(meta))}catch{}};
+function hasBasicPistol(){
+ const items=[meta.equipment?.primary,meta.equipment?.secondary,...(meta.inventory||[]),...(meta.stash||[])];
+ return items.some(it=>it?.kind==='weapon'&&it.type==='pistol');
+}
+function ensureBasicPistol(){
+ if(hasBasicPistol())return false;
+ const w=makeWeapon('pistol');
+ w.name='M9 권총 … 기담 지급';
+ w.value=0;
+ w.starterIssue=true;
+ meta.stash.push(w);
+ save();
+ return true;
+}
 const money=n=>`${Math.round(n||0).toLocaleString()} G`;
 const slotNames={primary:'주무기',secondary:'보조무기',armor:'방탄복',helmet:'헬멧',backpack:'백팩'};
 const equipKind={armor:'armor',helmet:'helmet',backpack:'backpack'};
@@ -44,8 +58,8 @@ function currentPlayer(){return snap?.player}
 function startRaid(){if(!meta.equipment.primary)return;ensureAudio();const departure={equipment:cp(meta.equipment),inventory:cp(meta.inventory),visionLevel:meta.visionLevel};meta.equipment={primary:null,secondary:null,armor:null,helmet:null,backpack:null};meta.inventory=[];save();renderLobby();$('#lobby').classList.add('hidden');$('#raid').classList.remove('hidden');lastResultHandled=false;killFeed=[];soundMarks=[];fx=[];input=emptyInput();session=new LocalSession(departure);session.on('snapshot',s=>{snap=s;renderHUD();if(s.result&&!lastResultHandled)handleResult(s.result)});session.on('event',handleEvent);canvas.focus()}
 $('#raidBtn').onclick=startRaid;
 function handleResult(r){lastResultHandled=true;session?.close();session=null;if(r.status==='extracted'){meta.equipment=r.equipment||{primary:null,secondary:null,armor:null,helmet:null,backpack:null};const cap=12;const items=r.items||[];meta.inventory=items.slice(0,cap);if(items.length>cap)meta.stash.push(...items.slice(cap));meta.money+=Math.round((r.lootValue||0)*.08);save()}showResult(r.status==='extracted',r)}
-function showResult(ok,r){const p=$('#resultPanel');p.classList.remove('hidden');p.innerHTML=`<div class="resultCard"><h2 class="${ok?'success':'failed'}">${ok?'EXTRACTED':'RAID LOST'}</h2><p>${ok?`탈출 성공 · ${r.reason}`:`${r.reason} · 출격 장비와 전리품 상실`}</p><p>처치 ${r.kills||0} · 회수 가치 ${money(r.lootValue||0)}</p><button id="backLobby" class="primary">로비로 돌아가기</button></div>`;$('#backLobby').onclick=()=>{p.classList.add('hidden');$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;renderLobby()}}
-$('#abandonBtn').onclick=()=>{if(!session)return;if(confirm('출격 장비와 전리품을 모두 포기할까요?')){session.close();session=null;lastResultHandled=true;$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;renderLobby()}};
+function showResult(ok,r){const p=$('#resultPanel');p.classList.remove('hidden');p.innerHTML=`<div class="resultCard"><h2 class="${ok?'success':'failed'}">${ok?'EXTRACTED':'RAID LOST'}</h2><p>${ok?`탈출 성공 · ${r.reason}`:`${r.reason} · 출격 장비와 전리품 상실`}</p><p>처치 ${r.kills||0} · 회수 가치 ${money(r.lootValue||0)}</p><button id="backLobby" class="primary">로비로 돌아가기</button></div>`;$('#backLobby').onclick=()=>{p.classList.add('hidden');$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;ensureBasicPistol();renderLobby()}}
+$('#abandonBtn').onclick=()=>{if(!session)return;if(confirm('출격 장비와 전리품을 모두 포기할까요?')){session.close();session=null;lastResultHandled=true;$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;ensureBasicPistol();renderLobby()}};
 
 function eventOnScreen(e){if(!snap?.player)return false;return Math.hypot(e.x-snap.player.x,e.y-snap.player.y)<1000}
 function handleEvent(e){
@@ -88,4 +102,4 @@ function drawSoundIndicators(){const cx=canvas.width/2,cy=canvas.height/2,r=Math
 function updateInput(){if(!session||!snap?.player)return;let x=0,y=0;if(keys.has('w'))y--;if(keys.has('s'))y++;if(keys.has('a'))x--;if(keys.has('d'))x++;const cam=camera(),wx=mouse.x+cam.x,wy=mouse.y+cam.y,dx=wx-snap.player.x,dy=wy-snap.player.y,l=Math.hypot(dx,dy)||1;input={...input,seq:input.seq+1,moveX:x,moveY:y,aimX:dx/l,aimY:dy/l,sprint:keys.has('shift'),interact:keys.has('e'),reload:keys.has('r')};session.sendInput(input);input.reload=false}
 setInterval(updateInput,1000/30);
 canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();mouse.x=(e.clientX-r.left)*canvas.width/r.width;mouse.y=(e.clientY-r.top)*canvas.height/r.height});canvas.addEventListener('mousedown',e=>{if(e.button===0){ensureAudio();input.shoot=true}});window.addEventListener('mouseup',e=>{if(e.button===0)input.shoot=false});canvas.addEventListener('contextmenu',e=>e.preventDefault());window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['w','a','s','d','shift','e','r','g','h','1','2'].includes(k))e.preventDefault();keys.add(k);if(!session||e.repeat)return;if(k==='g')session.sendAction({type:ACTIONS.GRENADE});else if(k==='h')session.sendAction({type:ACTIONS.USE_MED});else if(k==='1')session.sendAction({type:ACTIONS.SWAP_WEAPON,slot:'primary'});else if(k==='2')session.sendAction({type:ACTIONS.SWAP_WEAPON,slot:'secondary'})});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-renderLobby();requestAnimationFrame(draw);
+ensureBasicPistol();renderLobby();requestAnimationFrame(draw);
