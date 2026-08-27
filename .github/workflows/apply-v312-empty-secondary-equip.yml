@@ -1,0 +1,48 @@
+name: Apply v3.1.2 empty secondary equip
+
+on:
+  push:
+    paths:
+      - tools/apply-v312-empty-secondary-equip.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply patch
+        run: node tools/apply-v312-empty-secondary-equip.mjs
+      - name: Syntax check
+        run: |
+          node --check src/sim.js
+          node --check src/main.js
+          node --check src/protocol.js
+      - name: Regression test empty secondary equip
+        run: |
+          node --input-type=module <<'NODE'
+          import {createWorld,applyAction,WEAPONS} from './src/sim.js';
+          import {ACTIONS} from './src/protocol.js';
+          const mk=type=>({id:'test-'+type,kind:'weapon',type,name:WEAPONS[type].name,ammo:0,ammoTier:1,reserve:0,damage:WEAPONS[type].damage,value:WEAPONS[type].price});
+          const w=createWorld({players:[{name:'TEST',equipment:{primary:mk('pistol'),secondary:null},inventory:[mk('smg')]}],aiCount:0,mapIndex:0,coverSeed:'test'});
+          const id=w.humanIds[0];
+          applyAction(w,id,{type:ACTIONS.EQUIP_BAG,slot:0});
+          const p=w.actors.find(a=>a.id===id);
+          if(p.gear.primary?.type!=='pistol')throw new Error('primary weapon was replaced');
+          if(p.gear.secondary?.type!=='smg')throw new Error('weapon was not equipped into empty secondary slot');
+          if(p.inventory.length!==0)throw new Error('equipped weapon remained in inventory');
+          console.log('empty secondary equip regression test passed');
+          NODE
+      - name: Commit generated patch
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/sim.js
+          git commit -m "fix: equip raid weapons into empty secondary slot"
+          git push
