@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// retry after installing ffmpeg in the workflow
 const path='src/main.js';
 let s=fs.readFileSync(path,'utf8');
 const replace=(from,to,label)=>{if(!s.includes(from))throw new Error('missing '+label);s=s.replace(from,to)};
