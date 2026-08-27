@@ -1,0 +1,65 @@
+name: Add guaranteed starter pistol
+on:
+  push:
+    paths:
+      - '.github/workflows/starter-pistol.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch starter pistol insurance
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/main.js')
+          s=p.read_text(encoding='utf-8')
+
+          anchor="const save=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(meta))}catch{}};"
+          addition="""const save=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(meta))}catch{}};
+function hasBasicPistol(){
+ const items=[meta.equipment?.primary,meta.equipment?.secondary,...(meta.inventory||[]),...(meta.stash||[])];
+ return items.some(it=>it?.kind==='weapon'&&it.type==='pistol');
+}
+function ensureBasicPistol(){
+ if(hasBasicPistol())return false;
+ const w=makeWeapon('pistol');
+ w.name='M9 권총 · 기본 지급';
+ w.value=0;
+ w.starterIssue=true;
+ meta.stash.push(w);
+ save();
+ return true;
+}"""
+          if 'function ensureBasicPistol()' not in s:
+              if anchor not in s: raise SystemExit('save anchor missing')
+              s=s.replace(anchor,addition,1)
+
+          old="$('#backLobby').onclick=()=>{p.classList.add('hidden');$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;renderLobby()}"
+          new="$('#backLobby').onclick=()=>{p.classList.add('hidden');$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;ensureBasicPistol();renderLobby()}"
+          if old in s:s=s.replace(old,new,1)
+
+          old2="$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;renderLobby()}};"
+          new2="$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;ensureBasicPistol();renderLobby()}};"
+          if old2 in s:s=s.replace(old2,new2,1)
+
+          tail='renderLobby();requestAnimationFrame(draw);'
+          if 'ensureBasicPistol();renderLobby();requestAnimationFrame(draw);' not in s:
+              if tail not in s: raise SystemExit('startup tail missing')
+              s=s.replace(tail,'ensureBasicPistol();renderLobby();requestAnimationFrame(draw);',1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check src/main.js
+      - name: Commit starter pistol fix
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main.js
+          git rm .github/workflows/starter-pistol.yml
+          git commit -m 'fix: guarantee one free starter M9 in lobby'
+          git push
