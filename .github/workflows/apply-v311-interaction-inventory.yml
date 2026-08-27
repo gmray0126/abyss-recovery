@@ -1,0 +1,42 @@
+name: Apply v3.1.1 interaction inventory
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/apply-v311-interaction-inventory.mjs'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply patch
+        run: node tools/apply-v311-interaction-inventory.mjs
+      - name: Syntax check
+        run: |
+          node --check src/protocol.js
+          node --check src/sim.js
+          node --check src/main.js
+          node --check api/realtime.js
+      - name: Integration guards
+        run: |
+          grep -q "DISCARD_ITEM:'discard_item'" src/protocol.js
+          grep -q "action.type===ACTIONS.DISCARD_ITEM" src/sim.js
+          grep -q "상자·시체 우선" index.html
+          grep -q "\[1\]" src/main.js
+          grep -q "버리기" src/main.js
+      - name: Commit generated patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/protocol.js src/sim.js src/main.js index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'feat: prioritize loot interaction and add raid discard controls'
+          git push
