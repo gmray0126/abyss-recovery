@@ -16,25 +16,19 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import re
-
           main=Path('src/main.js')
           s=main.read_text(encoding='utf-8')
-
-          darkness="""function drawDarkness(cam){if(!snap?.player)return;const p=snap.player,sx=p.x-cam.x,sy=p.y-cam.y,level=p.visionLevel,near=150+level*28,far=near+360+level*50,half=1.05;ctx.save();ctx.fillStyle='rgba(2,5,8,.38)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalCompositeOperation='destination-out';let g=ctx.createRadialGradient(sx,sy,18,sx,sy,near);g.addColorStop(0,'rgba(0,0,0,.86)');g.addColorStop(.65,'rgba(0,0,0,.68)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(sx,sy,near,0,Math.PI*2);ctx.fill();ctx.save();ctx.translate(sx,sy);ctx.rotate(p.angle);const cone=ctx.createRadialGradient(0,0,near*.25,0,0,far);cone.addColorStop(0,'rgba(0,0,0,.96)');cone.addColorStop(.62,'rgba(0,0,0,.78)');cone.addColorStop(.86,'rgba(0,0,0,.42)');cone.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=cone;ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,far,-half,half);ctx.closePath();ctx.fill();ctx.restore();ctx.restore();const vign=ctx.createRadialGradient(canvas.width/2,canvas.height/2,360,canvas.width/2,canvas.height/2,820);vign.addColorStop(0,'rgba(0,0,0,0)');vign.addColorStop(1,'rgba(0,0,0,.12)');ctx.fillStyle=vign;ctx.fillRect(0,0,canvas.width,canvas.height)}
-function drawSoundIndicators"""
+          darkness="function drawDarkness(cam){if(!snap?.player)return;const p=snap.player,sx=p.x-cam.x,sy=p.y-cam.y,level=p.visionLevel,near=150+level*28,far=near+360+level*50,half=1.05;ctx.save();ctx.fillStyle='rgba(2,5,8,.38)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalCompositeOperation='destination-out';let g=ctx.createRadialGradient(sx,sy,18,sx,sy,near);g.addColorStop(0,'rgba(0,0,0,.86)');g.addColorStop(.65,'rgba(0,0,0,.68)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(sx,sy,near,0,Math.PI*2);ctx.fill();ctx.save();ctx.translate(sx,sy);ctx.rotate(p.angle);const cone=ctx.createRadialGradient(0,0,near*.25,0,0,far);cone.addColorStop(0,'rgba(0,0,0,.96)');cone.addColorStop(.62,'rgba(0,0,0,.78)');cone.addColorStop(.86,'rgba(0,0,0,.42)');cone.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=cone;ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,far,-half,half);ctx.closePath();ctx.fill();ctx.restore();ctx.restore();const vign=ctx.createRadialGradient(canvas.width/2,canvas.height/2,360,canvas.width/2,canvas.height/2,820);vign.addColorStop(0,'rgba(0,0,0,0)');vign.addColorStop(1,'rgba(0,0,0,.12)');ctx.fillStyle=vign;ctx.fillRect(0,0,canvas.width,canvas.height)}"+chr(10)+"function drawSoundIndicators"
           s,n=re.subn(r"function drawDarkness\(cam\)\{.*?\}\nfunction drawSoundIndicators",darkness,s,count=1,flags=re.S)
           if n!=1: raise SystemExit(f'darkness patch failed: {n}')
-
           old="drawActors(cam);drawBullets(cam);drawGrenades(cam);drawFxWorld(cam);ctx.restore();drawDarkness(cam);drawSoundIndicators();"
           new="drawActors(cam);drawGrenades(cam);drawFxWorld(cam);ctx.restore();drawDarkness(cam);ctx.save();ctx.translate(-cam.x,-cam.y);drawBullets(cam);ctx.restore();drawSoundIndicators();"
           if old not in s: raise SystemExit('draw order target missing')
           s=s.replace(old,new,1)
-
-          s,n=re.subn(r"function drawBullets\(cam\)\{.*?\}\nfunction drawGrenades", """function drawBullets(cam){for(const b of snap.bullets){if(!onScreen(b.x,b.y,cam))continue;const a=Math.atan2(b.vy,b.vx);ctx.save();ctx.strokeStyle='rgba(255,230,140,.98)';ctx.lineWidth=3;ctx.shadowColor='rgba(255,210,90,.95)';ctx.shadowBlur=7;ctx.beginPath();ctx.moveTo(b.x-Math.cos(a)*24,b.y-Math.sin(a)*24);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore()}}
-function drawGrenades""",s,count=1,flags=re.S)
+          bullet="function drawBullets(cam){for(const b of snap.bullets){if(!onScreen(b.x,b.y,cam))continue;const a=Math.atan2(b.vy,b.vx);ctx.save();ctx.strokeStyle='rgba(255,230,140,.98)';ctx.lineWidth=3;ctx.shadowColor='rgba(255,210,90,.95)';ctx.shadowBlur=7;ctx.beginPath();ctx.moveTo(b.x-Math.cos(a)*24,b.y-Math.sin(a)*24);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore()}}"+chr(10)+"function drawGrenades"
+          s,n=re.subn(r"function drawBullets\(cam\)\{.*?\}\nfunction drawGrenades",bullet,s,count=1,flags=re.S)
           if n!=1: raise SystemExit(f'bullet patch failed: {n}')
           main.write_text(s,encoding='utf-8')
-
           sim=Path('src/sim.js')
           t=sim.read_text(encoding='utf-8')
           t,n=re.subn(r"function visionParams\(level=3\)\{.*?\}","function visionParams(level=3){const near=150+level*28;return{near,far:near+360+level*50,half:1.05}}",t,count=1)
@@ -49,5 +43,6 @@ function drawGrenades""",s,count=1,flags=re.S)
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add src/main.js src/sim.js
+          git rm -f .github/workflows/fix-vision.yml || true
           git commit -m 'fix: show terrain outside vision and bullets through darkness'
           git push
