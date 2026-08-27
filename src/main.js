@@ -99,7 +99,7 @@ function renderProgress(){const box=$('#openProgress'),heal=snap.player?.healTim
 
 function updateRenderActors(dt){for(const [id,r] of renderActors){const d=Math.hypot(r.tx-r.x,r.ty-r.y);if(d>180){r.x=r.tx;r.y=r.ty;r.angle=r.ta;continue}const k=1-Math.exp(-dt*(id===snap?.playerId?34:22));r.x+=(r.tx-r.x)*k;r.y+=(r.ty-r.y)*k;r.angle+=angleDelta(r.ta,r.angle)*k}}
 function visualPlayer(){const p=snap?.player,r=p&&renderActors.get(snap.playerId);return p&&r?{...p,x:r.x,y:r.y,angle:r.angle}:p}
-function camera(){const p=visualPlayer();if(!p)return{x:0,y:0};const kick=recoilKick,dx=Math.cos(p.angle)*kick,dy=Math.sin(p.angle)*kick;let bobX=0,bobY=0;const moving=keys.has('w')||keys.has('a')||keys.has('s')||keys.has('d'),sprinting=keys.has('shift')&&moving;if(sprinting){const bob=Math.sin(performance.now()*.022)*1.8,side=(p.moveAngle??p.angle)+Math.PI/2;bobX=Math.cos(side)*bob;bobY=Math.sin(side)*bob}return{x:Math.max(0,Math.min(snap.worldW-canvas.width,p.x-canvas.width/2+dx+bobX)),y:Math.max(0,Math.min(snap.worldH-canvas.height,p.y-canvas.height/2+dy+bobY))}}
+function camera(){const p=visualPlayer();if(!p)return{x:0,y:0};const kick=recoilKick,dx=Math.cos(p.angle)*kick,dy=Math.sin(p.angle)*kick;return{x:Math.max(0,Math.min(snap.worldW-canvas.width,p.x-canvas.width/2+dx)),y:Math.max(0,Math.min(snap.worldH-canvas.height,p.y-canvas.height/2+dy))}}
 function onScreen(x,y,cam,pad=80){return x>cam.x-pad&&x<cam.x+canvas.width+pad&&y>cam.y-pad&&y<cam.y+canvas.height+pad}
 function visionShape(){const p=snap?.player;if(!p)return null;const near=190+p.visionLevel*34,far=near+430+p.visionLevel*58;return{p,near,far,half:1.05}}
 function angleDelta(a,b){return Math.atan2(Math.sin(a-b),Math.cos(a-b))}
