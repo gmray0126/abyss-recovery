@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DEAD DROP // Extraction Shooter Prototype</title>
+<title>DEAD DROP // v2.1 Extraction Shooter</title>
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -11,54 +11,73 @@
   <header class="topbar">
     <div>
       <div class="brand">DEAD DROP</div>
-      <div class="sub">TOP-DOWN EXTRACTION SHOOTER // MULTIPLAYER-READY CORE</div>
+      <div class="sub">DARK INDUSTRIAL EXTRACTION SHOOTER // SERVER-AUTH READY</div>
     </div>
     <div class="net"><span id="netDot"></span><span id="netText">LOCAL AUTHORITATIVE SIM</span></div>
   </header>
 
   <section id="lobby" class="screen">
-    <div class="lobbyGrid">
-      <main class="panel">
-        <div class="sectionTitle">출격 장비</div>
-        <div id="loadoutCards" class="loadoutCards"></div>
-        <div class="lobbyActions">
-          <button id="raidBtn" class="primary big">RAID 출격</button>
-          <div class="help">죽으면 들고 간 무기와 원정 중 전리품을 잃습니다. 살아서 탈출하면 전부 창고로 회수됩니다.</div>
+    <div class="lobbyShell">
+      <aside class="panel equipmentPanel">
+        <div class="sectionTitle">장비창</div>
+        <div id="equipmentGrid" class="equipmentGrid"></div>
+        <div class="sectionTitle minor">출격 인벤토리 <span id="raidInvCount" class="muted"></span></div>
+        <div id="raidInventory" class="inventoryGrid"></div>
+        <div class="visionSetting">
+          <div><b>시야 밝기 레벨</b><span class="muted"> 어두운 맵에서 주변 시야 범위</span></div>
+          <input id="visionLevel" type="range" min="1" max="5" step="1" value="3">
+          <b id="visionLevelText">3</b>
         </div>
+        <button id="raidBtn" class="primary big">RAID 출격</button>
+        <div class="help">창고 → 출격 인벤토리 → 장비 장착 순서입니다. 사망하면 장비창과 출격 인벤토리의 물건을 모두 잃습니다.</div>
+      </aside>
+
+      <main class="panel stashPanel">
+        <div class="sectionHead"><div class="sectionTitle">창고</div><div class="wallet"><span>보유 자금</span><b id="moneyText">0 G</b></div></div>
+        <div id="stashList" class="stashGrid"></div>
       </main>
-      <aside class="panel">
-        <div class="sectionTitle">보관함</div>
-        <div class="wallet"><span>보유 자금</span><b id="moneyText">0 G</b></div>
-        <div id="stashList" class="stashList"></div>
-        <div class="sectionTitle minor">상점</div>
+
+      <aside class="panel shopPanel">
+        <div class="sectionTitle">보급 상점</div>
         <div id="shopList" class="shopList"></div>
+        <div class="sectionTitle minor">이번 빌드</div>
+        <div class="patchNote">대형 야간 산업지대 · AI 7명 · 엄폐물 증설 · 상자 채널링 루팅 · 수류탄 · 방향성 소리 표시 · 시야 원뿔 · 총기 타격감 보강</div>
       </aside>
     </div>
   </section>
 
   <section id="raid" class="screen hidden">
     <div class="raidGrid">
-      <main id="gameWrap">
+      <main id="gameWrap" tabindex="0">
         <canvas id="game" width="1280" height="720"></canvas>
         <div class="hud topLeft">
           <div class="hudBox"><span class="label">HP</span><b id="hpText">100</b><div class="bar"><i id="hpBar"></i></div></div>
           <div class="hudBox"><span class="label">ARMOR</span><b id="armorText">0</b><div class="bar armor"><i id="armorBar"></i></div></div>
         </div>
         <div class="hud topRight">
-          <div class="hudBox weaponHud"><span id="weaponName">AR</span><b id="ammoText">30 / 90</b><small id="fireMode">AUTO</small></div>
+          <div class="hudBox weaponHud"><span id="weaponName">-</span><b id="ammoText">0 / 0</b><small id="fireMode">SEMI</small></div>
         </div>
-        <div id="raidTimer" class="timer">14:59</div>
-        <div id="interactHint" class="hint">WASD 이동 · SHIFT 전력질주 · 마우스 조준 · 좌클릭 사격 · R 재장전 · E 상호작용</div>
+        <div id="raidTimer" class="timer">17:59</div>
+        <div class="visionHud">VIS <b id="visionHudText">3</b></div>
+        <div id="interactHint" class="hint">WASD 이동 · SHIFT 전력질주 · 좌클릭 사격 · R 재장전 · E 상호작용 · G 수류탄 · 1/2 무기 전환</div>
+        <div id="openProgress" class="openProgress hidden"><div id="openProgressFill"></div><span id="openProgressText"></span></div>
+        <div id="hitMarker" class="hitMarker"></div>
         <div id="killFeed" class="killFeed"></div>
         <div id="lootPanel" class="lootPanel hidden"></div>
         <div id="resultPanel" class="resultPanel hidden"></div>
       </main>
+
       <aside class="sidePanel">
         <div class="panel compact">
           <div class="sectionTitle">RAID 상태</div>
           <div class="statRow"><span>전리품 가치</span><b id="lootValue">0 G</b></div>
           <div class="statRow"><span>처치</span><b id="killCount">0</b></div>
           <div class="statRow"><span>남은 AI</span><b id="aliveCount">0</b></div>
+          <div class="statRow"><span>수류탄</span><b id="grenadeCount">0</b></div>
+        </div>
+        <div class="panel compact">
+          <div class="sectionTitle">장비</div>
+          <div id="raidEquipment" class="raidEquipment"></div>
         </div>
         <div class="panel compact">
           <div class="sectionTitle">가방 <span id="bagCount" class="muted">0/8</span></div>
@@ -66,7 +85,12 @@
         </div>
         <div class="panel compact controls">
           <b>조작</b>
-          <div>WASD 이동</div><div>SHIFT 전력질주</div><div>좌클릭 사격</div><div>R 재장전</div><div>E 루팅 / 탈출</div><div>1 치료키트 사용</div>
+          <div>WASD 이동 / SHIFT 전력질주</div>
+          <div>좌클릭 사격 / R 재장전</div>
+          <div>1 · 2 무기 전환</div>
+          <div>G 수류탄 투척</div>
+          <div>E 상자·시체 열기 / 탈출</div>
+          <div>H 치료키트 사용</div>
         </div>
         <button id="abandonBtn" class="danger">원정 포기</button>
       </aside>

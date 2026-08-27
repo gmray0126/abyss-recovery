@@ -1,45 +1,26 @@
-import {TICK_DT} from './protocol.js';
-import {createWorld, stepWorld, applyAction, makeSnapshot} from './sim.js';
+import {createWorld,stepWorld,setPlayerInput,applyAction,buildSnapshot,drainEvents} from './sim.js';
 
-// Browser-local authoritative simulation. This implements the exact shape the
-// future realtime server will expose: input commands in, snapshots/events out.
-export class LocalSession {
-  constructor(config={}){
-    this.world=createWorld(config);
-    this.input=null;
-    this.acc=0;
-    this.last=performance.now()/1000;
-    this.listeners={snapshot:[],event:[]};
-    this.running=true;
-    this.frame=this.frame.bind(this);
-    requestAnimationFrame(this.frame);
-  }
-  on(type,fn){this.listeners[type]?.push(fn);return()=>{this.listeners[type]=this.listeners[type].filter(x=>x!==fn)}}
-  emit(type,payload){for(const fn of this.listeners[type]||[])fn(payload)}
-  sendInput(input){this.input={...input}}
-  sendAction(action){applyAction(this.world,action)}
-  frame(nowMs){
-    if(!this.running)return;
-    const now=nowMs/1000,dt=Math.min(.1,now-this.last);this.last=now;this.acc+=dt;
-    while(this.acc>=TICK_DT){stepWorld(this.world,this.input,TICK_DT);this.acc-=TICK_DT}
-    this.emit('snapshot',makeSnapshot(this.world));
-    if(this.world.events.length){for(const e of this.world.events.splice(0))this.emit('event',e)}
-    requestAnimationFrame(this.frame);
-  }
-  close(){this.running=false}
+class Emitter{
+ constructor(){this.handlers=new Map()}
+ on(name,fn){if(!this.handlers.has(name))this.handlers.set(name,new Set());this.handlers.get(name).add(fn);return()=>this.handlers.get(name)?.delete(fn)}
+ emit(name,data){for(const fn of this.handlers.get(name)||[])fn(data)}
 }
 
-// Future multiplayer adapter. The UI/gameplay code does not need to change;
-// only LocalSession is swapped for this transport when a websocket game server exists.
-export class WebSocketSession {
-  constructor(url,token){
-    this.ws=new WebSocket(url);this.listeners={snapshot:[],event:[]};
-    this.ws.addEventListener('open',()=>this.ws.send(JSON.stringify({t:'join',token})));
-    this.ws.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.t==='snapshot')this.emit('snapshot',m.data);else if(m.t==='event')this.emit('event',m.data)});
-  }
-  on(type,fn){this.listeners[type]?.push(fn)}
-  emit(type,payload){for(const fn of this.listeners[type]||[])fn(payload)}
-  sendInput(input){if(this.ws.readyState===1)this.ws.send(JSON.stringify({t:'input',data:input}))}
-  sendAction(action){if(this.ws.readyState===1)this.ws.send(JSON.stringify({t:'action',data:action}))}
-  close(){this.ws.close()}
+export class LocalSession extends Emitter{
+ constructor(config={}){
+   super();this.closed=false;this.world=createWorld({players:[config]});this.playerId=this.world.humanIds[0];this.acc=0;this.last=performance.now();
+   this.timer=setInterval(()=>this.loop(),16);this.snapshotTimer=setInterval(()=>this.pushSnapshot(),50);this.pushSnapshot();
+ }
+ loop(){if(this.closed)return;const now=performance.now(),frame=Math.min(.08,(now-this.last)/1000);this.last=now;this.acc+=frame;const FIXED=1/20;let guard=0;while(this.acc>=FIXED&&guard++<4){stepWorld(this.world,FIXED);this.acc-=FIXED;for(const e of drainEvents(this.world)){if(!e.recipient||e.recipient===this.playerId)this.emit('event',e)}}}
+ pushSnapshot(){if(this.closed)return;this.emit('snapshot',buildSnapshot(this.world,this.playerId))}
+ sendInput(input){if(!this.closed)setPlayerInput(this.world,this.playerId,input)}
+ sendAction(action){if(!this.closed)applyAction(this.world,this.playerId,action)}
+ close(){if(this.closed)return;this.closed=true;clearInterval(this.timer);clearInterval(this.snapshotTimer)}
+}
+
+export class WebSocketSession extends Emitter{
+ constructor(url,hello){super();this.ws=new WebSocket(url);this.ws.addEventListener('open',()=>this.ws.send(JSON.stringify({type:'hello',...hello})));this.ws.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.type==='snapshot')this.emit('snapshot',m.data);else if(m.type==='event')this.emit('event',m.data)});this.ws.addEventListener('close',()=>this.emit('close'))}
+ sendInput(input){if(this.ws.readyState===1)this.ws.send(JSON.stringify({type:'input',data:input}))}
+ sendAction(action){if(this.ws.readyState===1)this.ws.send(JSON.stringify({type:'action',data:action}))}
+ close(){this.ws.close()}
 }
