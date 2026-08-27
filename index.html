@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DEAD DROP // v2.5 Multiplayer Extraction</title>
+<title>DEAD DROP // v2.6 Smooth Combat Economy</title>
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -46,8 +46,10 @@
       <aside class="panel shopPanel">
         <div class="sectionTitle">보급 상점</div>
         <div id="shopList" class="shopList"></div>
+        <div class="sectionTitle minor">무기 성능</div>
+        <div id="weaponStatsList" class="weaponStatsList"></div>
         <div class="sectionTitle minor">이번 빌드</div>
-        <div class="patchNote">10분 실시간 RAID · 인간 최대 8명 · AI 빈자리 보충 · 중간 참가/탈출 · WebSocket 실시간 동기화</div>
+        <div class="patchNote">피격 가시성 · 문 끼임 방지 · 직접 판매 경제 · 전력질주 시각효과 · 20Hz 네트워크 + 60fps 보간</div>
       </aside>
     </div>
   </section>
@@ -65,6 +67,7 @@
         </div>
         <div id="raidTimer" class="timer">17:59</div>
         <div class="visionHud">VIS <b id="visionHudText">3</b></div>
+        <div id="sprintHud" class="sprintHud hidden">SPRINT</div>
         <div id="interactHint" class="hint">WASD 이동 · SHIFT 전력질주 · 클릭 후 마우스 고정(ESC 해제) · 좌클릭 사격 · R 재장전 · E 상호작용 · G 수류탄 · H 치료(2초) · 1/2 무기 전환</div>
         <div id="openProgress" class="openProgress hidden"><div id="openProgressFill"></div><span id="openProgressText"></span></div>
         <div id="hitMarker" class="hitMarker"></div>
@@ -76,7 +79,7 @@
       <aside class="sidePanel">
         <div class="panel compact">
           <div class="sectionTitle">RAID 상태</div>
-          <div class="statRow"><span>전리품 가치</span><b id="lootValue">0 G</b></div>
+          <div class="statRow"><span>휴대품 평가액</span><b id="lootValue">0 G</b></div>
           <div class="statRow"><span>처치</span><b id="killCount">0</b></div>
           <div class="statRow"><span>남은 AI</span><b id="aliveCount">0</b></div>
           <div class="statRow"><span>수류탄 (G)</span><b id="grenadeCount">0</b></div>

@@ -4,7 +4,7 @@ import {
   addHumanPlayer,removeHumanPlayer,reconcileFillerAI
 } from '../src/sim.js';
 
-const CYCLE_MS=10*60*1000,CAPACITY=8,FIXED=1/30,SNAPSHOT_MS=33,STATUS_MS=1000;
+const CYCLE_MS=10*60*1000,CAPACITY=8,FIXED=1/30,SNAPSHOT_MS=50,STATUS_MS=1000;
 const shared=globalThis.__DEAD_DROP_RT__||(globalThis.__DEAD_DROP_RT__={rooms:new Map(),sockets:new Set(),socketMeta:new WeakMap(),timer:null,lastTick:Date.now(),lastStatus:0});
 const sm=ws=>{let d=shared.socketMeta.get(ws);if(!d){d={roomKey:null,playerId:null,fullSent:false};shared.socketMeta.set(ws,d)}return d};
 const safeSend=(ws,msg)=>{try{ws.send(JSON.stringify(msg))}catch{}};

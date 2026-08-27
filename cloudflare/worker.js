@@ -6,7 +6,7 @@ import {
 const CYCLE_MS = 10 * 60 * 1000;
 const CAPACITY = 8;
 const FIXED = 1 / 30;
-const SNAPSHOT_MS = 33;
+const SNAPSHOT_MS = 50;
 
 const roomKey = (now = Date.now()) => Math.floor(now / CYCLE_MS);
 const roomId = key => `IND-${String(key).slice(-6)}`;

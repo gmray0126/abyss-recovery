@@ -9,7 +9,7 @@ class Emitter{
 export class LocalSession extends Emitter{
  constructor(config={}){
    super();this.closed=false;this.world=createWorld({players:[config]});this.playerId=this.world.humanIds[0];this.acc=0;this.last=performance.now();
-   this.timer=setInterval(()=>this.loop(),16);this.snapshotTimer=setInterval(()=>this.pushSnapshot(),33);this.pushSnapshot();
+   this.timer=setInterval(()=>this.loop(),16);this.snapshotTimer=setInterval(()=>this.pushSnapshot(),50);this.pushSnapshot();
  }
  loop(){if(this.closed)return;const now=performance.now(),frame=Math.min(.08,(now-this.last)/1000);this.last=now;this.acc+=frame;const FIXED=1/30;let guard=0;while(this.acc>=FIXED&&guard++<4){stepWorld(this.world,FIXED);this.acc-=FIXED;for(const e of drainEvents(this.world)){if(!e.recipient||e.recipient===this.playerId)this.emit('event',e)}}}
  pushSnapshot(){if(this.closed)return;this.emit('snapshot',buildSnapshot(this.world,this.playerId))}
