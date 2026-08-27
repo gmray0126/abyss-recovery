@@ -1,0 +1,29 @@
+import fs from 'node:fs';
+
+const path='src/main.js';
+let s=fs.readFileSync(path,'utf8');
+const replace=(from,to,label)=>{if(!s.includes(from))throw new Error('missing '+label);s=s.replace(from,to)};
+
+replace(
+"const audioSampleUrls={shotPistol:'./assets/audio/shot-pistol.wav',shotRifle:'./assets/audio/shot-rifle.wav',shotRifle2:'./assets/audio/shot-rifle2.wav',reloadGeneric:'./assets/audio/reload-generic.wav',reloadGeneric2:'./assets/audio/reload-generic2.wav',reloadPistol:'./assets/audio/reload-pistol.wav',reloadRifle:'./assets/audio/reload-rifle.wav',reloadShotgun:'./assets/audio/reload-shotgun.wav'};",
+"const audioSampleUrls={shotPistol:'./assets/audio/shot-pistol.wav',shotSmg:'./assets/audio/shot-smg.wav',shotAr:'./assets/audio/shot-ar.wav',shotShotgun:'./assets/audio/shot-shotgun.wav',shotDmr:'./assets/audio/shot-dmr.wav',reloadGeneric:'./assets/audio/reload-generic.wav',reloadGeneric2:'./assets/audio/reload-generic2.wav',reloadPistol:'./assets/audio/reload-pistol.wav',reloadRifle:'./assets/audio/reload-rifle.wav',reloadShotgun:'./assets/audio/reload-shotgun.wav'};",
+'audio sample urls');
+
+replace(
+"function shotSound(type,volume=1){if(!audioCtx)return;const sample={pistol:['shotPistol',1,.88],smg:['shotPistol',1.34,.72],ar:['shotRifle',1.02,.92],shotgun:['shotRifle2',.72,1.18],dmr:['shotRifle2',.88,1.08]}[type];if(sample&&playSample(sample[0],volume*sample[2],sample[1]))return;const d={pistol:[.035,360],smg:[.026,430],ar:[.045,300],shotgun:[.075,170],dmr:[.06,220]}[type]||[.04,300];noiseBurst(type==='shotgun'?.10:.065,d[0]*volume,70,d[1]*3);const o=audioCtx.createOscillator(),g=audioCtx.createGain(),now=audioCtx.currentTime;o.type='square';o.frequency.setValueAtTime(d[1],now);o.frequency.exponentialRampToValueAtTime(55,now+.055);g.gain.setValueAtTime(d[0]*.5*volume,now);g.gain.exponentialRampToValueAtTime(.001,now+.07);o.connect(g).connect(audioCtx.destination);o.start();o.stop(now+.08)}",
+"function shotSound(type,volume=1){if(!audioCtx)return;const sample={pistol:['shotPistol',.62],smg:['shotSmg',.50],ar:['shotAr',.60],shotgun:['shotShotgun',.72],dmr:['shotDmr',.68]}[type];if(sample&&playSample(sample[0],volume*sample[1],1))return;const d={pistol:[.035,360],smg:[.026,430],ar:[.045,300],shotgun:[.075,170],dmr:[.06,220]}[type]||[.04,300];noiseBurst(type==='shotgun'?.10:.065,d[0]*volume,70,d[1]*3);const o=audioCtx.createOscillator(),g=audioCtx.createGain(),now=audioCtx.currentTime;o.type='square';o.frequency.setValueAtTime(d[1],now);o.frequency.exponentialRampToValueAtTime(55,now+.055);g.gain.setValueAtTime(d[0]*.5*volume,now);g.gain.exponentialRampToValueAtTime(.001,now+.07);o.connect(g).connect(audioCtx.destination);o.start();o.stop(now+.08)}",
+'shot sound mapping');
+
+replace(
+"$('#medCount').textContent=p.inventory.filter(i=>i.kind==='med').length;$('#sprintHud').classList.toggle('hidden',!p.sprinting);renderBag();renderRaidEquipment();renderLoot();renderProgress()}",
+"$('#medCount').textContent=p.inventory.filter(i=>i.kind==='med').length;$('#sprintHud').classList.toggle('hidden',!p.sprinting);renderBag();renderRaidEquipment();renderLoot()}",
+'HUD progress call');
+
+const oldProgress="function renderProgress(){const box=$('#openProgress'),heal=snap.player?.healTimer||0;if(heal>0){box.classList.remove('hidden');const dur=snap.player.healDuration||2,pct=Math.max(0,Math.min(1,1-heal/dur));$('#openProgressFill').style.width=`${pct*100}%`;$('#openProgressText').textContent=`치료키트 사용중 · ${heal.toFixed(1)}초`;return}const reload=snap.player?.reload||0,weaponType=snap.player?.weapon?.type;if(reload>0&&weaponType&&WEAPONS[weaponType]){box.classList.remove('hidden');const dur=WEAPONS[weaponType].reload||1,pct=Math.max(0,Math.min(1,1-reload/dur));$('#openProgressFill').style.width=`${pct*100}%`;$('#openProgressText').textContent=`재장전 중 · ${reload.toFixed(1)}초`;return}const q=snap.interaction;if(!q){box.classList.add('hidden');return}box.classList.remove('hidden');const pct=Math.min(1,q.progress/q.duration);$('#openProgressFill').style.width=`${pct*100}%`;$('#openProgressText').textContent=q.kind==='extract'?`탈출 중 ${(q.duration-q.progress).toFixed(1)}초`:`상자 여는 중 ${(q.duration-q.progress).toFixed(1)}초`}";
+const newProgress="const progressBox=$('#openProgress'),progressFill=$('#openProgressFill'),progressText=$('#openProgressText');progressFill.style.width='100%';progressFill.style.transformOrigin='left center';progressFill.style.willChange='transform';function renderProgress(now=performance.now()){if(!snap?.player){progressBox.classList.add('hidden');return}const age=Math.min(.12,Math.max(0,(now-lastSnapshotAt)/1000)),show=(pct,text)=>{progressBox.classList.remove('hidden');progressFill.style.transform=`scaleX(${Math.max(0,Math.min(1,pct))})`;progressText.textContent=text};const healBase=snap.player.healTimer||0;if(healBase>0){const heal=Math.max(0,healBase-age),dur=snap.player.healDuration||2;show(1-heal/dur,`치료키트 사용중 · ${heal.toFixed(1)}초`);return}const reloadBase=snap.player.reload||0,weaponType=snap.player.weapon?.type;if(reloadBase>0&&weaponType&&WEAPONS[weaponType]){const reload=Math.max(0,reloadBase-age),dur=WEAPONS[weaponType].reload||1;show(1-reload/dur,`재장전 중 · ${reload.toFixed(1)}초`);return}const q=snap.interaction;if(q){const progress=Math.min(q.duration,q.progress+(keys.has('e')?age:0)),left=Math.max(0,q.duration-progress);show(progress/q.duration,q.kind==='extract'?`탈출 중 ${left.toFixed(1)}초`:`상자 여는 중 ${left.toFixed(1)}초`);return}progressBox.classList.add('hidden')}";
+replace(oldProgress,newProgress,'smooth progress function');
+
+replace("if(!snap)return;updateRenderActors(dt);","if(!snap)return;renderProgress(now);updateRenderActors(dt);",'frame progress call');
+replace("const p=visualPlayer()||snap.player,scale=.5,sx=","const p=visualPlayer()||snap.player,scale=.4,sx=",'fog resolution');
+
+fs.writeFileSync(path,s);
