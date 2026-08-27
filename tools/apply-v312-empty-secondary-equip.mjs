@@ -8,3 +8,4 @@ if(!s.includes(old))throw new Error('applyBagEquip anchor not found');
 s=s.replace(old,next);
 fs.writeFileSync(path,s);
 console.log('v3.1.2 empty secondary equip fix applied');
+// trigger workflow after workflow registration
