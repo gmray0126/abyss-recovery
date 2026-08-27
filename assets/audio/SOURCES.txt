@@ -1,8 +1,10 @@
-DEAD DROP audio sources
+FIREARM REPORTS (CC0-1.0)
+Source: The Free Firearm Sound Library — real firearm field recordings by Ben Jaszczak, Brian Nelson, Kevin Heras and Matthew Nanney.
+Mirror used for prepared WAVs: https://github.com/petroulacl/fps-asset-kit
+Original library record: https://opengameart.org/content/the-free-firearm-sound-library
+Mapping: pistol=1911 A_34P, smg=Carl Gustav M45 G_24P, ar=AR-15 D_24P, shotgun=Model 12 K_17P, dmr=Mosin Nagant M_21P.
+License: CC0 1.0 / no rights reserved.
 
-Weapon shots / generic load sounds: FPS Placeholder Sounds by Jack Menhorn, CC-BY 3.0.
-Source: https://opengameart.org/content/fps-placeholder-sounds
-Attribution: Jack Menhorn
-
-Reload samples: Gun reload sounds by SpringySpringo, CC0.
-Source: https://opengameart.org/content/gun-reload-sounds
+RELOAD FOLEY (CC0)
+Source: SpringySpringo — Gun reload sounds
+https://opengameart.org/content/gun-reload-sounds
