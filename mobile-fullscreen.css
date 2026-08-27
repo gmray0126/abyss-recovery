@@ -1,0 +1,9 @@
+@media (hover:none) and (pointer:coarse){
+  body.mobileRaidFullscreen{overflow:hidden;height:100dvh}
+  body.mobileRaidFullscreen .topbar{display:none!important}
+  body.mobileRaidFullscreen #raid.screen{padding:0!important;height:100dvh!important}
+  body.mobileRaidFullscreen #raid .raidGrid{height:100dvh!important;max-width:none!important}
+  body.mobileRaidFullscreen #gameWrap{height:100dvh!important;width:100vw!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+  body.mobileRaidFullscreen #game{width:100vw!important;height:100dvh!important;object-fit:contain}
+  body.mobileRaidFullscreen .sidePanel{top:7px!important}
+}
