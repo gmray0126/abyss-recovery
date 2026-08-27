@@ -89,8 +89,8 @@ update('cloudflare/worker.js',s=>mustReplace(
 ));
 
 update('index.html',s=>{
- s=mustReplace(s,'<title>DEAD DROP // v3.0 Ammo Economy & Rotating Maps</title>','<title>DEAD DROP // v3.1 Dynamic Cover Raids</title>','page title');
- s=mustReplace(s,'탄약 T1~T5 · 방어구 수리 · 10분 맵 순환 · 구역 색상 강화 · 20Hz 네트워크 + 60fps 보간','RAID마다 엄폐물 재배치 · 엄폐물 대폭 증가 · 문/스폰/탈출구 안전배치 · 탄약 T1~T5 · 10분 맵 순환','patch note');
+ s=mustReplace(s,'<title>DEAD DROP // v3.0.1 Ammo Economy & Rotating Maps</title>','<title>DEAD DROP // v3.1 Dynamic Cover Raids</title>','page title');
+ s=mustReplace(s,'v3.0.1 · 탄약 T1~T5 · 방어구 수리 · 10분 맵 순환 · 구역 색상 강화 · 탄약 HUD 갱신','v3.1 · RAID마다 엄폐물 재배치 · 엄폐물 대폭 증가 · 문/스폰/탈출구 안전배치 · 탄약 T1~T5 · 10분 맵 순환','patch note');
  return s;
 });
 
