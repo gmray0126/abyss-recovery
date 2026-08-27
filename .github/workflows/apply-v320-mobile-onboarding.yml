@@ -2,7 +2,7 @@ name: Apply v3.2 mobile onboarding
 on:
   push:
     paths:
-      - 'tools/apply-v320-mobile-onboarding.mjs'
+      - 'tools/apply-v320-mobile-onboarding-fixed.mjs'
 permissions:
   contents: write
 jobs:
@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: '20'
       - name: Apply patch
-        run: node tools/apply-v320-mobile-onboarding.mjs
+        run: node tools/apply-v320-mobile-onboarding-fixed.mjs
       - name: Syntax check
         run: |
           node --check src/main.js
