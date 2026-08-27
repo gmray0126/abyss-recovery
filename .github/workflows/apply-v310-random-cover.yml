@@ -1,0 +1,56 @@
+name: Apply v3.1 randomized raid cover
+on:
+  push:
+    branches: [main]
+    paths:
+      - tools/apply-v310-random-cover.mjs
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply patch
+        run: node tools/apply-v310-random-cover.mjs
+      - name: Syntax check
+        run: |
+          node --check src/sim.js
+          node --check src/net.js
+          node --check api/realtime.js
+          node --check cloudflare/worker.js
+      - name: Deterministic layout test
+        run: |
+          node --input-type=module <<'NODE'
+          import {createWorld} from './src/sim.js';
+          const a=createWorld({players:[],aiCount:0,mapIndex:0,coverSeed:123456});
+          const b=createWorld({players:[],aiCount:0,mapIndex:0,coverSeed:123456});
+          const c=createWorld({players:[],aiCount:0,mapIndex:0,coverSeed:123457});
+          const dyn=w=>w.obstacles.filter(o=>o.dynamic).map(o=>[o.x,o.y,o.w,o.h,o.kind]);
+          if(JSON.stringify(dyn(a))!==JSON.stringify(dyn(b)))throw new Error('same seed produced different cover');
+          if(JSON.stringify(dyn(a))===JSON.stringify(dyn(c)))throw new Error('different seed produced same cover');
+          if(dyn(a).length<30)throw new Error(`too few dynamic covers: ${dyn(a).length}`);
+          if((a.map?.dynamicCoverCount||0)!==dyn(a).length)throw new Error('cover count metadata mismatch');
+          const overlap=(r,s,p=0)=>r.x<s.x+s.w+p&&r.x+r.w+p>s.x&&r.y<s.y+s.h+p&&r.y+r.h+p>s.y;
+          for(const o of a.obstacles.filter(x=>x.dynamic)){
+            for(const d of a.doors){const safe={x:d.x-95,y:d.y-95,w:d.w+190,h:d.h+190};if(overlap(o,safe))throw new Error(`cover blocks door ${d.id}`)}
+            for(const e of a.extracts){const safe={x:e.x-80,y:e.y-80,w:e.w+160,h:e.h+160};if(overlap(o,safe))throw new Error(`cover blocks extract ${e.id}`)}
+          }
+          console.log('dynamic covers',dyn(a).length,'seed',a.map.layoutSeed);
+          NODE
+      - name: Guard integration
+        run: |
+          grep -q "buildRaidObstacles" src/sim.js
+          grep -q "dynamicCoverCount" src/sim.js
+          grep -q "coverSeed:key" api/realtime.js
+          grep -q "coverSeed: key" cloudflare/worker.js
+      - name: Commit generated patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/sim.js src/net.js api/realtime.js cloudflare/worker.js index.html
+          git commit -m "feat: randomize and densify raid cover layouts"
+          git push
