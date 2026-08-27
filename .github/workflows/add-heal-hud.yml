@@ -1,0 +1,61 @@
+name: Add visible H heal control
+on:
+  push:
+    paths:
+      - '.github/workflows/add-heal-hud.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch heal HUD and feedback
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='<div class="statRow"><span>수류탄</span><b id="grenadeCount">0</b></div>'
+          new='<div class="statRow"><span>수류탄 (G)</span><b id="grenadeCount">0</b></div>\n          <div class="statRow"><span>치료키트 (H)</span><b id="medCount">0</b></div>'
+          if old not in s:
+              raise SystemExit('index heal target missing')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('src/sim.js')
+          s=p.read_text(encoding='utf-8')
+          old="function useMed(w,p){if(p.hp>=p.maxHp)return;const i=p.inventory.findIndex(x=>x.kind==='med');if(i<0)return;const m=p.inventory.splice(i,1)[0];p.hp=Math.min(p.maxHp,p.hp+(m.heal||45));emit(w,'heal',{actor:p.id})}"
+          new="function useMed(w,p){if(p.hp>=p.maxHp)return;const i=p.inventory.findIndex(x=>x.kind==='med');if(i<0)return;const m=p.inventory.splice(i,1)[0],before=p.hp;p.hp=Math.min(p.maxHp,p.hp+(m.heal||45));emit(w,'heal',{actor:p.id,amount:Math.round(p.hp-before)})}"
+          if old not in s:
+              raise SystemExit('sim heal target missing')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('src/main.js')
+          s=p.read_text(encoding='utf-8')
+          old="$('#grenadeCount').textContent=p.inventory.filter(i=>i.kind==='grenade').length;renderBag();"
+          new="$('#grenadeCount').textContent=p.inventory.filter(i=>i.kind==='grenade').length;$('#medCount').textContent=p.inventory.filter(i=>i.kind==='med').length;renderBag();"
+          if old not in s:
+              raise SystemExit('main med count target missing')
+          s=s.replace(old,new,1)
+          old2="if(e.type==='loot')toast(`획득: ${e.item}`);if(e.type==='equip')toast(`장착: ${e.item}`);if(e.type==='door')toast(`${e.name} ${e.open?'열림':'닫힘'}`);"
+          new2="if(e.type==='loot')toast(`획득: ${e.item}`);if(e.type==='equip')toast(`장착: ${e.item}`);if(e.type==='door')toast(`${e.name} ${e.open?'열림':'닫힘'}`);if(e.type==='heal'&&e.actor===snap?.playerId)toast(`치료 완료 +${e.amount||0} HP`);"
+          if old2 not in s:
+              raise SystemExit('main heal feedback target missing')
+          s=s.replace(old2,new2,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check src/main.js
+          node --check src/sim.js
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html src/main.js src/sim.js
+          git rm .github/workflows/add-heal-hud.yml
+          git commit -m 'feat: expose H healing control and med count'
+          git push
