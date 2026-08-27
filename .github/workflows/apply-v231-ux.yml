@@ -1,0 +1,25 @@
+name: Apply v2.3.1 UX
+on:
+  push:
+    paths:
+      - 'tools/patch_v231_ux.py'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply patch
+        run: |
+          python tools/patch_v231_ux.py
+          node --check src/main.js
+          node --check src/sim.js
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main.js src/sim.js
+          git rm tools/patch_v231_ux.py .github/workflows/apply-v231-ux.yml
+          git commit -m 'fix: unlock mouse on death and improve healing and footsteps'
+          git push
