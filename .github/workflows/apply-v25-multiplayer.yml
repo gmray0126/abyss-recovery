@@ -1,0 +1,26 @@
+name: Apply v2.5 multiplayer
+on:
+  push:
+    paths:
+      - 'tools/patch_v25_multiplayer.py'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply multiplayer patch
+        run: |
+          python tools/patch_v25_multiplayer.py
+          node --check src/main.js
+          node --check src/net.js
+          node --check src/sim.js
+          node --check api/realtime.js
+      - name: Commit multiplayer build
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main.js src/net.js src/sim.js index.html styles.css
+          git commit -m 'feat: realtime 10 minute multiplayer raids' || exit 0
+          git push
