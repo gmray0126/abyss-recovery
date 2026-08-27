@@ -1,0 +1,47 @@
+name: Apply v2.8 real audio smooth progress
+on:
+  push:
+    paths: ['tools/apply-v28-real-audio-smooth-progress.mjs']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare real CC0 firearm one-shots
+        run: |
+          set -e
+          mkdir -p /tmp/deaddrop-audio assets/audio
+          curl -L --fail -o /tmp/deaddrop-audio/pistol.wav 'https://raw.githubusercontent.com/petroulacl/fps-asset-kit/main/sfx/firearm_sfx/Prepared%20SFX%20Library/1911/A_34P.wav'
+          curl -L --fail -o /tmp/deaddrop-audio/smg.wav 'https://raw.githubusercontent.com/petroulacl/fps-asset-kit/main/sfx/firearm_sfx/Prepared%20SFX%20Library/Carl%20Gustav%20M45/G_24P.wav'
+          curl -L --fail -o /tmp/deaddrop-audio/ar.wav 'https://raw.githubusercontent.com/petroulacl/fps-asset-kit/main/sfx/firearm_sfx/Prepared%20SFX%20Library/AR-15/D_24P.wav'
+          curl -L --fail -o /tmp/deaddrop-audio/shotgun.wav 'https://raw.githubusercontent.com/petroulacl/fps-asset-kit/main/sfx/firearm_sfx/Prepared%20SFX%20Library/Model%2012/K_17P.wav'
+          curl -L --fail -o /tmp/deaddrop-audio/dmr.wav 'https://raw.githubusercontent.com/petroulacl/fps-asset-kit/main/sfx/firearm_sfx/Prepared%20SFX%20Library/Mosin%20Nagant/M_21P.wav'
+          for k in pistol smg ar shotgun dmr; do
+            ffmpeg -hide_banner -loglevel error -y -i /tmp/deaddrop-audio/$k.wav -af "silenceremove=start_periods=1:start_duration=0.01:start_threshold=-42dB,atrim=0:0.95,afade=t=out:st=0.72:d=0.23,alimiter=limit=0.95" -ar 44100 -ac 1 -c:a pcm_s16le assets/audio/shot-$k.wav
+          done
+          rm -f assets/audio/shot-rifle.wav assets/audio/shot-rifle2.wav assets/audio/shot-alt.wav assets/audio/shot-heavy.wav
+          cat > assets/audio/SOURCES.txt <<'EOF'
+          FIREARM REPORTS (CC0-1.0)
+          Source: The Free Firearm Sound Library — real firearm field recordings by Ben Jaszczak, Brian Nelson, Kevin Heras and Matthew Nanney.
+          Mirror used for prepared WAVs: https://github.com/petroulacl/fps-asset-kit
+          Original library record: https://opengameart.org/content/the-free-firearm-sound-library
+          Mapping: pistol=1911 A_34P, smg=Carl Gustav M45 G_24P, ar=AR-15 D_24P, shotgun=Model 12 K_17P, dmr=Mosin Nagant M_21P.
+          License: CC0 1.0 / no rights reserved.
+
+          RELOAD FOLEY (CC0)
+          Source: SpringySpringo — Gun reload sounds
+          https://opengameart.org/content/gun-reload-sounds
+          EOF
+      - run: node tools/apply-v28-real-audio-smooth-progress.mjs
+      - run: node --check src/main.js
+      - name: Commit verified patch
+        run: |
+          set -e
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -f tools/apply-v28-real-audio-smooth-progress.mjs .github/workflows/apply-v28-real-audio-smooth-progress.yml
+          git add src/main.js assets/audio
+          git commit -m 'fix: use real firearm recordings and smooth progress bars'
+          git push
