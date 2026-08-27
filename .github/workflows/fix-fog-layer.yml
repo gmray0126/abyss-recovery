@@ -1,0 +1,58 @@
+name: Fix darkness layer compositing
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-fog-layer.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch fog rendering
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/main.js')
+          s=p.read_text(encoding='utf-8')
+          start=s.index('function drawDarkness(cam){')
+          end=s.index('function drawSoundIndicators()', start)
+          new=r'''function drawDarkness(cam){
+ if(!snap?.player)return;
+ const p=snap.player,sx=p.x-cam.x,sy=p.y-cam.y,level=p.visionLevel;
+ const near=190+level*34,far=near+430+level*58,half=1.05;
+ const fog=drawDarkness._fog||(drawDarkness._fog=document.createElement('canvas'));
+ if(fog.width!==canvas.width||fog.height!==canvas.height){fog.width=canvas.width;fog.height=canvas.height}
+ const fctx=fog.getContext('2d');
+ fctx.setTransform(1,0,0,1,0,0);fctx.clearRect(0,0,fog.width,fog.height);
+ // Terrain always remains readable. Vision only controls actor visibility and local brightness.
+ fctx.globalCompositeOperation='source-over';
+ fctx.fillStyle='rgba(2,5,8,.43)';fctx.fillRect(0,0,fog.width,fog.height);
+ // Cut holes only in the fog layer, never in the world canvas itself.
+ fctx.globalCompositeOperation='destination-out';
+ let g=fctx.createRadialGradient(sx,sy,16,sx,sy,near);
+ g.addColorStop(0,'rgba(0,0,0,.82)');g.addColorStop(.58,'rgba(0,0,0,.66)');g.addColorStop(1,'rgba(0,0,0,0)');
+ fctx.fillStyle=g;fctx.beginPath();fctx.arc(sx,sy,near,0,Math.PI*2);fctx.fill();
+ fctx.save();fctx.translate(sx,sy);fctx.rotate(p.angle);
+ const cone=fctx.createRadialGradient(0,0,near*.18,0,0,far);
+ cone.addColorStop(0,'rgba(0,0,0,.98)');cone.addColorStop(.62,'rgba(0,0,0,.94)');cone.addColorStop(.86,'rgba(0,0,0,.66)');cone.addColorStop(1,'rgba(0,0,0,0)');
+ fctx.fillStyle=cone;fctx.beginPath();fctx.moveTo(0,0);fctx.arc(0,0,far,-half,half);fctx.closePath();fctx.fill();fctx.restore();
+ fctx.globalCompositeOperation='source-over';
+ ctx.drawImage(fog,0,0);
+}
+'''
+          s=s[:start]+new+s[end:]
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check src/main.js
+      - name: Commit fog fix
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main.js
+          git rm .github/workflows/fix-fog-layer.yml
+          git commit -m 'fix: brighten vision cone without erasing terrain'
+          git push
