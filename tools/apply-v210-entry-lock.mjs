@@ -105,3 +105,5 @@ patch('src/main.js',s=>{
   if(!s.includes("left<=60")||!s.includes('신규 참가 마감'))throw new Error('client entry lock patch incomplete');
   return s;
 });
+
+// trigger v2.10
