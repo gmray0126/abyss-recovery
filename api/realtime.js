@@ -9,7 +9,7 @@ const shared=globalThis.__DEAD_DROP_RT__||(globalThis.__DEAD_DROP_RT__={rooms:ne
 const sm=ws=>{let d=shared.socketMeta.get(ws);if(!d){d={roomKey:null,playerId:null,fullSent:false};shared.socketMeta.set(ws,d)}return d};
 const safeSend=(ws,msg)=>{try{ws.send(JSON.stringify(msg))}catch{}};
 const roomKey=(now=Date.now())=>Math.floor(now/CYCLE_MS),roomId=k=>`IND-${String(k).slice(-6)}`;
-function createRoom(key){const start=key*CYCLE_MS,end=start+CYCLE_MS,mapIndex=((key%3)+3)%3,world=createWorld({players:[],aiCount:CAPACITY,mapIndex});world.timeLeft=Math.max(0,(end-Date.now())/1000);const r={key,id:roomId(key),start,end,world,clients:new Set(),byPlayer:new Map(),nextAiFill:start+60_000,lastSnapshot:0,ended:false};shared.rooms.set(key,r);return r}
+function createRoom(key){const start=key*CYCLE_MS,end=start+CYCLE_MS,mapIndex=((key%3)+3)%3,world=createWorld({players:[],aiCount:CAPACITY,mapIndex,coverSeed:key});world.timeLeft=Math.max(0,(end-Date.now())/1000);const r={key,id:roomId(key),start,end,world,clients:new Set(),byPlayer:new Map(),nextAiFill:start+60_000,lastSnapshot:0,ended:false};shared.rooms.set(key,r);return r}
 function currentRoom(now=Date.now()){const k=roomKey(now);return shared.rooms.get(k)||createRoom(k)}
 function liveHumans(r){let n=0;for(const id of r.byPlayer.keys()){const a=r.world.actors.find(x=>x.id===id);if(a&&!a.dead&&!r.world.results[id])n++}return n}
 function liveAI(r){return r.world.actors.filter(a=>a.kind!=='player'&&!a.dead).length}

@@ -65,7 +65,7 @@ export class RaidRoom {
       this.nextAiFill = saved.nextAiFill || this.nextAiFill;
       this.world.events = [];
     } else {
-      this.world = createWorld({ players: [], aiCount: CAPACITY, mapIndex: ((key % 3) + 3) % 3 });
+      this.world = createWorld({ players: [], aiCount: CAPACITY, mapIndex: ((key % 3) + 3) % 3, coverSeed: key });
     }
     this.world.timeLeft = Math.max(0, (this.endsAt - Date.now()) / 1000);
   }
