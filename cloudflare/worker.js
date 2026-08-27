@@ -5,6 +5,7 @@ import {
 
 const CYCLE_MS = 10 * 60 * 1000;
 const CAPACITY = 8;
+const ENTRY_LOCK_MS = 60_000;
 const FIXED = 1 / 30;
 const SNAPSHOT_MS = 50;
 
@@ -133,6 +134,8 @@ export class RaidRoom {
 
   status(now = Date.now()) {
     const humans = this.liveHumans();
+    const remainingMs = Math.max(0, this.endsAt - now);
+    const entryClosed = remainingMs <= ENTRY_LOCK_MS;
     return {
       roomId: roomId(this.key),
       roomKey: this.key,
@@ -140,8 +143,9 @@ export class RaidRoom {
       ai: this.liveAI(),
       capacity: CAPACITY,
       endsAt: this.endsAt,
-      remainingMs: Math.max(0, this.endsAt - now),
-      joinable: humans < CAPACITY && now < this.endsAt
+      remainingMs,
+      entryClosed,
+      joinable: humans < CAPACITY && !entryClosed
     };
   }
 
@@ -188,8 +192,9 @@ export class RaidRoom {
     const att = this.attachment(ws);
     if (att.playerId) return;
     const humans = this.liveHumans();
-    if (humans >= CAPACITY || Date.now() >= this.endsAt) {
-      this.send(ws, { type: 'join_denied', reason: humans >= CAPACITY ? '현재 방이 가득 찼습니다.' : '현재 RAID가 종료되었습니다.' });
+    const remainingMs = Math.max(0, this.endsAt - Date.now());
+    if (humans >= CAPACITY || remainingMs <= ENTRY_LOCK_MS) {
+      this.send(ws, { type: 'join_denied', reason: humans >= CAPACITY ? '현재 방이 가득 찼습니다.' : '현재 RAID는 종료 1분 전이라 신규 참가가 마감되었습니다.' });
       return;
     }
 
