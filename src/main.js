@@ -96,7 +96,29 @@ function drawActors(cam){for(const a of snap.actors){if(a.dead||!onScreen(a.x,a.
 function drawBullets(cam){for(const b of snap.bullets){if(!onScreen(b.x,b.y,cam))continue;const a=Math.atan2(b.vy,b.vx);ctx.save();ctx.strokeStyle='rgba(255,230,140,.98)';ctx.lineWidth=3;ctx.shadowColor='rgba(255,210,90,.95)';ctx.shadowBlur=7;ctx.beginPath();ctx.moveTo(b.x-Math.cos(a)*24,b.y-Math.sin(a)*24);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore()}}
 function drawGrenades(cam){for(const g of snap.grenades){if(!onScreen(g.x,g.y,cam))continue;ctx.fillStyle='#59605c';ctx.beginPath();ctx.arc(g.x,g.y,6,0,Math.PI*2);ctx.fill();ctx.fillStyle=g.fuse<.7?'#e06757':'#9ca59e';ctx.fillRect(g.x-1,g.y-9,2,4)}}
 function drawFxWorld(cam){for(const f of fx){if(!onScreen(f.x,f.y,cam))continue;const a=Math.max(0,f.t/f.max);ctx.globalAlpha=a;if(f.kind==='muzzle'){ctx.fillStyle='#ffd776';ctx.beginPath();ctx.arc(f.x,f.y,15*(1-a)+8,0,Math.PI*2);ctx.fill()}else if(f.kind==='impact'){ctx.fillStyle='#e5d9b4';for(let i=0;i<4;i++)ctx.fillRect(f.x+(Math.random()-.5)*10,f.y+(Math.random()-.5)*10,2,2)}else if(f.kind==='spark'){ctx.fillStyle='#f1b75e';ctx.fillRect(f.x-2,f.y-2,4,4)}else if(f.kind==='casing'){ctx.fillStyle='#c5a258';ctx.fillRect(f.x,f.y,4,2)}ctx.globalAlpha=1}}
-function drawDarkness(cam){if(!snap?.player)return;const p=snap.player,sx=p.x-cam.x,sy=p.y-cam.y,level=p.visionLevel,near=150+level*28,far=near+360+level*50,half=1.05;ctx.save();ctx.fillStyle='rgba(2,5,8,.38)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalCompositeOperation='destination-out';let g=ctx.createRadialGradient(sx,sy,18,sx,sy,near);g.addColorStop(0,'rgba(0,0,0,.86)');g.addColorStop(.65,'rgba(0,0,0,.68)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(sx,sy,near,0,Math.PI*2);ctx.fill();ctx.save();ctx.translate(sx,sy);ctx.rotate(p.angle);const cone=ctx.createRadialGradient(0,0,near*.25,0,0,far);cone.addColorStop(0,'rgba(0,0,0,.96)');cone.addColorStop(.62,'rgba(0,0,0,.78)');cone.addColorStop(.86,'rgba(0,0,0,.42)');cone.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=cone;ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,far,-half,half);ctx.closePath();ctx.fill();ctx.restore();ctx.restore();const vign=ctx.createRadialGradient(canvas.width/2,canvas.height/2,360,canvas.width/2,canvas.height/2,820);vign.addColorStop(0,'rgba(0,0,0,0)');vign.addColorStop(1,'rgba(0,0,0,.12)');ctx.fillStyle=vign;ctx.fillRect(0,0,canvas.width,canvas.height)}
+function drawDarkness(cam){
+ if(!snap?.player)return;
+ const p=snap.player,sx=p.x-cam.x,sy=p.y-cam.y,level=p.visionLevel;
+ const near=190+level*34,far=near+430+level*58,half=1.05;
+ const fog=drawDarkness._fog||(drawDarkness._fog=document.createElement('canvas'));
+ if(fog.width!==canvas.width||fog.height!==canvas.height){fog.width=canvas.width;fog.height=canvas.height}
+ const fctx=fog.getContext('2d');
+ fctx.setTransform(1,0,0,1,0,0);fctx.clearRect(0,0,fog.width,fog.height);
+ // Terrain always remains readable. Vision only controls actor visibility and local brightness.
+ fctx.globalCompositeOperation='source-over';
+ fctx.fillStyle='rgba(2,5,8,.43)';fctx.fillRect(0,0,fog.width,fog.height);
+ // Cut holes only in the fog layer, never in the world canvas itself.
+ fctx.globalCompositeOperation='destination-out';
+ let g=fctx.createRadialGradient(sx,sy,16,sx,sy,near);
+ g.addColorStop(0,'rgba(0,0,0,.82)');g.addColorStop(.58,'rgba(0,0,0,.66)');g.addColorStop(1,'rgba(0,0,0,0)');
+ fctx.fillStyle=g;fctx.beginPath();fctx.arc(sx,sy,near,0,Math.PI*2);fctx.fill();
+ fctx.save();fctx.translate(sx,sy);fctx.rotate(p.angle);
+ const cone=fctx.createRadialGradient(0,0,near*.18,0,0,far);
+ cone.addColorStop(0,'rgba(0,0,0,.98)');cone.addColorStop(.62,'rgba(0,0,0,.94)');cone.addColorStop(.86,'rgba(0,0,0,.66)');cone.addColorStop(1,'rgba(0,0,0,0)');
+ fctx.fillStyle=cone;fctx.beginPath();fctx.moveTo(0,0);fctx.arc(0,0,far,-half,half);fctx.closePath();fctx.fill();fctx.restore();
+ fctx.globalCompositeOperation='source-over';
+ ctx.drawImage(fog,0,0);
+}
 function drawSoundIndicators(){const cx=canvas.width/2,cy=canvas.height/2,r=Math.min(canvas.width,canvas.height)*.43;for(const s of soundMarks){const a=s.t/s.max,x=cx+Math.cos(s.angle)*r,y=cy+Math.sin(s.angle)*r;ctx.save();ctx.translate(x,y);ctx.rotate(s.angle);ctx.globalAlpha=Math.min(1,a*1.5)*.8;ctx.fillStyle='#d5d9d8';ctx.beginPath();ctx.moveTo(12,0);ctx.lineTo(-8,-8);ctx.lineTo(-3,0);ctx.lineTo(-8,8);ctx.closePath();ctx.fill();ctx.restore()}ctx.globalAlpha=1}
 
 function updateInput(){if(!session||!snap?.player)return;let x=0,y=0;if(keys.has('w'))y--;if(keys.has('s'))y++;if(keys.has('a'))x--;if(keys.has('d'))x++;const cam=camera(),wx=mouse.x+cam.x,wy=mouse.y+cam.y,dx=wx-snap.player.x,dy=wy-snap.player.y,l=Math.hypot(dx,dy)||1;input={...input,seq:input.seq+1,moveX:x,moveY:y,aimX:dx/l,aimY:dy/l,sprint:keys.has('shift'),interact:keys.has('e'),reload:keys.has('r')};session.sendInput(input);input.reload=false}
