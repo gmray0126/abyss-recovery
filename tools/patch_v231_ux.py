@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 def rep(s,a,b,label):
     if a not in s:
@@ -30,14 +31,13 @@ s=rep(s,
 "if(e.type==='heard'){const life=e.kind==='footstep'?0.95:e.kind==='gunshot'?1.45:e.kind==='explosion'?1.7:1.1;soundMarks.push({angle:e.angle,kind:e.kind||'sound',intensity:e.intensity||'mid',t:life,max:life});if(soundMarks.length>18)soundMarks.splice(0,soundMarks.length-18)}",
 "if(e.type==='self_step')footstepSound(!!e.loud,e.loud?1:.72);if(e.type==='heard'){const life=e.kind==='footstep'?0.95:e.kind==='gunshot'?1.45:e.kind==='explosion'?1.7:1.1;if(e.kind==='footstep')footstepSound(!!e.loud,e.intensity==='near'?.72:e.intensity==='mid'?.48:.28);soundMarks.push({angle:e.angle,kind:e.kind||'sound',loud:!!e.loud,intensity:e.intensity||'mid',t:life,max:life});if(soundMarks.length>18)soundMarks.splice(0,soundMarks.length-18)}",
 'heard footstep audio')
-s=rep(s,
-"const fade=Math.min(1,(s.t/s.max)*1.7),x=cx+Math.cos(s.angle)*r,y=cy+Math.sin(s.angle)*r,scale=s.intensity==='near'?1.18:s.intensity==='far'?.82:1;",
-"const fade=Math.min(1,(s.t/s.max)*1.7),x=cx+Math.cos(s.angle)*r,y=cy+Math.sin(s.angle)*r,baseScale=s.intensity==='near'?1.18:s.intensity==='far'?.82:1,scale=baseScale*(s.loud?1.35:1);",
-'loud footstep mark')
+pat=r"const fade=Math\.min\(1,\(s\.t/s\.max\)\*1\.7\),x=cx\+Math\.cos\(s\.angle\)\*r,y=cy\+Math\.sin\(s\.angle\)\*r,scale=[^;]+;"
+repl="const fade=Math.min(1,(s.t/s.max)*1.7),x=cx+Math.cos(s.angle)*r,y=cy+Math.sin(s.angle)*r,baseScale=s.intensity==='near'?1.18:s.intensity==='far'?0.82:1,scale=baseScale*(s.loud?1.35:1);"
+s,n=re.subn(pat,repl,s,count=1)
+if n!=1: raise SystemExit('missing: loud footstep mark regex')
 s=rep(s,
 "$('#openProgressText').textContent=`치료 중 ${heal.toFixed(1)}초`;",
 "$('#openProgressText').textContent=`치료키트 사용중 · ${heal.toFixed(1)}초`;",
 'heal progress label')
 p.write_text(s,encoding='utf-8')
 print('v2.3.1 UX patch applied')
-# trigger
