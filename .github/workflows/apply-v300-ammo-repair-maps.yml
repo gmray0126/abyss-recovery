@@ -1,0 +1,39 @@
+name: Apply v3 ammo repair rotating maps
+on:
+  push:
+    branches: [main]
+    paths:
+      - tools/apply-v300-ammo-repair-maps.mjs
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply patch
+        run: node tools/apply-v300-ammo-repair-maps.mjs
+      - name: Syntax check
+        run: |
+          node --check src/sim.js
+          node --check src/main.js
+          node --check src/net.js
+          node --check api/realtime.js
+          node --check cloudflare/worker.js
+      - name: Guard features
+        run: |
+          grep -q "export const AMMO_TIERS" src/sim.js
+          grep -q "침수 항만 09" src/sim.js
+          grep -q "오로라 폐쇄 연구기지" src/sim.js
+          grep -q "ammoShopList" src/main.js
+          grep -q "ENTRY_LOCK_MS=60_000" api/realtime.js
+      - name: Commit generated patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/sim.js src/main.js src/net.js api/realtime.js cloudflare/worker.js index.html styles.css
+          git commit -m "feat: add tiered ammo repairs and rotating maps"
+          git push
