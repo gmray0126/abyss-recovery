@@ -1,0 +1,43 @@
+name: Install v2.1 overhaul
+on:
+  push:
+    paths:
+      - '.github/workflows/install-v21.yml'
+permissions:
+  contents: write
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode v2.1 files
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64,gzip
+          files={
+            'index.html':'.deploy_v21/index.b64',
+            'styles.css':'.deploy_v21/styles.b64',
+            'src/protocol.js':'.deploy_v21/protocol.b64',
+            'src/net.js':'.deploy_v21/net.b64',
+            'src/sim.js':'.deploy_v21/sim.b64',
+            'src/main.js':'.deploy_v21/main.b64',
+          }
+          for out,src in files.items():
+              p=Path(out); p.parent.mkdir(parents=True,exist_ok=True)
+              p.write_bytes(gzip.decompress(base64.b64decode(Path(src).read_text().strip())))
+          PY
+          node --check src/protocol.js
+          node --check src/net.js
+          node --check src/sim.js
+          node --check src/main.js
+      - name: Commit clean v2.1
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html styles.css src/protocol.js src/net.js src/sim.js src/main.js
+          git rm -r .deploy_v21 .github/workflows/install-v21.yml
+          git commit -m 'v2.1 overhaul: inventory vision sound loot grenades'
+          git push
