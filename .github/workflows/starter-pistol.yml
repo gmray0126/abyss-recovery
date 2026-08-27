@@ -13,46 +13,8 @@ jobs:
       - name: Patch starter pistol insurance
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('src/main.js')
-          s=p.read_text(encoding='utf-8')
-
-          anchor="const save=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(meta))}catch{}};"
-          addition="""const save=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(meta))}catch{}};
-function hasBasicPistol(){
- const items=[meta.equipment?.primary,meta.equipment?.secondary,...(meta.inventory||[]),...(meta.stash||[])];
- return items.some(it=>it?.kind==='weapon'&&it.type==='pistol');
-}
-function ensureBasicPistol(){
- if(hasBasicPistol())return false;
- const w=makeWeapon('pistol');
- w.name='M9 권총 · 기본 지급';
- w.value=0;
- w.starterIssue=true;
- meta.stash.push(w);
- save();
- return true;
-}"""
-          if 'function ensureBasicPistol()' not in s:
-              if anchor not in s: raise SystemExit('save anchor missing')
-              s=s.replace(anchor,addition,1)
-
-          old="$('#backLobby').onclick=()=>{p.classList.add('hidden');$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;renderLobby()}"
-          new="$('#backLobby').onclick=()=>{p.classList.add('hidden');$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;ensureBasicPistol();renderLobby()}"
-          if old in s:s=s.replace(old,new,1)
-
-          old2="$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;renderLobby()}};"
-          new2="$('#raid').classList.add('hidden');$('#lobby').classList.remove('hidden');snap=null;ensureBasicPistol();renderLobby()}};"
-          if old2 in s:s=s.replace(old2,new2,1)
-
-          tail='renderLobby();requestAnimationFrame(draw);'
-          if 'ensureBasicPistol();renderLobby();requestAnimationFrame(draw);' not in s:
-              if tail not in s: raise SystemExit('startup tail missing')
-              s=s.replace(tail,'ensureBasicPistol();renderLobby();requestAnimationFrame(draw);',1)
-
-          p.write_text(s,encoding='utf-8')
-          PY
+          echo 'ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCnA9UGF0aCgnc3JjL21haW4uanMnKQpzPXAucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpCmFuY2hvcj0iY29uc3Qgc2F2ZT0oKT0+e3RyeXtsb2NhbFN0b3JhZ2Uuc2V0SXRlbShTQVZFX0tFWSxKU09OLnN0cmluZ2lmeShtZXRhKSl9Y2F0Y2h7fX07IgphZGRpdGlvbj0iIiJjb25zdCBzYXZlPSgpPT57dHJ5e2xvY2FsU3RvcmFnZS5zZXRJdGVtKFNBVkVfS0VZLEpTT04uc3RyaW5naWZ5KG1ldGEpKX1jYXRjaHt9fTsKZnVuY3Rpb24gaGFzQmFzaWNQaXN0b2woKXsKIGNvbnN0IGl0ZW1zPVttZXRhLmVxdWlwbWVudD8ucHJpbWFyeSxtZXRhLmVxdWlwbWVudD8uc2Vjb25kYXJ5LC4uLihtZXRhLmludmVudG9yeXx8W10pLC4uLihtZXRhLnN0YXNofHxbXSldOwogcmV0dXJuIGl0ZW1zLnNvbWUoaXQ9Pml0Py5raW5kPT09J3dlYXBvbicmJml0LnR5cGU9PT0ncGlzdG9sJyk7Cn0KZnVuY3Rpb24gZW5zdXJlQmFzaWNQaXN0b2woKXsKIGlmKGhhc0Jhc2ljUGlzdG9sKCkpcmV0dXJuIGZhbHNlOwogY29uc3Qgdz1tYWtlV2VhcG9uKCdwaXN0b2wnKTsKIHcubmFtZT0nTTkg6raM7LSdIOKApiDquLDri7Qg7KeA6riJJzsKIHcudmFsdWU9MDsKIHcuc3RhcnRlcklzc3VlPXRydWU7CiBtZXRhLnN0YXNoLnB1c2godyk7CiBzYXZlKCk7CiByZXR1cm4gdHJ1ZTsKfSIiIgppZiAnZnVuY3Rpb24gZW5zdXJlQmFzaWNQaXN0b2woKScgbm90IGluIHM6CiAgICBpZiBhbmNob3Igbm90IGluIHM6IHJhaXNlIFN5c3RlbUV4aXQoJ3NhdmUgYW5jaG9yIG1pc3NpbmcnKQogICAgcz1zLnJlcGxhY2UoYW5jaG9yLGFkZGl0aW9uLDEpCm9sZD0iJCgnI2JhY2tMb2JieScpLm9uY2xpY2s9KCk9PntwLmNsYXNzTGlzdC5hZGQoJ2hpZGRlbicpOyQoJyNyYWlkJykuY2xhc3NMaXN0LmFkZCgnaGlkZGVuJyk7JCgnI2xvYmJ5JykuY2xhc3NMaXN0LnJlbW92ZSgnaGlkZGVuJyk7c25hcD1udWxsO3JlbmRlckxvYmJ5KCl9IgpuZXc9IiQoJyNiYWNrTG9iYnknKS5vbmNsaWNrPSgpPT57cC5jbGFzc0xpc3QuYWRkKCdoaWRkZW4nKTskKCcjcmFpZCcpLmNsYXNzTGlzdC5hZGQoJ2hpZGRlbicpOyQoJyNsb2JieScpLmNsYXNzTGlzdC5yZW1vdmUoJ2hpZGRlbicpO3NuYXA9bnVsbDtlbnN1cmVCYXNpY1Bpc3RvbCgpO3JlbmRlckxvYmJ5KCl9IgppZiBvbGQgaW4gczpzPXMucmVwbGFjZShvbGQsbmV3LDEpCm9sZDI9IiQoJyNyYWlkJykuY2xhc3NMaXN0LmFkZCgnaGlkZGVuJyk7JCgnI2xvYmJ5JykuY2xhc3NMaXN0LnJlbW92ZSgnaGlkZGVuJyk7c25hcD1udWxsO3JlbmRlckxvYmJ5KCl9fTsiCm5ldzI9IiQoJyNyYWlkJykuY2xhc3NMaXN0LmFkZCgnaGlkZGVuJyk7JCgnI2xvYmJ5JykuY2xhc3NMaXN0LnJlbW92ZSgnaGlkZGVuJyk7c25hcD1udWxsO2Vuc3VyZUJhc2ljUGlzdG9sKCk7cmVuZGVyTG9iYnkoKX19OyIKaWYgb2xkMiBpbiBzOnM9cy5yZXBsYWNlKG9sZDIsbmV3MiwxKQp0YWlsPSdyZW5kZXJMb2JieSgpO3JlcXVlc3RBbmltYXRpb25GcmFtZShkcmF3KTsnCmlmICdlbnN1cmVCYXNpY1Bpc3RvbCgpO3JlbmRlckxvYmJ5KCk7cmVxdWVzdEFuaW1hdGlvbkZyYW1lKGRyYXcpOycgbm90IGluIHM6CiAgICBpZiB0YWlsIG5vdCBpbiBzOiByYWlzZSBTeXN0ZW1FeGl0KCdzdGFydHVwIHRhaWwgbWlzc2luZycpCiAgICBzPXMucmVwbGFjZSh0YWlsLCdlbnN1cmVCYXNpY1Bpc3RvbCgpO3JlbmRlckxvYmJ5KCk7cmVxdWVzdEFuaW1hdGlvbkZyYW1lKGRyYXcpOycsMSkKcC53cml0ZV90ZXh0KHMsZW5jb2Rpbmc9J3V0Zi04JykK' | base64 -d > /tmp/starter_patch.py
+          python /tmp/starter_patch.py
           node --check src/main.js
       - name: Commit starter pistol fix
         shell: bash
