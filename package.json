@@ -1,9 +1,10 @@
 {
   "name": "dead-drop",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "private": true,
   "type": "module",
   "dependencies": {
+    "@vercel/functions": "latest",
     "ws": "^8.18.3"
   }
 }
