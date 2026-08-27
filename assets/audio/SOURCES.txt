@@ -1,0 +1,8 @@
+DEAD DROP audio sources
+
+Weapon shots / generic load sounds: FPS Placeholder Sounds by Jack Menhorn, CC-BY 3.0.
+Source: https://opengameart.org/content/fps-placeholder-sounds
+Attribution: Jack Menhorn
+
+Reload samples: Gun reload sounds by SpringySpringo, CC0.
+Source: https://opengameart.org/content/gun-reload-sounds
