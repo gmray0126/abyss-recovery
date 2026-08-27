@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'tools/patch_v23_combat_ux.py'
+      - '.github/workflows/apply-v23-combat-ux.yml'
 permissions:
   contents: write
 jobs:
