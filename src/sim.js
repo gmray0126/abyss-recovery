@@ -80,7 +80,7 @@ function moveEntity(e,dx,dy){let moved=false;const nx=e.x+dx;if(!blocked(nx,e.y,
 function segmentBlocked(x1,y1,x2,y2){const d=distXY(x1,y1,x2,y2),n=Math.ceil(d/22);for(let i=1;i<n;i++){const t=i/n,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;if(MAP_OBSTACLES.some(o=>x>o.x&&x<o.x+o.w&&y>o.y&&y<o.y+o.h))return true}return false}
 function los(a,b,max=1000){return dist(a,b)<=max&&!segmentBlocked(a.x,a.y,b.x,b.y)}
 function angleDiff(a,b){return Math.atan2(Math.sin(a-b),Math.cos(a-b))}
-function visionParams(level=3){const near=150+level*28;return{near,far:near+360+level*50,half:1.05}}}
+function visionParams(level=3){const near=150+level*28;return{near,far:near+360+level*50,half:1.05}}
 function canSee(viewer,target,level=3){const d=dist(viewer,target),v=visionParams(level);if(d<=v.near)return !segmentBlocked(viewer.x,viewer.y,target.x,target.y);if(d>v.far)return false;const a=Math.atan2(target.y-viewer.y,target.x-viewer.x);return Math.abs(angleDiff(a,viewer.angle))<=v.half&&!segmentBlocked(viewer.x,viewer.y,target.x,target.y)}
 function currentWeapon(a){return a.gear[a.weaponSlot]||null}
 function bagCapacity(a){return a.gear.backpack?.capacity||8}
