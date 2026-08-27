@@ -67,7 +67,6 @@ old="function renderBag(){const g=$('#bagGrid');g.innerHTML='';const inv=snap.pl
 new="function renderBag(){const inv=snap.player.inventory,key=snap.player.bagCapacity+'|'+inv.map(it=>`${it.id}:${it.ammo??''}:${it.reserve??''}`).join(',');if(key===hudBagKey)return;hudBagKey=key;const g=$('#bagGrid');g.innerHTML='';for(let i=0;i<snap.player.bagCapacity;i++){const it=inv[i],d=document.createElement('div');d.className='bagSlot';if(it){d.innerHTML=`<b>${itemName(it)}</b><small>${itemSub(it)}</small>`;if(['weapon','armor','helmet','backpack'].includes(it.kind)){const b=document.createElement('button');b.textContent='장착';b.onpointerdown=e=>{e.preventDefault();e.stopPropagation();session?.sendAction({type:ACTIONS.EQUIP_BAG,slot:i})};d.appendChild(b)}}g.appendChild(d)}}"
 s=rep(s,old,new,'bag DOM cache')
 
-# replace renderLoot by locating function boundaries, less brittle than exact giant string
 start=s.find('function renderLoot(){')
 end=s.find('\nfunction renderProgress(){',start)
 if start<0 or end<0: raise SystemExit('missing target: renderLoot')
@@ -78,3 +77,4 @@ s=rep(s,"$('#hitMarker').style.opacity=hitMarkerT>0?'1':'0';$('#hitMarker').styl
 
 p.write_text(s,encoding='utf-8')
 print('v2.4 AI door + performance patch applied')
+# trigger workflow
