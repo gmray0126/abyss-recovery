@@ -1,0 +1,26 @@
+name: Force v3.2.1 mobile fullscreen deploy
+on:
+  push:
+    paths:
+      - '.github/workflows/force-v321-mobile-deploy.yml'
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax check mobile fullscreen
+        run: node --check src/mobile-fullscreen.js
+      - name: Create deployment refresh commit
+        run: |
+          mkdir -p .deploy
+          date -u +%Y-%m-%dT%H:%M:%SZ > .deploy/mobile-v321.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .deploy/mobile-v321.txt
+          git commit -m "chore: refresh v3.2.1 mobile production"
+          git push
