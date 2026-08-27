@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DEAD DROP // v3.1.1 Loot Priority & Raid Inventory</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DEAD DROP // v3.2 Mobile Controls & Raid Guide</title>
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -35,7 +35,18 @@
           <div id="roomStateText" class="roomState">멀티 서버에 연결 중입니다.</div>
         </div>
         <button id="raidBtn" class="primary big">현재 RAID 참가</button>
-        <div class="help">창고 → 출격 인벤토리 → 장비 장착 순서입니다. 사망하면 장비창과 출격 인벤토리의 물건을 모두 잃습니다.</div>
+        <details class="raidGuide" open>
+          <summary>처음이라면 · RAID 기본 흐름</summary>
+          <div class="raidGuideGrid">
+            <div><b>1 · 준비</b><span>창고의 총·방어구·탄약을 출격 인벤토리로 옮긴 뒤 장착합니다. 총과 같은 구경의 탄약을 따로 챙겨야 장전할 수 있습니다.</span></div>
+            <div><b>2 · 진입</b><span>RAID는 10분 단위로 열리며 최대 8명의 인간 플레이어가 참가합니다. 빈 자리는 AI가 보충하고 종료 1분 전에는 신규 참가가 막힙니다.</span></div>
+            <div><b>3 · 전투와 루팅</b><span>상자와 시체에서 전리품을 획득합니다. 가방이 꽉 차면 인게임에서 필요 없는 아이템을 버리고 더 좋은 전리품을 챙길 수 있습니다.</span></div>
+            <div><b>4 · 탈출</b><span>탈출구에서 E를 유지해 성공해야 가져온 장비와 전리품을 보존합니다. 전리품은 자동 현금화되지 않으며 로비에서 직접 판매합니다.</span></div>
+          </div>
+          <div class="raidGuideWarn">사망 또는 원정 포기 = 장착 장비 + 휴대품 전부 소실 · 손상된 방탄복과 헬멧은 로비에서 자금을 내고 수리할 수 있습니다.</div>
+          <div class="raidGuideMobile">모바일: 가로모드 권장 · 왼쪽 스틱 이동(끝까지 밀면 달리기) · 오른쪽 스틱 조준(바깥 링까지 밀면 사격) · 화면 버튼으로 장전/상호작용/치료/수류탄/무기 전환.</div>
+        </details>
+        <div class="help">PC: WASD 이동 · SHIFT 달리기 · 마우스 조준/사격 · E 상호작용 · R 장전 · 1/2 무기 전환.</div>
       </aside>
 
       <main class="panel stashPanel">
@@ -47,12 +58,12 @@
         <div class="sectionTitle">보급 상점</div>
         <div id="shopList" class="shopList"></div>
         <div class="sectionTitle minor">탄약 상점</div>
-        <div class="ammoHint">탄약은 구경별로 별도 구매 · T1~T5가 높을수록 피해량 증가</div>
+        <div class="ammoHint">총과 같은 구경의 탄약을 별도 구매 · T1~T5가 높을수록 실제 피해량 증가 · 빈 탄창은 보유한 호환 탄약 중 높은 티어부터 장전</div>
         <div id="ammoShopList" class="ammoShopList"></div>
         <div class="sectionTitle minor">무기 성능</div>
         <div id="weaponStatsList" class="weaponStatsList"></div>
         <div class="sectionTitle minor">이번 빌드</div>
-        <div class="patchNote">v3.1.1 · 상자·시체 우선 상호작용 · 1/2 무기 전환 · RAID 가방 아이템 버리기 · 랜덤 엄폐물</div>
+        <div class="patchNote">v3.2 · 모바일 전용 트윈스틱 조작 · PC UI 분리 · RAID 진행 설명 강화 · 모바일 가방 패널 · 랜덤 엄폐물</div>
       </aside>
     </div>
   </section>
@@ -61,6 +72,20 @@
     <div class="raidGrid">
       <main id="gameWrap" tabindex="0">
         <canvas id="game" width="1280" height="720"></canvas>
+        <div id="rotateNotice" class="rotateNotice">모바일은 가로모드로 플레이해주세요.</div>
+        <div id="mobileControls" class="mobileControls" aria-hidden="true">
+          <div id="mobileMoveStick" class="mobileStick moveStick"><div id="mobileMoveKnob" class="mobileStickKnob"></div><span>MOVE · 끝까지 = SPRINT</span></div>
+          <div id="mobileAimStick" class="mobileStick aimStick"><div id="mobileAimKnob" class="mobileStickKnob"></div><span>AIM · 바깥 링 = FIRE</span></div>
+          <div class="mobileActions">
+            <button data-mobile="reload">장전</button>
+            <button data-mobile="interact" class="holdAction">상호</button>
+            <button data-mobile="heal">치료</button>
+            <button data-mobile="grenade">폭탄</button>
+            <button data-mobile="primary">1</button>
+            <button data-mobile="secondary">2</button>
+            <button data-mobile="bag" class="bagAction">가방</button>
+          </div>
+        </div>
         <div class="hud topLeft">
           <div class="hudBox"><span class="label">HP</span><b id="hpText">100</b><div class="bar"><i id="hpBar"></i></div></div>
           <div class="hudBox"><span class="label">ARMOR</span><b id="armorText">0</b><div class="bar armor"><i id="armorBar"></i></div></div>
@@ -81,6 +106,7 @@
       </main>
 
       <aside class="sidePanel">
+        <button id="mobileBagClose" class="mobileBagClose">가방 닫기 ×</button>
         <div class="panel compact">
           <div class="sectionTitle">RAID 상태</div>
           <div class="statRow"><span>휴대품 평가액</span><b id="lootValue">0 G</b></div>
