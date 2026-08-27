@@ -9,18 +9,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Add CC0 audio assets
+      - name: Add licensed audio assets
         run: |
           set -e
           mkdir -p assets/audio
-          curl -L --fail -o assets/audio/shot-pistol.wav 'https://opengameart.org/sites/default/files/22%20Pistol.wav'
-          curl -L --fail -o assets/audio/shot-rifle.wav 'https://opengameart.org/sites/default/files/22%20Magnum.wav'
-          curl -L --fail -o assets/audio/shot-heavy.wav 'https://opengameart.org/sites/default/files/Black%20Powder.wav'
-          curl -L --fail -o assets/audio/shot-alt.wav 'https://opengameart.org/sites/default/files/Unkown.wav'
-          curl -L --fail -o assets/audio/reload-pistol.wav 'https://opengameart.org/sites/default/files/gunreload1.wav'
-          curl -L --fail -o assets/audio/reload-rifle.wav 'https://opengameart.org/sites/default/files/assaultriflereload1_0.wav'
-          curl -L --fail -o assets/audio/reload-shotgun.wav 'https://opengameart.org/sites/default/files/shotguncock_0.wav'
-          printf '%s\n' 'CC0 audio from OpenGameArt.org' 'Gunshots: https://opengameart.org/content/gunshots' 'Reloads: https://opengameart.org/content/gun-reload-sounds' > assets/audio/SOURCES.txt
+          curl -L --fail --retry 3 -o assets/audio/shot-pistol.wav 'https://opengameart.org/sites/default/files/gun_shot_01.wav'
+          curl -L --fail --retry 3 -o assets/audio/shot-rifle.wav 'https://opengameart.org/sites/default/files/gun_rifle_01.wav'
+          curl -L --fail --retry 3 -o assets/audio/shot-rifle2.wav 'https://opengameart.org/sites/default/files/gun_rifle_02.wav'
+          curl -L --fail --retry 3 -o assets/audio/reload-generic.wav 'https://opengameart.org/sites/default/files/gun_load_01.wav'
+          curl -L --fail --retry 3 -o assets/audio/reload-generic2.wav 'https://opengameart.org/sites/default/files/gun_load_02.wav'
+          curl -L --fail --retry 3 -o assets/audio/reload-pistol.wav 'https://opengameart.org/sites/default/files/gunreload1.wav'
+          curl -L --fail --retry 3 -o assets/audio/reload-rifle.wav 'https://opengameart.org/sites/default/files/assaultriflereload1_0.wav'
+          curl -L --fail --retry 3 -o assets/audio/reload-shotgun.wav 'https://opengameart.org/sites/default/files/shotguncock_0.wav'
+          printf '%s\n' \
+            'DEAD DROP audio sources' \
+            '' \
+            'Weapon shots / generic load sounds: FPS Placeholder Sounds by Jack Menhorn, CC-BY 3.0.' \
+            'Source: https://opengameart.org/content/fps-placeholder-sounds' \
+            'Attribution: Jack Menhorn' \
+            '' \
+            'Reload samples: Gun reload sounds by SpringySpringo, CC0.' \
+            'Source: https://opengameart.org/content/gun-reload-sounds' \
+            > assets/audio/SOURCES.txt
       - run: node tools/apply-v27-audio.mjs
       - run: node --check src/main.js
       - name: Commit
