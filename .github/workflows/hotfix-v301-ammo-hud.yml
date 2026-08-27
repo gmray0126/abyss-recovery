@@ -1,0 +1,27 @@
+name: Hotfix v3.0.1 ammo HUD
+on:
+  push:
+    branches: [main]
+    paths:
+      - tools/hotfix-v301-ammo-hud.mjs
+      - .github/workflows/hotfix-v301-ammo-hud.yml
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tools/hotfix-v301-ammo-hud.mjs
+      - run: node --check src/main.js
+      - run: grep -q "it.qty" src/main.js
+      - name: Commit hotfix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main.js
+          git commit -m "fix: refresh ammo stack HUD after reload"
+          git push
