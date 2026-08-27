@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'tools/patch_v25_multiplayer.py'
+      - '.github/workflows/apply-v25-multiplayer.yml'
 permissions:
   contents: write
 jobs:
