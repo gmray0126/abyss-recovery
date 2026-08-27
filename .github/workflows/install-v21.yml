@@ -43,3 +43,4 @@ jobs:
           git add index.html styles.css src/protocol.js src/net.js src/sim.js src/main.js
           git commit -m 'v2.1 overhaul: inventory vision sound loot grenades' || exit 0
           git push
+# retry after repaired main payload
