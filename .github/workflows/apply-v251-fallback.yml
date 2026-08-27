@@ -1,0 +1,24 @@
+name: Apply v2.5.1 fallback
+on:
+  push:
+    paths:
+      - 'tools/patch_v251_fallback.py'
+      - '.github/workflows/apply-v251-fallback.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply fallback patch
+        run: |
+          python tools/patch_v251_fallback.py
+          node --check src/main.js
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main.js
+          git commit -m 'fix: keep local raids playable while multiplayer reconnects' || exit 0
+          git push
