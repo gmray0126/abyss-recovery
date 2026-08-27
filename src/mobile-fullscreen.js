@@ -1,3 +1,4 @@
+// v3.2.1 mobile raid fullscreen shell
 const TOUCH_MODE=matchMedia('(pointer: coarse)').matches||navigator.maxTouchPoints>0;
 if(TOUCH_MODE){
   const raid=document.querySelector('#raid');
@@ -9,7 +10,7 @@ if(TOUCH_MODE){
     const active=raidActive();
     document.body.classList.toggle('mobileRaidFullscreen',active);
     if(!active&&requestedByRaid&&document.fullscreenElement){
-      document.exitFullscreen?.().catch?.(()=>{});
+      try{document.exitFullscreen?.()}catch{}
       requestedByRaid=false;
     }
   };
@@ -24,7 +25,7 @@ if(TOUCH_MODE){
     try{await screen.orientation?.lock?.('landscape')}catch{}
   };
 
-  raidBtn?.addEventListener('pointerdown',()=>{requestRaidFullscreen()});
+  raidBtn?.addEventListener('pointerdown',requestRaidFullscreen);
   if(raid)new MutationObserver(syncRaidViewport).observe(raid,{attributes:true,attributeFilter:['class']});
   document.addEventListener('fullscreenchange',syncRaidViewport);
   window.addEventListener('orientationchange',syncRaidViewport);
