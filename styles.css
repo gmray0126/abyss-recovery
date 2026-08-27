@@ -5,3 +5,14 @@
 
 .roomCard{margin:10px 0;padding:10px 12px;border:1px solid #33434a;background:#101719;border-radius:5px}.roomHead,.roomStats{display:flex;justify-content:space-between;gap:10px;align-items:center}.roomHead span{color:#8fd0df;font-family:monospace}.roomStats{margin-top:8px;padding:7px 0;border-top:1px solid #263338;border-bottom:1px solid #263338;font-size:12px}.callsign{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px}.callsign input{flex:1;background:#0b1012;border:1px solid #34454c;color:#d9e3e5;padding:6px 8px;border-radius:3px}.roomState{margin-top:7px;color:#89999d;font-size:11px}.roomState.live{color:#8ecaa0}.roomState.full{color:#d49a80}
 .weaponStatsList{display:grid;gap:6px}.weaponStatCard{border:1px solid #2b3941;background:#0b1115;border-radius:7px;padding:8px}.weaponStatCard .weaponStatHead{display:flex;justify-content:space-between;gap:8px;font-size:11px}.weaponStatCard .weaponStatGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:3px 8px;margin-top:5px;font-size:9px;color:#94a0a7}.weaponStatCard .weaponStatGrid b{color:#dce4e8}.stashActions{display:flex;gap:4px;margin-top:auto}.stashActions button{flex:1;margin-top:0}.sellBtn{border-color:#6c5a35;background:#3b321f}.sellBtn:hover{background:#4a3d24}.sprintHud{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:8;font-size:10px;font-weight:900;letter-spacing:.18em;color:#bfeaff;text-shadow:0 0 8px rgba(100,210,255,.75);background:rgba(9,23,30,.66);border:1px solid rgba(98,185,217,.45);padding:4px 8px;border-radius:5px;pointer-events:none}
+
+
+/* v3.0 ammo economy / repairs / map identity */
+.ammoHint{font-size:11px;color:#8fa0a4;margin:-3px 0 7px;line-height:1.35}
+.ammoShopList{display:grid;gap:7px;margin-bottom:12px}
+.ammoGroup{border:1px solid rgba(135,159,164,.18);background:rgba(13,20,22,.55);padding:7px;border-radius:5px}
+.ammoHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:12px}.ammoHead span{color:#819397;font-size:10px}
+.ammoTiers{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.ammoTiers button{padding:5px 2px;font-size:10px}.ammoTiers button[data-tier="3"]{border-color:#66866f}.ammoTiers button[data-tier="4"]{border-color:#987849}.ammoTiers button[data-tier="5"]{border-color:#a45757}
+.repairBtn{border-color:#6d8359!important;color:#bad49f!important}.conditionBad{color:#e49a77}.conditionGood{color:#9bc7a5}
+.mapHud{position:absolute;top:46px;left:50%;transform:translateX(-50%);font:700 11px monospace;letter-spacing:1.4px;color:rgba(185,214,215,.75);text-shadow:0 1px 3px #000;pointer-events:none}
+.roomStats{flex-wrap:wrap}.roomStats span:first-child{flex-basis:100%;margin-bottom:2px;color:#a9c4c4}

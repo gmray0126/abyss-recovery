@@ -9,11 +9,25 @@ const uid=(()=>{let n=1;return p=>`${p}${n++}`})();
 const copy=o=>o?JSON.parse(JSON.stringify(o)):o;
 
 export const WEAPONS={
- pistol:{name:'M9 권총',price:220,damage:28,mag:15,reserve:60,rate:.21,reload:1.35,speed:1180,spread:.018,range:900,auto:false,recoil:1.6,sound:620},
- smg:{name:'VX-9 SMG',price:540,damage:17,mag:30,reserve:120,rate:.075,reload:1.7,speed:1040,spread:.06,range:760,auto:true,recoil:1.15,sound:760},
- ar:{name:'AK-12 돌격소총',price:820,damage:24,mag:30,reserve:90,rate:.105,reload:1.95,speed:1260,spread:.035,range:1080,auto:true,recoil:2.0,sound:980},
- shotgun:{name:'M870 산탄총',price:730,damage:12,pellets:8,mag:6,reserve:30,rate:.68,reload:2.1,speed:980,spread:.17,range:520,auto:false,recoil:4.2,sound:1120},
- dmr:{name:'M14 DMR',price:1050,damage:46,mag:10,reserve:50,rate:.34,reload:2.2,speed:1460,spread:.012,range:1350,auto:false,recoil:3.4,sound:1180}
+ pistol:{name:'M9 권총',price:220,damage:28,mag:15,caliber:'9mm',rate:.21,reload:1.35,speed:1180,spread:.018,range:900,auto:false,recoil:1.6,sound:620},
+ smg:{name:'VX-9 SMG',price:540,damage:17,mag:30,caliber:'9mm',rate:.075,reload:1.7,speed:1040,spread:.06,range:760,auto:true,recoil:1.15,sound:760},
+ ar:{name:'AK-12 돌격소총',price:820,damage:24,mag:30,caliber:'5.56',rate:.105,reload:1.95,speed:1260,spread:.035,range:1080,auto:true,recoil:2.0,sound:980},
+ shotgun:{name:'M870 산탄총',price:730,damage:12,pellets:8,mag:6,caliber:'12g',rate:.68,reload:2.1,speed:980,spread:.17,range:520,auto:false,recoil:4.2,sound:1120},
+ dmr:{name:'M14 DMR',price:1050,damage:46,mag:10,caliber:'7.62',rate:.34,reload:2.2,speed:1460,spread:.012,range:1350,auto:false,recoil:3.4,sound:1180}
+};
+
+export const AMMO_TIERS={
+ 1:{name:'T1',damageMult:.85,unitPrice:3},
+ 2:{name:'T2',damageMult:1.00,unitPrice:5},
+ 3:{name:'T3',damageMult:1.15,unitPrice:8},
+ 4:{name:'T4',damageMult:1.32,unitPrice:13},
+ 5:{name:'T5',damageMult:1.52,unitPrice:20}
+};
+export const AMMO_CALIBERS={
+ '9mm':{name:'9×19mm',pack:30},
+ '5.56':{name:'5.56mm',pack:30},
+ '7.62':{name:'7.62mm',pack:30},
+ '12g':{name:'12게이지',pack:12}
 };
 
 export const GEAR={
@@ -76,14 +90,80 @@ const CRATES=[
  {x:420,y:430},{x:1020,y:1040},{x:1260,y:740},{x:1580,y:360},{x:1940,y:820},{x:2660,y:1310},{x:3180,y:340},{x:3840,y:1160},
  {x:340,y:1840},{x:1410,y:2620},{x:1800,y:2550},{x:2800,y:1770},{x:3040,y:2550},{x:3900,y:1840},{x:3020,y:1320},{x:1540,y:1670}
 ];
+
+const MAP_PALETTES={
+ industrial:{ground:'#1b2223',gridA:'#1d2627',gridB:'#20292a',road:'#29363a',line:'rgba(221,184,92,.16)',wall:'#354044',container:'#87573b',vehicle:'#415763',tank:'#58634a',shelf:'#6e5a39',machine:'#3f6061',desk:'#594a43',barricade:'#75603e',pipe:'#526a62',water:'#25505e',door:'#936f49'},
+ harbor:{ground:'#19262b',gridA:'#1b2a30',gridB:'#1e3036',road:'#30414a',line:'rgba(118,196,214,.16)',wall:'#354c56',container:'#a15d3c',vehicle:'#426675',tank:'#667356',shelf:'#78603b',machine:'#396b70',desk:'#5c5148',barricade:'#897044',pipe:'#557c77',water:'#173f52',door:'#a77645'},
+ research:{ground:'#202229',gridA:'#242630',gridB:'#272a34',road:'#303541',line:'rgba(129,211,190,.15)',wall:'#424752',container:'#6a5668',vehicle:'#4d5f70',tank:'#5c6755',shelf:'#665b76',machine:'#3f6c68',desk:'#605567',barricade:'#77674e',pipe:'#4f716b',water:'#284c55',door:'#92745e'}
+};
+function coverPointsFor(obstacles){const out=[];for(const o of obstacles){if(o.w>500||o.h>500||o.kind==='water')continue;const m=28;out.push({x:o.x-m,y:o.y+o.h/2},{x:o.x+o.w+m,y:o.y+o.h/2},{x:o.x+o.w/2,y:o.y-m},{x:o.x+o.w/2,y:o.y+o.h+m})}return out}
+function portMap(){
+ const o=[],a=(...r)=>o.push(...r);
+ // northern container stacks and customs shed
+ for(const [x,y,w,h] of [[240,260,340,74],[660,250,300,74],[1040,300,270,74],[280,470,300,74],[690,500,390,74],[250,720,390,74],[760,760,360,74],[310,980,300,74],[720,1010,430,74]])a(rect(x,y,w,h,'container'));
+ a(rect(1450,220,1180,34),rect(1450,220,34,850),rect(2596,220,34,350),rect(2596,720,34,350),rect(1450,1036,420,34),rect(2010,1036,620,34));
+ for(const [x,y,w,h] of [[1600,380,220,52],[1920,380,220,52],[2250,380,220,52],[1580,650,250,52],[1960,650,250,52],[2310,650,190,52],[1700,880,260,52],[2180,870,270,52]])a(rect(x,y,w,h,'shelf'));
+ // water basins make the harbor layout fundamentally different
+ a(rect(250,1390,1040,310,'water'),rect(2820,980,1120,300,'water'),rect(1710,2070,900,300,'water'));
+ // west cold storage
+ a(rect(260,1880,1120,34),rect(260,1880,34,850),rect(1346,1880,34,330),rect(1346,2360,34,370),rect(260,2696,420,34),rect(820,2696,560,34));
+ a(rect(430,2040,270,90,'machine'),rect(830,2030,300,100,'machine'),rect(430,2320,180,190,'shelf'),rect(790,2310,210,190,'shelf'),rect(1110,2320,150,190,'shelf'));
+ // east fuel pier and customs checkpoint
+ for(const [x,y,w,h] of [[2810,1570,160,210],[3080,1540,160,240],[3380,1580,160,210],[3690,1540,160,240],[2930,1940,160,210],[3290,1950,160,210],[3650,1930,160,220]])a(rect(x,y,w,h,'tank'));
+ a(rect(2760,1430,1180,32),rect(2760,1430,32,1250),rect(3908,1430,32,1250),rect(2760,2648,430,32),rect(3340,2648,600,32));
+ for(const [x,y,w,h] of [[1440,1260,210,58],[1810,1230,180,58],[2160,1250,220,58],[2460,1290,180,58],[1450,1750,230,62],[2420,1760,240,62]])a(rect(x,y,w,h,'barricade'));
+ return{
+  id:'harbor',name:'침수 항만 09',palette:MAP_PALETTES.harbor,
+  roads:[{x:0,y:1160,w:4200,h:170},{x:1330,y:0,w:160,h:3000},{x:2630,y:0,w:150,h:3000}],obstacles:o,
+  doors:[{id:'port-custom-east',name:'세관창고 동문',x:2596,y:600,w:34,h:96},{id:'port-custom-south',name:'세관창고 남문',x:1892,y:1036,w:96,h:34},{id:'port-cold-east',name:'냉동창고 동문',x:1346,y:2240,w:34,h:96},{id:'port-cold-south',name:'냉동창고 남문',x:702,y:2696,w:96,h:34},{id:'port-fuel-south',name:'연료부두 철문',x:3215,y:2648,w:96,h:32}],
+  zones:[{name:'북부 컨테이너 스택',x:180,y:180,w:1180,h:980,color:'#b0643f'},{name:'세관 창고',x:1450,y:220,w:1180,h:850,color:'#55798b'},{name:'침수 선적로',x:180,y:1160,w:2480,h:610,color:'#32758a'},{name:'냉동 창고',x:260,y:1880,w:1120,h:850,color:'#6388a0'},{name:'연료 부두',x:2760,y:1430,w:1180,h:1250,color:'#89904d'},{name:'동부 수로',x:2800,y:850,w:1140,h:500,color:'#28677e'}],
+  spawns:[{x:100,y:1120},{x:4100,y:1370},{x:1500,y:2860},{x:2860,y:2860},{x:2780,y:160},{x:1380,y:150}],
+  patrols:[{x:620,y:620},{x:2050,y:620},{x:3450,y:720},{x:850,y:2260},{x:2350,y:1650},{x:3400,y:2200},{x:1600,y:1500},{x:2700,y:1320}],
+  extracts:[{id:'port-west',name:'서부 페리램프',x:20,y:1040,w:105,h:260},{id:'port-north',name:'북부 세관로',x:1960,y:20,w:280,h:95},{id:'port-east',name:'동부 서비스게이트',x:4060,y:2110,w:110,h:290}],
+  crates:[{x:350,y:360},{x:1120,y:920},{x:1540,y:300},{x:2100,y:820},{x:2540,y:980},{x:3060,y:820},{x:3820,y:850},{x:390,y:1960},{x:1260,y:2600},{x:1540,y:1800},{x:2670,y:1850},{x:2890,y:2550},{x:3820,y:2450},{x:2420,y:1220}]
+ };
+}
+function researchMap(){
+ const o=[],a=(...r)=>o.push(...r);
+ // west decontamination wing
+ a(rect(220,250,1040,34),rect(220,250,34,980),rect(1226,250,34,410),rect(1226,810,34,420),rect(220,1196,390,34),rect(760,1196,500,34));
+ a(rect(500,250,26,360),rect(820,250,26,360),rect(254,650,430,26),rect(790,650,436,26),rect(480,830,26,366),rect(850,820,26,376));
+ for(const [x,y,w,h] of [[310,370,120,48],[610,390,120,48],[930,360,120,48],[310,930,130,48],[610,980,150,48],[970,940,130,48]])a(rect(x,y,w,h,'desk'));
+ // central reactor ring
+ a(rect(1550,520,1120,34),rect(1550,520,34,1190),rect(2636,520,34,480),rect(2636,1140,34,570),rect(1550,1676,460,34),rect(2160,1676,510,34));
+ for(const [x,y,w,h] of [[1770,720,210,210],[2200,700,220,220],[1780,1110,220,220],[2200,1110,220,220]])a(rect(x,y,w,h,'machine'));
+ a(rect(2020,930,180,260,'tank'));
+ // east archive/server wing
+ a(rect(3020,250,960,34),rect(3020,250,34,1210),rect(3946,250,34,1210),rect(3020,1426,360,34),rect(3520,1426,460,34));
+ for(const [x,y,w,h] of [[3160,390,100,260],[3340,390,100,260],[3520,390,100,260],[3700,390,100,260],[3160,820,100,260],[3380,820,100,260],[3600,820,100,260],[3800,820,100,260]])a(rect(x,y,w,h,'shelf'));
+ // southern botanical and maintenance blocks
+ a(rect(300,1880,1180,34),rect(300,1880,34,820),rect(1446,1880,34,300),rect(1446,2320,34,380),rect(300,2666,470,34),rect(920,2666,560,34));
+ for(const [x,y,w,h] of [[430,2040,280,100],[850,2030,300,110],[420,2320,190,180],[760,2290,210,210],[1110,2320,180,180]])a(rect(x,y,w,h,'machine'));
+ a(rect(1770,2010,850,270,'water'),rect(2870,2050,980,220,'water'));
+ for(const [x,y,w,h] of [[1620,1840,220,55],[1990,1810,190,55],[2380,1840,220,55],[2770,1770,220,55],[3210,1780,200,55],[3620,1760,210,55],[1710,2440,230,55],[2420,2450,220,55],[3140,2460,240,55],[3650,2480,180,55]])a(rect(x,y,w,h,'barricade'));
+ return{
+  id:'research',name:'오로라 폐쇄 연구기지',palette:MAP_PALETTES.research,
+  roads:[{x:0,y:1480,w:4200,h:190},{x:1350,y:0,w:150,h:3000},{x:2750,y:0,w:150,h:3000}],obstacles:o,
+  doors:[{id:'lab-west-east',name:'제독동 동문',x:1226,y:690,w:34,h:96},{id:'lab-west-south',name:'제독동 남문',x:640,y:1196,w:96,h:34},{id:'reactor-east',name:'반응로 동문',x:2636,y:1020,w:34,h:96},{id:'reactor-south',name:'반응로 남문',x:2040,y:1676,w:96,h:34},{id:'archive-south',name:'자료동 남문',x:3400,y:1426,w:96,h:34},{id:'green-east',name:'생체동 동문',x:1446,y:2210,w:34,h:96},{id:'green-south',name:'생체동 남문',x:800,y:2666,w:96,h:34}],
+  zones:[{name:'제독 연구동',x:220,y:250,w:1040,h:980,color:'#6c5d8b'},{name:'중앙 반응로',x:1550,y:520,w:1120,h:1190,color:'#4f8b79'},{name:'자료 서버동',x:3020,y:250,w:960,h:1210,color:'#5d7294'},{name:'생체 유지동',x:300,y:1880,w:1180,h:820,color:'#68865e'},{name:'냉각 수조',x:1700,y:1950,w:2200,h:600,color:'#3c7683'},{name:'남부 격리선',x:1500,y:1700,w:2600,h:1100,color:'#7f684f'}],
+  spawns:[{x:120,y:1500},{x:4080,y:1510},{x:1510,y:2860},{x:2920,y:2850},{x:2050,y:180},{x:1280,y:160}],
+  patrols:[{x:650,y:720},{x:2100,y:1050},{x:3500,y:760},{x:900,y:2260},{x:1900,y:1880},{x:3400,y:1850},{x:2600,y:1500},{x:1450,y:1510}],
+  extracts:[{id:'research-west',name:'서부 제독터널',x:20,y:1370,w:105,h:250},{id:'research-north',name:'북부 헬리패드',x:1940,y:20,w:320,h:95},{id:'research-east',name:'동부 격리게이트',x:4060,y:2210,w:110,h:270}],
+  crates:[{x:300,y:330},{x:1180,y:1100},{x:1600,y:610},{x:2100,y:1450},{x:2590,y:1600},{x:3100,y:330},{x:3890,y:1320},{x:370,y:1940},{x:1390,y:2580},{x:1600,y:1810},{x:2670,y:1800},{x:2920,y:2520},{x:3890,y:1800},{x:2820,y:1380}]
+ };
+}
+const BASE_MAP={id:'industrial',name:'칼리고 산업단지',palette:MAP_PALETTES.industrial,roads:[{x:0,y:1420,w:4200,h:260},{x:1330,y:0,w:180,h:3000},{x:2930,y:0,w:150,h:3000}],obstacles:MAP_OBSTACLES,doors:DOOR_DEFS,zones:ZONES.map((z,i)=>({...z,color:['#9a623d','#6b7647','#547b86','#76604d','#7b7443','#596c78'][i%6]})),spawns:SPAWNS,patrols:PATROLS,extracts:EXTRACTS,crates:CRATES};
+export const MAPS=[BASE_MAP,portMap(),researchMap()];
+function selectedMap(index=0){const n=((Number(index)||0)%MAPS.length+MAPS.length)%MAPS.length;return MAPS[n]}
+
 const COVER_POINTS=[];
 for(const o of MAP_OBSTACLES){if(o.w>500||o.h>500)continue;const m=28;COVER_POINTS.push({x:o.x-m,y:o.y+o.h/2},{x:o.x+o.w+m,y:o.y+o.h/2},{x:o.x+o.w/2,y:o.y-m},{x:o.x+o.w/2,y:o.y+o.h+m})}
 
-function weaponItem(type,quality=1){const d=WEAPONS[type];return{kind:'weapon',id:uid('w'),type,name:d.name,damage:Math.round(d.damage*quality),ammo:d.mag,reserve:d.reserve,value:Math.round(d.price*quality)}}
+function weaponItem(type,quality=1,tier=1){const d=WEAPONS[type];return{kind:'weapon',id:uid('w'),type,name:d.name,damage:d.damage,ammo:d.mag,ammoTier:tier,value:Math.round(d.price*quality)}}
 function gearItem(key){const d=GEAR[key];return{id:uid('g'),key,...copy(d),value:d.price}}
 function valuable(name,value){return{kind:'valuable',id:uid('v'),name,value}}
-function ammoItem(type,qty){return{kind:'ammo',id:uid('a'),type,name:`${WEAPONS[type].name} 탄약`,qty,value:qty*3}}
-function normalizeItem(it){const x=copy(it);if(!x.id)x.id=uid('i');if(x.kind==='weapon'){const d=WEAPONS[x.type];x.name=x.name||d.name;x.ammo=x.ammo??d.mag;x.reserve=x.reserve??d.reserve;x.damage=x.damage??d.damage;x.value=x.value??d.price}return x}
+function ammoItem(caliber,qty,tier=1){const c=AMMO_CALIBERS[caliber]||AMMO_CALIBERS['9mm'],t=AMMO_TIERS[tier]||AMMO_TIERS[1];return{kind:'ammo',id:uid('a'),caliber,tier,name:`${c.name} T${tier} 탄약`,qty,value:Math.round(qty*t.unitPrice)}}
+function normalizeItem(it){const x=copy(it);if(!x.id)x.id=uid('i');if(x.kind==='weapon'){const d=WEAPONS[x.type];x.name=x.name||d.name;x.ammo=x.ammo??d.mag;x.ammoTier=x.ammoTier||1;x.reserve=0;x.damage=x.damage??d.damage;x.value=x.value??d.price}else if(x.kind==='ammo'){x.caliber=x.caliber||WEAPONS[x.type]?.caliber||'9mm';x.tier=Math.max(1,Math.min(5,Number(x.tier)||1));x.qty=Math.max(0,Number(x.qty)||0);x.name=x.name||`${AMMO_CALIBERS[x.caliber]?.name||x.caliber} T${x.tier} 탄약`;x.value=x.value??Math.round(x.qty*(AMMO_TIERS[x.tier]?.unitPrice||3))}return x}
 function circleRect(x,y,r,o){const cx=clamp(x,o.x,o.x+o.w),cy=clamp(y,o.y,o.y+o.h);return (x-cx)**2+(y-cy)**2<r*r}
 function allBlockers(w){return w?[...w.obstacles,...w.doors.filter(d=>!d.open)]:MAP_OBSTACLES}
 function pointHitsBlocker(w,x,y){for(const o of w.obstacles)if(x>o.x&&x<o.x+o.w&&y>o.y&&y<o.y+o.h)return true;for(const d of w.doors)if(!d.open&&x>d.x&&x<d.x+d.w&&y>d.y&&y<d.y+d.h)return true;return false}
@@ -110,21 +190,21 @@ function makeActor(kind,x,y,team,load={}){
  const helmet=load.helmet?normalizeItem(load.helmet):kind==='pmc'?gearItem('helmet'):null;
  const backpack=load.backpack?normalizeItem(load.backpack):null;
  const inventory=(load.inventory||[]).map(normalizeItem);
- return{id:uid(kind[0]),kind,team,name:load.name||kind.toUpperCase(),x,y,r:13,hp:100,maxHp:100,gear:{primary,secondary,armor,helmet,backpack},weaponSlot:'primary',inventory,angle:0,moveSpeed:kind==='scav'?126:150,fireCd:0,reload:0,input:emptyInput(),triggerHeld:false,dead:false,kills:0,thinkCd:Math.random()*.3,patrol:{...PATROLS[Math.floor(Math.random()*PATROLS.length)]},targetId:null,lastKnown:null,heard:null,cover:null,strafe:Math.random()<.5?-1:1,stepCd:Math.random()*.4,healCd:0,healTimer:0,healDuration:0,healItemId:null,flinch:0,grenadeCd:5+Math.random()*6,sleepAcc:0,interactLatch:false,visionLevel:load.visionLevel||3};
+ return{id:uid(kind[0]),kind,team,name:load.name||kind.toUpperCase(),x,y,r:13,hp:100,maxHp:100,gear:{primary,secondary,armor,helmet,backpack},weaponSlot:'primary',inventory,angle:0,moveSpeed:kind==='scav'?126:150,fireCd:0,reload:0,input:emptyInput(),triggerHeld:false,dead:false,kills:0,thinkCd:Math.random()*.3,patrol:{...(load.patrols||PATROLS)[Math.floor(Math.random()*(load.patrols||PATROLS).length)]},targetId:null,lastKnown:null,heard:null,cover:null,strafe:Math.random()<.5?-1:1,stepCd:Math.random()*.4,healCd:0,healTimer:0,healDuration:0,healItemId:null,flinch:0,grenadeCd:5+Math.random()*6,sleepAcc:0,interactLatch:false,visionLevel:load.visionLevel||3};
 }
 
-function rollCrate(i){const out=[];const names=['암호화 SSD','군용 무전기','광학 부품','공구 세트','의약품 박스','배터리 팩','제어 모듈'];out.push(valuable(names[i%names.length],260+Math.floor(Math.random()*650)));if(Math.random()<.72)out.push(ammoItem(['pistol','smg','ar','shotgun','dmr'][i%5],18+Math.floor(Math.random()*35)));if(Math.random()<.38)out.push(gearItem('med'));if(Math.random()<.24)out.push(gearItem('grenade'));if(Math.random()<.12)out.push(weaponItem(['smg','ar','shotgun','dmr'][i%4],1+.04*Math.random()));return out}
+function rollCrate(i){const out=[];const names=['암호화 SSD','군용 무전기','광학 부품','공구 세트','의약품 박스','배터리 팩','제어 모듈'],cals=['9mm','5.56','7.62','12g'];out.push(valuable(names[i%names.length],260+Math.floor(Math.random()*650)));if(Math.random()<.72){const caliber=cals[i%cals.length],tier=Math.min(5,1+Math.floor(Math.pow(Math.random(),1.7)*5)),pack=AMMO_CALIBERS[caliber].pack;out.push(ammoItem(caliber,Math.max(6,Math.round(pack*(.55+Math.random()*.7))),tier))}if(Math.random()<.38)out.push(gearItem('med'));if(Math.random()<.24)out.push(gearItem('grenade'));if(Math.random()<.12)out.push(weaponItem(['smg','ar','shotgun','dmr'][i%4],1+.04*Math.random(),1+Math.floor(Math.random()*2)));return out}
 
 function pickHumanSpawn(w){
  const alive=w.actors.filter(a=>!a.dead);let best=SPAWNS[0],score=-1;
- for(const s of SPAWNS){if(blocked(w,s.x,s.y,15))continue;const nearest=alive.length?Math.min(...alive.map(a=>distXY(s.x,s.y,a.x,a.y))):99999;if(nearest>score){score=nearest;best=s}}
+ for(const s of (w.spawns||SPAWNS)){if(blocked(w,s.x,s.y,15))continue;const nearest=alive.length?Math.min(...alive.map(a=>distXY(s.x,s.y,a.x,a.y))):99999;if(nearest>score){score=nearest;best=s}}
  return best
 }
 function spawnFillerAI(w,index=0){
- const pos=PATROLS[(index+(w.aiSpawnSeq||0))%PATROLS.length];w.aiSpawnSeq=(w.aiSpawnSeq||0)+1;
+ const patrols=w.patrols||PATROLS,pos=patrols[(index+(w.aiSpawnSeq||0))%patrols.length];w.aiSpawnSeq=(w.aiSpawnSeq||0)+1;
  const pmc=(w.aiSpawnSeq%4===0),kind=pmc?'pmc':'scav',guns=pmc?['ar','dmr','smg']:['smg','shotgun','pistol','ar'];
- const primary=weaponItem(guns[w.aiSpawnSeq%guns.length],pmc?1.02:.92),inventory=[];if(Math.random()<.38)inventory.push(gearItem('med'));if(pmc&&Math.random()<.45)inventory.push(gearItem('grenade'));
- const a=makeActor(kind,pos.x+(Math.random()-.5)*80,pos.y+(Math.random()-.5)*80,pmc?`filler-pmc-${w.aiSpawnSeq}`:'filler-scav',{name:pmc?`RAIDER-${60+w.aiSpawnSeq}`:`SCAV-${60+w.aiSpawnSeq}`,primary,inventory});a.filler=true;w.actors.push(a);return a
+ const gunType=guns[w.aiSpawnSeq%guns.length],tier=pmc?2:1,primary=weaponItem(gunType,pmc?1.02:.92,tier),inventory=[ammoItem(WEAPONS[gunType].caliber,AMMO_CALIBERS[WEAPONS[gunType].caliber].pack,tier)];if(Math.random()<.38)inventory.push(gearItem('med'));if(pmc&&Math.random()<.45)inventory.push(gearItem('grenade'));
+ const a=makeActor(kind,pos.x+(Math.random()-.5)*80,pos.y+(Math.random()-.5)*80,pmc?`filler-pmc-${w.aiSpawnSeq}`:`filler-scav-${w.aiSpawnSeq}`,{name:pmc?`RAIDER-${60+w.aiSpawnSeq}`:`SCAV-${60+w.aiSpawnSeq}`,primary,inventory,patrols});a.filler=true;w.actors.push(a);return a
 }
 export function addHumanPlayer(w,pc={}){
  const s=pickHumanSpawn(w),team=`human-${uid('team')}`,a=makeActor('player',s.x,s.y,team,{name:pc.name||'PLAYER',primary:pc.equipment?.primary,secondary:pc.equipment?.secondary,armor:pc.equipment?.armor,helmet:pc.equipment?.helmet,backpack:pc.equipment?.backpack,inventory:pc.inventory||[],visionLevel:pc.visionLevel||3});
@@ -140,20 +220,19 @@ export function reconcileFillerAI(w,target,{onlyRemove=false}={}){
 }
 
 export function createWorld(config={}){
- const players=config.players||[{}];const w={time:0,timeLeft:18*60,obstacles:MAP_OBSTACLES.map(copy),doors:DOOR_DEFS.map(d=>({...d,open:false})),zones:ZONES,extracts:EXTRACTS,actors:[],humanIds:[],bullets:[],grenades:[],crates:[],corpses:[],sounds:[],events:[],results:{},openContainers:{},interactions:{},inputs:{},aiSpawnSeq:0};
+ const players=config.players||[{}],def=selectedMap(config.mapIndex||0),map={id:def.id,name:def.name,palette:copy(def.palette),roads:copy(def.roads)};
+ const w={time:0,timeLeft:18*60,map,obstacles:def.obstacles.map(copy),doors:def.doors.map(d=>({...copy(d),open:false})),zones:def.zones.map(copy),extracts:def.extracts.map(copy),spawns:def.spawns.map(copy),patrols:def.patrols.map(copy),coverPoints:coverPointsFor(def.obstacles),actors:[],humanIds:[],bullets:[],grenades:[],crates:[],corpses:[],sounds:[],events:[],results:{},openContainers:{},interactions:{},inputs:{},aiSpawnSeq:0};
  players.forEach(pc=>addHumanPlayer(w,pc));
- if(Number.isFinite(config.aiCount))reconcileFillerAI(w,config.aiCount);else{
-  const pmcLoads=[{primary:weaponItem('ar',1.05),inventory:[gearItem('med'),gearItem('grenade')]},{primary:weaponItem('dmr',1.04),secondary:weaponItem('pistol'),inventory:[gearItem('med')]}];
-  const pmcPos=[{x:2500,y:1570},{x:3500,y:720}];pmcPos.forEach((q,i)=>w.actors.push(makeActor('pmc',q.x,q.y,`pmc-${i}`,{name:`RAIDER-${21+i}`,...pmcLoads[i]})));
-  const scavPos=[{x:630,y:670},{x:2100,y:860},{x:820,y:2220},{x:2350,y:2210},{x:3590,y:2280}];const scavGuns=['smg','shotgun','pistol','smg','shotgun'];scavPos.forEach((q,i)=>w.actors.push(makeActor('scav',q.x,q.y,'scav',{name:`SCAV-${40+i}`,primary:weaponItem(scavGuns[i],.92),inventory:Math.random()<.4?[gearItem('med')]:[]})));
- }
- CRATES.forEach((q,i)=>w.crates.push({id:`crate-${i}`,kind:'crate',x:q.x,y:q.y,r:19,opened:false,items:rollCrate(i)}));return w
+ if(Number.isFinite(config.aiCount))reconcileFillerAI(w,config.aiCount);else reconcileFillerAI(w,7);
+ def.crates.forEach((q,i)=>w.crates.push({id:`crate-${i}`,kind:'crate',x:q.x,y:q.y,r:19,opened:false,items:rollCrate(i)}));return w
 }
 
 export function setPlayerInput(w,id,input){const a=getPlayer(w,id);if(!a||a.dead)return;w.inputs[id]={...w.inputs[id],...input};a.input=w.inputs[id]}
-function startReload(a){const gun=currentWeapon(a);if(!gun)return;const d=WEAPONS[gun.type];if(a.reload>0||gun.ammo>=d.mag||gun.reserve<=0)return;a.reload=d.reload}
-function finishReload(a){const gun=currentWeapon(a);if(!gun)return;const d=WEAPONS[gun.type],need=d.mag-gun.ammo,take=Math.min(need,gun.reserve);gun.ammo+=take;gun.reserve-=take;a.reload=0}
-function shoot(w,a,aimX,aimY,ai=false){const gun=currentWeapon(a);if(!gun)return;const d=WEAPONS[gun.type];if(a.reload>0||a.fireCd>0||a.flinch>0)return;if(gun.ammo<=0){startReload(a);return}gun.ammo--;a.fireCd=d.rate;const base=Math.atan2(aimY,aimX),pellets=d.pellets||1;for(let i=0;i<pellets;i++){const spread=d.spread*(ai?1.35:1),ang=base+(Math.random()-.5)*spread*2;w.bullets.push({id:uid('b'),owner:a.id,x:a.x+Math.cos(ang)*21,y:a.y+Math.sin(ang)*21,vx:Math.cos(ang)*d.speed,vy:Math.sin(ang)*d.speed,damage:gun.damage||d.damage,life:d.range/d.speed,headChance:ai?.10:.18})}if(w.bullets.length>360)w.bullets.splice(0,w.bullets.length-360);addSound(w,a.x,a.y,d.sound,'gunshot',a.id);emit(w,'shot',{actor:a.id,x:a.x,y:a.y,weapon:gun.type,recoil:d.recoil,angle:base,ownerKind:a.kind})}
+function ammoReserve(a,gun){if(!gun)return 0;const cal=WEAPONS[gun.type]?.caliber;return a.inventory.filter(i=>i.kind==='ammo'&&i.caliber===cal).reduce((n,i)=>n+(i.qty||0),0)}
+function reloadTierFor(a,gun){if(a.kind!=='player')return gun.ammoTier|| (a.kind==='pmc'?2:1);const cal=WEAPONS[gun.type]?.caliber,tiers=a.inventory.filter(i=>i.kind==='ammo'&&i.caliber===cal&&(i.qty||0)>0).map(i=>i.tier||1);if(!tiers.length)return 0;if(gun.ammo>0){const cur=gun.ammoTier||1;return tiers.includes(cur)?cur:0}return Math.max(...tiers)}
+function startReload(a){const gun=currentWeapon(a);if(!gun)return;const d=WEAPONS[gun.type],tier=reloadTierFor(a,gun);if(a.reload>0||gun.ammo>=d.mag||!tier)return;a.reload=d.reload;a.reloadTier=tier}
+function finishReload(a){const gun=currentWeapon(a);if(!gun){a.reload=0;return}const d=WEAPONS[gun.type],need=d.mag-gun.ammo;if(a.kind!=='player'){gun.ammo=d.mag;gun.ammoTier=a.reloadTier||gun.ammoTier||1;a.reload=0;a.reloadTier=0;return}const tier=a.reloadTier||reloadTierFor(a,gun);if(!tier){a.reload=0;return}let left=need;for(let i=a.inventory.length-1;i>=0&&left>0;i--){const it=a.inventory[i];if(it.kind!=='ammo'||it.caliber!==d.caliber||(it.tier||1)!==tier)continue;const take=Math.min(left,it.qty||0);it.qty-=take;left-=take;if(it.qty<=0)a.inventory.splice(i,1)}const loaded=need-left;if(loaded>0){gun.ammo+=loaded;gun.ammoTier=tier}a.reload=0;a.reloadTier=0}
+function shoot(w,a,aimX,aimY,ai=false){const gun=currentWeapon(a);if(!gun)return;const d=WEAPONS[gun.type];if(a.reload>0||a.fireCd>0||a.flinch>0)return;if(gun.ammo<=0){startReload(a);return}gun.ammo--;a.fireCd=d.rate;const base=Math.atan2(aimY,aimX),pellets=d.pellets||1,tier=gun.ammoTier||1,mult=AMMO_TIERS[tier]?.damageMult||1,shotDamage=(gun.damage||d.damage)*mult;for(let i=0;i<pellets;i++){const spread=d.spread*(ai?1.35:1),ang=base+(Math.random()-.5)*spread*2;w.bullets.push({id:uid('b'),owner:a.id,x:a.x+Math.cos(ang)*21,y:a.y+Math.sin(ang)*21,vx:Math.cos(ang)*d.speed,vy:Math.sin(ang)*d.speed,damage:shotDamage,life:d.range/d.speed,headChance:ai?.10:.18,ammoTier:tier})}if(w.bullets.length>360)w.bullets.splice(0,w.bullets.length-360);addSound(w,a.x,a.y,d.sound,'gunshot',a.id);emit(w,'shot',{actor:a.id,x:a.x,y:a.y,weapon:gun.type,ammoTier:tier,recoil:d.recoil,angle:base,ownerKind:a.kind})}
 function hostile(a,b){if(!a||!b||a.dead||b.dead||a.id===b.id)return false;if(a.team===b.team)return false;if(a.kind==='scav'&&b.kind==='scav')return false;return true}
 function damageActor(w,t,raw,source,headshot=false){if(t.dead)return;let damage=raw;if(headshot&&t.gear.helmet?.durability>0){const absorbed=Math.min(t.gear.helmet.durability,damage*.42);t.gear.helmet.durability-=absorbed;damage-=absorbed}if(t.gear.armor?.armor>0){const absorbed=Math.min(t.gear.armor.armor,damage*.48);t.gear.armor.armor-=absorbed;damage-=absorbed}t.hp-=damage;t.flinch=.07;emit(w,'hit',{target:t.id,source,damage:Math.round(damage),headshot});if(t.hp<=0){t.hp=0;killActor(w,t,source)}}
 function killActor(w,a,source){if(a.dead)return;a.dead=true;const killer=getActor(w,source);if(killer)killer.kills++;const items=[];for(const k of ['primary','secondary','armor','helmet','backpack'])if(a.gear[k])items.push(normalizeItem(a.gear[k]));items.push(...a.inventory.map(normalizeItem));if(a.kind==='player')items.push(valuable((a.name||'PLAYER')+' 인식표',350));w.corpses.push({id:uid('corpse'),kind:'corpse',x:a.x,y:a.y,r:20,ownerName:a.name,items});emit(w,'kill',{killer:killer?.name||'UNKNOWN',victim:a.name,playerKill:killer?.kind==='player'});if(a.kind==='player')w.results[a.id]={status:'dead',reason:'사망',kills:a.kills,lootValue:0}}
@@ -180,7 +259,7 @@ function movePlayer(w,p,dt){const inp=w.inputs[p.id]||emptyInput();updateHealing
 
 function nearestVisibleHostile(w,a,max){let best=null,bd=max;for(const b of w.actors){if(!hostile(a,b))continue;const d=dist(a,b);if(d<bd&&canSee(w,a,b,a.kind==='pmc'?4:2)){best=b;bd=d}}return best}
 function recentHeard(w,a){let best=null,score=Infinity;for(const s of w.sounds){if(s.source===a.id||s.age>2.1)continue;const d=distXY(a.x,a.y,s.x,s.y);if(d>s.range*.8)continue;const v=d+(s.kind==='gunshot'?0:220);if(v<score){score=v;best=s}}return best}
-function chooseCover(w,a,target){let best=null,score=Infinity;for(const c of COVER_POINTS){const da=distXY(a.x,a.y,c.x,c.y);if(da>470||blocked(w,c.x,c.y,a.r))continue;if(!segmentBlocked(w,c.x,c.y,target.x,target.y))continue;const dt=distXY(target.x,target.y,c.x,c.y),s=da+Math.abs(300-dt)*.35;if(s<score){score=s;best=c}}return best}
+function chooseCover(w,a,target){let best=null,score=Infinity;for(const c of (w.coverPoints||COVER_POINTS)){const da=distXY(a.x,a.y,c.x,c.y);if(da>470||blocked(w,c.x,c.y,a.r))continue;if(!segmentBlocked(w,c.x,c.y,target.x,target.y))continue;const dt=distXY(target.x,target.y,c.x,c.y),s=da+Math.abs(300-dt)*.35;if(s<score){score=s;best=c}}return best}
 function aiTryDoor(w,a,tx,ty){if((a.doorCd||0)>0)return false;const dir=norm(tx-a.x,ty-a.y);let best=null,bd=110;for(const d of w.doors){if(d.open)continue;const cx=d.x+d.w/2,cy=d.y+d.h/2,dx=cx-a.x,dy=cy-a.y,dd=Math.hypot(dx,dy);if(dd>=bd)continue;const dot=(dx*dir.x+dy*dir.y)/(dd||1);if(dot<.15)continue;best=d;bd=dd}if(!best)return false;best.open=true;a.doorCd=.65;addSound(w,best.x+best.w/2,best.y+best.h/2,210,'door',a.id);return true}
 function steerToward(w,a,tx,ty,speed,dt){aiTryDoor(w,a,tx,ty);const n=norm(tx-a.x,ty-a.y);if(moveEntity(w,a,n.x*speed*dt,n.y*speed*dt))return;const s=a.strafe||1;if(!moveEntity(w,a,-n.y*s*speed*.72*dt,n.x*s*speed*.72*dt))a.strafe*=-1}
 function aiFire(w,a,t){const n=norm(t.x-a.x,t.y-a.y),err=a.kind==='pmc'?.035:.075,ang=Math.atan2(n.y,n.x)+(Math.random()-.5)*err*2;shoot(w,a,Math.cos(ang),Math.sin(ang),true)}
@@ -200,5 +279,5 @@ export function stepWorld(w,dt){if(dt<=0)return;w.time+=dt;w.timeLeft=Math.max(0
 function publicItem(it){if(!it)return null;return copy(it)}
 function movementState(a){const inp=a.input||emptyInput(),moving=!!(inp.moveX||inp.moveY),sprinting=a.kind==='player'&&moving&&!!inp.sprint&&(a.healTimer||0)<=0;return{moving,sprinting,moveAngle:moving?Math.atan2(inp.moveY,inp.moveX):a.angle}}
 function actorPublic(a){const gun=currentWeapon(a),m=movementState(a);return{id:a.id,kind:a.kind,name:a.name,x:a.x,y:a.y,r:a.r,hp:a.hp,maxHp:a.maxHp,angle:a.angle,dead:a.dead,weaponType:gun?.type||null,moving:m.moving,sprinting:m.sprinting,moveAngle:m.moveAngle}}
-export function buildSnapshot(w,viewerId){const p=getPlayer(w,viewerId);if(!p)return null;const pm=movementState(p);const visible=w.actors.filter(a=>a.id===viewerId||(!a.dead&&canSee(w,p,a,p.visionLevel))).map(actorPublic);const openId=w.openContainers[viewerId],oc=getContainer(w,openId);const interaction=w.interactions[viewerId]?copy(w.interactions[viewerId]):null;const gear={};for(const k of ['primary','secondary','armor','helmet','backpack'])gear[k]=publicItem(p.gear[k]);const gun=currentWeapon(p);return{time:w.time,timeLeft:w.timeLeft,worldW:WORLD_W,worldH:WORLD_H,obstacles:w.obstacles,zones:w.zones,extracts:w.extracts,crates:w.crates.filter(c=>canSee(w,p,c,p.visionLevel)).map(c=>({id:c.id,x:c.x,y:c.y,opened:c.opened,empty:c.items.length===0})),corpses:w.corpses.filter(c=>canSee(w,p,c,p.visionLevel)).map(c=>({id:c.id,x:c.x,y:c.y,ownerName:c.ownerName,empty:c.items.length===0})),doors:w.doors.filter(d=>inVisionArc(p,{x:d.x+d.w/2,y:d.y+d.h/2},p.visionLevel)).map(d=>({id:d.id,name:d.name,x:d.x,y:d.y,w:d.w,h:d.h,open:d.open})),actors:visible,bullets:w.bullets.filter(b=>distXY(p.x,p.y,b.x,b.y)<1100).map(b=>({x:b.x,y:b.y,vx:b.vx,vy:b.vy,owner:b.owner})),grenades:w.grenades.filter(g=>distXY(p.x,p.y,g.x,g.y)<1100).map(g=>({x:g.x,y:g.y,fuse:g.fuse})),playerId:viewerId,aliveAI:w.actors.filter(a=>a.kind!=='player'&&!a.dead).length,player:{id:p.id,x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,angle:p.angle,kills:p.kills,visionLevel:p.visionLevel,weaponSlot:p.weaponSlot,weapon:publicItem(gun),gear,inventory:p.inventory.map(publicItem),bagCapacity:bagCapacity(p),armor:p.gear.armor?.armor||0,maxArmor:p.gear.armor?.maxArmor||p.gear.armor?.armor||0,reload:p.reload,healTimer:p.healTimer||0,healDuration:p.healDuration||0,moving:pm.moving,sprinting:pm.sprinting,moveAngle:pm.moveAngle},openContainer:oc?{id:oc.id,kind:oc.kind,ownerName:oc.ownerName,items:oc.items.map(publicItem)}:null,interaction,result:w.results[viewerId]?copy(w.results[viewerId]):null};}
+export function buildSnapshot(w,viewerId){const p=getPlayer(w,viewerId);if(!p)return null;const pm=movementState(p);const visible=w.actors.filter(a=>a.id===viewerId||(!a.dead&&canSee(w,p,a,p.visionLevel))).map(actorPublic);const openId=w.openContainers[viewerId],oc=getContainer(w,openId);const interaction=w.interactions[viewerId]?copy(w.interactions[viewerId]):null;const gear={};for(const k of ['primary','secondary','armor','helmet','backpack'])gear[k]=publicItem(p.gear[k]);const gun=currentWeapon(p);return{time:w.time,timeLeft:w.timeLeft,map:copy(w.map),worldW:WORLD_W,worldH:WORLD_H,obstacles:w.obstacles,zones:w.zones,extracts:w.extracts,crates:w.crates.filter(c=>canSee(w,p,c,p.visionLevel)).map(c=>({id:c.id,x:c.x,y:c.y,opened:c.opened,empty:c.items.length===0})),corpses:w.corpses.filter(c=>canSee(w,p,c,p.visionLevel)).map(c=>({id:c.id,x:c.x,y:c.y,ownerName:c.ownerName,empty:c.items.length===0})),doors:w.doors.filter(d=>inVisionArc(p,{x:d.x+d.w/2,y:d.y+d.h/2},p.visionLevel)).map(d=>({id:d.id,name:d.name,x:d.x,y:d.y,w:d.w,h:d.h,open:d.open})),actors:visible,bullets:w.bullets.filter(b=>distXY(p.x,p.y,b.x,b.y)<1100).map(b=>({x:b.x,y:b.y,vx:b.vx,vy:b.vy,owner:b.owner})),grenades:w.grenades.filter(g=>distXY(p.x,p.y,g.x,g.y)<1100).map(g=>({x:g.x,y:g.y,fuse:g.fuse})),playerId:viewerId,aliveAI:w.actors.filter(a=>a.kind!=='player'&&!a.dead).length,player:{id:p.id,x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,angle:p.angle,kills:p.kills,visionLevel:p.visionLevel,weaponSlot:p.weaponSlot,weapon:publicItem(gun),ammoReserve:gun?ammoReserve(p,gun):0,gear,inventory:p.inventory.map(publicItem),bagCapacity:bagCapacity(p),armor:p.gear.armor?.armor||0,maxArmor:p.gear.armor?.maxArmor||p.gear.armor?.armor||0,reload:p.reload,healTimer:p.healTimer||0,healDuration:p.healDuration||0,moving:pm.moving,sprinting:pm.sprinting,moveAngle:pm.moveAngle},openContainer:oc?{id:oc.id,kind:oc.kind,ownerName:oc.ownerName,items:oc.items.map(publicItem)}:null,interaction,result:w.results[viewerId]?copy(w.results[viewerId]):null};}
 export function drainEvents(w){const e=w.events;w.events=[];return e}
