@@ -114,14 +114,39 @@ function makeActor(kind,x,y,team,load={}){
 
 function rollCrate(i){const out=[];const names=['암호화 SSD','군용 무전기','광학 부품','공구 세트','의약품 박스','배터리 팩','제어 모듈'];out.push(valuable(names[i%names.length],260+Math.floor(Math.random()*650)));if(Math.random()<.72)out.push(ammoItem(['pistol','smg','ar','shotgun','dmr'][i%5],18+Math.floor(Math.random()*35)));if(Math.random()<.38)out.push(gearItem('med'));if(Math.random()<.24)out.push(gearItem('grenade'));if(Math.random()<.12)out.push(weaponItem(['smg','ar','shotgun','dmr'][i%4],1+.04*Math.random()));return out}
 
+function pickHumanSpawn(w){
+ const alive=w.actors.filter(a=>!a.dead);let best=SPAWNS[0],score=-1;
+ for(const s of SPAWNS){if(blocked(w,s.x,s.y,15))continue;const nearest=alive.length?Math.min(...alive.map(a=>distXY(s.x,s.y,a.x,a.y))):99999;if(nearest>score){score=nearest;best=s}}
+ return best
+}
+function spawnFillerAI(w,index=0){
+ const pos=PATROLS[(index+(w.aiSpawnSeq||0))%PATROLS.length];w.aiSpawnSeq=(w.aiSpawnSeq||0)+1;
+ const pmc=(w.aiSpawnSeq%4===0),kind=pmc?'pmc':'scav',guns=pmc?['ar','dmr','smg']:['smg','shotgun','pistol','ar'];
+ const primary=weaponItem(guns[w.aiSpawnSeq%guns.length],pmc?1.02:.92),inventory=[];if(Math.random()<.38)inventory.push(gearItem('med'));if(pmc&&Math.random()<.45)inventory.push(gearItem('grenade'));
+ const a=makeActor(kind,pos.x+(Math.random()-.5)*80,pos.y+(Math.random()-.5)*80,pmc?`filler-pmc-${w.aiSpawnSeq}`:'filler-scav',{name:pmc?`RAIDER-${60+w.aiSpawnSeq}`:`SCAV-${60+w.aiSpawnSeq}`,primary,inventory});a.filler=true;w.actors.push(a);return a
+}
+export function addHumanPlayer(w,pc={}){
+ const s=pickHumanSpawn(w),team=`human-${uid('team')}`,a=makeActor('player',s.x,s.y,team,{name:pc.name||'PLAYER',primary:pc.equipment?.primary,secondary:pc.equipment?.secondary,armor:pc.equipment?.armor,helmet:pc.equipment?.helmet,backpack:pc.equipment?.backpack,inventory:pc.inventory||[],visionLevel:pc.visionLevel||3});
+ w.actors.push(a);w.humanIds.push(a.id);w.inputs[a.id]=emptyInput();return a.id
+}
+export function removeHumanPlayer(w,id,{drop=true}={}){
+ const a=getActor(w,id);if(!a)return false;if(drop&&!a.dead&&!w.results[id])killActor(w,a,null);w.humanIds=w.humanIds.filter(x=>x!==id);delete w.inputs[id];delete w.openContainers[id];delete w.interactions[id];delete w.results[id];w.actors=w.actors.filter(x=>x.id!==id);return true
+}
+export function reconcileFillerAI(w,target,{onlyRemove=false}={}){
+ target=Math.max(0,target|0);let ai=w.actors.filter(a=>a.kind!=='player'&&!a.dead);
+ if(ai.length>target){const humans=w.actors.filter(a=>a.kind==='player'&&!a.dead);ai.sort((a,b)=>{const da=humans.length?Math.min(...humans.map(h=>dist(a,h))):0,db=humans.length?Math.min(...humans.map(h=>dist(b,h))):0;return db-da});const remove=new Set(ai.slice(0,ai.length-target).map(a=>a.id));w.actors=w.actors.filter(a=>!remove.has(a.id));ai=ai.filter(a=>!remove.has(a.id))}
+ if(!onlyRemove&&ai.length<target)for(let i=ai.length;i<target;i++)spawnFillerAI(w,i);return w.actors.filter(a=>a.kind!=='player'&&!a.dead).length
+}
+
 export function createWorld(config={}){
- const players=config.players||[{}];const w={time:0,timeLeft:18*60,obstacles:MAP_OBSTACLES.map(copy),doors:DOOR_DEFS.map(d=>({...d,open:false})),zones:ZONES,extracts:EXTRACTS,actors:[],humanIds:[],bullets:[],grenades:[],crates:[],corpses:[],sounds:[],events:[],results:{},openContainers:{},interactions:{},inputs:{}};
- players.forEach((pc,i)=>{const s=SPAWNS[i%SPAWNS.length],a=makeActor('player',s.x,s.y,`human-${i}`,{name:pc.name||`PLAYER-${i+1}`,primary:pc.equipment?.primary,secondary:pc.equipment?.secondary,armor:pc.equipment?.armor,helmet:pc.equipment?.helmet,backpack:pc.equipment?.backpack,inventory:pc.inventory||[],visionLevel:pc.visionLevel||3});w.actors.push(a);w.humanIds.push(a.id);w.inputs[a.id]=emptyInput()});
- const pmcLoads=[{primary:weaponItem('ar',1.05),inventory:[gearItem('med'),gearItem('grenade')]},{primary:weaponItem('dmr',1.04),secondary:weaponItem('pistol'),inventory:[gearItem('med')]}];
- const pmcPos=[{x:2500,y:1570},{x:3500,y:720}];pmcPos.forEach((p,i)=>w.actors.push(makeActor('pmc',p.x,p.y,`pmc-${i}`,{name:`RAIDER-${21+i}`,...pmcLoads[i]})));
- const scavPos=[{x:630,y:670},{x:2100,y:860},{x:820,y:2220},{x:2350,y:2210},{x:3590,y:2280}];const scavGuns=['smg','shotgun','pistol','smg','shotgun'];scavPos.forEach((p,i)=>w.actors.push(makeActor('scav',p.x,p.y,'scav',{name:`SCAV-${40+i}`,primary:weaponItem(scavGuns[i],.92),inventory:Math.random()<.4?[gearItem('med')]:[]})));
- CRATES.forEach((p,i)=>w.crates.push({id:`crate-${i}`,kind:'crate',x:p.x,y:p.y,r:19,opened:false,items:rollCrate(i)}));
- return w;
+ const players=config.players||[{}];const w={time:0,timeLeft:18*60,obstacles:MAP_OBSTACLES.map(copy),doors:DOOR_DEFS.map(d=>({...d,open:false})),zones:ZONES,extracts:EXTRACTS,actors:[],humanIds:[],bullets:[],grenades:[],crates:[],corpses:[],sounds:[],events:[],results:{},openContainers:{},interactions:{},inputs:{},aiSpawnSeq:0};
+ players.forEach(pc=>addHumanPlayer(w,pc));
+ if(Number.isFinite(config.aiCount))reconcileFillerAI(w,config.aiCount);else{
+  const pmcLoads=[{primary:weaponItem('ar',1.05),inventory:[gearItem('med'),gearItem('grenade')]},{primary:weaponItem('dmr',1.04),secondary:weaponItem('pistol'),inventory:[gearItem('med')]}];
+  const pmcPos=[{x:2500,y:1570},{x:3500,y:720}];pmcPos.forEach((q,i)=>w.actors.push(makeActor('pmc',q.x,q.y,`pmc-${i}`,{name:`RAIDER-${21+i}`,...pmcLoads[i]})));
+  const scavPos=[{x:630,y:670},{x:2100,y:860},{x:820,y:2220},{x:2350,y:2210},{x:3590,y:2280}];const scavGuns=['smg','shotgun','pistol','smg','shotgun'];scavPos.forEach((q,i)=>w.actors.push(makeActor('scav',q.x,q.y,'scav',{name:`SCAV-${40+i}`,primary:weaponItem(scavGuns[i],.92),inventory:Math.random()<.4?[gearItem('med')]:[]})));
+ }
+ CRATES.forEach((q,i)=>w.crates.push({id:`crate-${i}`,kind:'crate',x:q.x,y:q.y,r:19,opened:false,items:rollCrate(i)}));return w
 }
 
 export function setPlayerInput(w,id,input){const a=getPlayer(w,id);if(!a||a.dead)return;w.inputs[id]={...w.inputs[id],...input};a.input=w.inputs[id]}

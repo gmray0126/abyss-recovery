@@ -19,8 +19,13 @@ export class LocalSession extends Emitter{
 }
 
 export class WebSocketSession extends Emitter{
- constructor(url,hello){super();this.ws=new WebSocket(url);this.ws.addEventListener('open',()=>this.ws.send(JSON.stringify({type:'hello',...hello})));this.ws.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.type==='snapshot')this.emit('snapshot',m.data);else if(m.type==='event')this.emit('event',m.data)});this.ws.addEventListener('close',()=>this.emit('close'))}
- sendInput(input){if(this.ws.readyState===1)this.ws.send(JSON.stringify({type:'input',data:input}))}
- sendAction(action){if(this.ws.readyState===1)this.ws.send(JSON.stringify({type:'action',data:action}))}
- close(){this.ws.close()}
+ constructor(url){super();this.url=url;this.ws=null;this.manual=false;this.joined=false;this.pendingJoin=null;this.lastSnapshot=null;this.reconnectTimer=null;this.connect()}
+ get connected(){return this.ws?.readyState===1}
+ connect(){if(this.manual)return;this.ws=new WebSocket(this.url);this.ws.addEventListener('open',()=>{this.emit('connection',{connected:true});this.ws.send(JSON.stringify({type:'watch'}));if(this.pendingJoin)this._sendJoin()});this.ws.addEventListener('message',e=>{let m;try{m=JSON.parse(e.data)}catch{return}if(m.type==='status')this.emit('status',m.data);else if(m.type==='joined'){this.joined=true;this.emit('joined',m.data)}else if(m.type==='join_denied'){this.pendingJoin=null;this.emit('join_denied',m)}else if(m.type==='snapshot'){this.lastSnapshot=m.full||!this.lastSnapshot?m.data:{...this.lastSnapshot,...m.data};this.emit('snapshot',this.lastSnapshot)}else if(m.type==='event')this.emit('event',m.data);else if(m.type==='left'){this.joined=false;this.lastSnapshot=null;this.emit('left')}});this.ws.addEventListener('close',()=>{const wasJoined=this.joined;this.joined=false;this.emit('connection',{connected:false});if(wasJoined)this.emit('disconnect');if(!this.manual){clearTimeout(this.reconnectTimer);this.reconnectTimer=setTimeout(()=>this.connect(),1000)}});this.ws.addEventListener('error',()=>{})}
+ _sendJoin(){if(this.connected&&this.pendingJoin)this.ws.send(JSON.stringify({type:'join',data:this.pendingJoin}))}
+ join(config){this.pendingJoin=config;if(this.connected)this._sendJoin()}
+ leave(){this.pendingJoin=null;if(this.connected)this.ws.send(JSON.stringify({type:'leave'}));this.joined=false;this.lastSnapshot=null}
+ sendInput(input){if(this.connected&&this.joined)this.ws.send(JSON.stringify({type:'input',data:input}))}
+ sendAction(action){if(this.connected&&this.joined)this.ws.send(JSON.stringify({type:'action',data:action}))}
+ close(){this.manual=true;clearTimeout(this.reconnectTimer);this.ws?.close()}
 }
