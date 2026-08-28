@@ -13,7 +13,7 @@ function loadResume(){
 }
 function saveResume(data){try{localStorage.setItem(RESUME_KEY,JSON.stringify(data))}catch{}}
 function clearResume(){try{localStorage.removeItem(RESUME_KEY)}catch{}}
-function recoveryFromSnapshot(s){const p=s?.player;if(!p)return null;return{name:p.name,x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,kills:p.kills,baseVisionLevel:p.baseVisionLevel||p.visionLevel,weaponSlot:p.weaponSlot,recoil:p.recoil||0,gear:p.gear,inventory:p.inventory}}
+function recoveryFromSnapshot(s){const p=s?.player;if(!p)return null;return{name:p.name,x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,kills:p.kills,baseVisionLevel:p.baseVisionLevel||p.visionLevel,weaponSlot:p.weaponSlot,recoil:p.recoil||0,secureItemId:p.secureItemId||null,gear:p.gear,inventory:p.inventory}}
 
 class Emitter{constructor(){this.handlers=new Map()}on(name,fn){if(!this.handlers.has(name))this.handlers.set(name,new Set());this.handlers.get(name).add(fn);return()=>this.handlers.get(name)?.delete(fn)}emit(name,data){for(const fn of this.handlers.get(name)||[])fn(data)}}
 
