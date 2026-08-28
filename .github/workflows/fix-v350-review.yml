@@ -1,0 +1,82 @@
+name: Fix v3.5 review findings
+on:
+  push:
+    branches:
+      - feat/v350-arsenal-secure-slot
+    paths:
+      - '.github/workflows/fix-v350-review.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Harden recovery and shotgun parts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def rep(s,a,b,label):
+              if a not in s: raise SystemExit('missing '+label)
+              return s.replace(a,b,1)
+
+          p=Path('src/sim.js'); s=p.read_text(encoding='utf-8')
+          s=rep(s,"tactical_stock:{kind:'part',key:'tactical_stock',slot:'stock',name:'전술 개머리판',price:460,compatibleClasses:['smg','ar','battle','dmr']","tactical_stock:{kind:'part',key:'tactical_stock',slot:'stock',name:'전술 개머리판',price:460,compatibleClasses:['smg','ar','battle','shotgun','dmr']",'tactical shotgun stock')
+          s=rep(s,"heavy_stock:{kind:'part',key:'heavy_stock',slot:'stock',name:'중량 개머리판',price:570,compatibleClasses:['ar','battle','dmr','sniper']","heavy_stock:{kind:'part',key:'heavy_stock',slot:'stock',name:'중량 개머리판',price:570,compatibleClasses:['ar','battle','shotgun','dmr','sniper']",'heavy shotgun stock')
+          anchor=" laser:{kind:'part',key:'laser',slot:'tactical',name:'전술 레이저'"
+          insert=" choke:{kind:'part',key:'choke',slot:'muzzle',name:'정밀 초크',price:410,compatibleClasses:['shotgun'],spreadMult:.66,recoilMult:1.04},\n breacher:{kind:'part',key:'breacher',slot:'muzzle',name:'브리처 총구',price:460,compatibleClasses:['shotgun'],spreadMult:1.12,recoilMult:.78,soundMult:1.10},\n laser:{kind:'part',key:'laser',slot:'tactical',name:'전술 레이저'"
+          s=rep(s,anchor,insert,'shotgun muzzle parts')
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('src/net.js'); s=p.read_text(encoding='utf-8')
+          old="if(data.endsAt&&Date.now()>data.endsAt+DEFAULT_RECONNECT_GRACE_MS){localStorage.removeItem(RESUME_KEY);return null}\n    return data;"
+          new="if(data.endsAt&&Date.now()>data.endsAt+DEFAULT_RECONNECT_GRACE_MS)return{...data,expired:true};\n    return data;"
+          s=rep(s,old,new,'expired resume preservation')
+          old="constructor(url){super();const saved=loadResume();this.url=url;this.ws=null;this.manual=false;this.joined=false;this.pendingJoin=null;this.lastSnapshot=null;this.reconnectTimer=null;this.disconnectTimer=null;this.resumeToken=saved?.token||null;this.resumeInfo=saved||null;this.reconnectGraceMs=Number(saved?.reconnectGraceMs)||DEFAULT_RECONNECT_GRACE_MS;this.connect()}"
+          new="constructor(url){super();const saved=loadResume();this.url=url;this.ws=null;this.manual=false;this.joined=false;this.pendingJoin=null;this.lastSnapshot=null;this.reconnectTimer=null;this.disconnectTimer=null;this.expiredRecovery=saved?.expired?saved.recovery||null:null;this.resumeToken=saved?.expired?null:(saved?.token||null);this.resumeInfo=saved?.expired?null:(saved||null);this.reconnectGraceMs=Number(saved?.reconnectGraceMs)||DEFAULT_RECONNECT_GRACE_MS;if(saved?.expired)clearResume();this.connect()}"
+          s=rep(s,old,new,'constructor expired recovery')
+          s=rep(s," get connected(){return this.ws?.readyState===1}"," get connected(){return this.ws?.readyState===1}\n takeExpiredSecureItem(){const r=this.expiredRecovery;this.expiredRecovery=null;if(!r?.secureItemId)return null;return r.inventory?.find(i=>i.id===r.secureItemId)||null}\n _recoverySecureItem(){const r=this.resumeInfo?.recovery;if(!r?.secureItemId)return null;return r.inventory?.find(i=>i.id===r.secureItemId)||null}",'secure recovery methods')
+          old="else if(m.type==='resume_denied'){this.joined=false;this.pendingJoin=null;clearTimeout(this.disconnectTimer);this.disconnectTimer=null;this._clearResume();this.emit('resume_denied',m);this.emit('disconnect',{reason:m.reason||'재접속 제한 시간이 초과되었습니다.'})}"
+          new="else if(m.type==='resume_denied'){this.joined=false;this.pendingJoin=null;clearTimeout(this.disconnectTimer);this.disconnectTimer=null;const secureItem=this._recoverySecureItem();this._clearResume();this.emit('resume_denied',m);this.emit('disconnect',{reason:m.reason||'재접속 제한 시간이 초과되었습니다.',secureItem})}"
+          s=rep(s,old,new,'resume denied secure')
+          old="_armDisconnectTimeout(){clearTimeout(this.disconnectTimer);this.disconnectTimer=setTimeout(()=>{if(this.joined)return;this.pendingJoin=null;this._clearResume();this.emit('disconnect',{reason:'재접속 제한 시간 2분 30초 초과'})},Math.max(1000,this.reconnectGraceMs+1500))}"
+          new="_armDisconnectTimeout(){clearTimeout(this.disconnectTimer);this.disconnectTimer=setTimeout(()=>{if(this.joined)return;this.pendingJoin=null;const secureItem=this._recoverySecureItem();this._clearResume();this.emit('disconnect',{reason:'재접속 제한 시간 2분 30초 초과',secureItem})},Math.max(1000,this.reconnectGraceMs+1500))}"
+          s=rep(s,old,new,'disconnect timeout secure')
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('src/main.js'); s=p.read_text(encoding='utf-8')
+          s=rep(s,"noiseBurst(type==='shotgun'?.10:.065,d[0]*volume","noiseBurst(cls==='shotgun'?.10:.065,d[0]*volume",'shotgun audio class')
+          s=rep(s,"if(playSample(key,.58,type==='smg'?1.08:1))","if(playSample(key,.58,cls==='smg'?1.08:1))",'smg reload class')
+          s=rep(s,"realtime=new WebSocketSession(WS_URL);const fallbackTimer=","realtime=new WebSocketSession(WS_URL);restoreSecureItem(realtime.takeExpiredSecureItem?.());const fallbackTimer=",'startup expired secure recovery')
+          old="realtime.on('disconnect',x=>{if(session===realtime&&!lastResultHandled){restoreSecureItem(secureItemFromSnapshot());lastResultHandled=true;session=null;if(document.pointerLockElement)document.exitPointerLock?.();showResult(false,{reason:x?.reason||'멀티 서버 연결 끊김',kills:snap?.player?.kills||0,lootValue:0,secureItem:secureItemFromSnapshot()})}})"
+          new="realtime.on('disconnect',x=>{if(session===realtime&&!lastResultHandled){const secureItem=x?.secureItem||secureItemFromSnapshot();restoreSecureItem(secureItem);lastResultHandled=true;session=null;if(document.pointerLockElement)document.exitPointerLock?.();showResult(false,{reason:x?.reason||'멀티 서버 연결 끊김',kills:snap?.player?.kills||0,lootValue:0,secureItem})}})"
+          s=rep(s,old,new,'disconnect payload secure')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validate reviewed build
+        run: |
+          node --check src/sim.js
+          node --check src/net.js
+          node --check src/main.js
+          node --check src/protocol.js
+          node --input-type=module <<'NODE'
+          import {WEAPONS,WEAPON_PARTS,weaponAcceptsPart,weaponPartEffects,createWorld,applyAction,removeHumanPlayer,buildSnapshot} from './src/sim.js';
+          if(Object.keys(WEAPON_PARTS).length < 24) throw new Error('expected 24+ parts');
+          for(const type of ['shotgun','saiga']){
+            const gun={kind:'weapon',type,parts:{}};
+            for(const key of ['tactical_stock','heavy_stock','choke','breacher']) if(!weaponAcceptsPart(gun,WEAPON_PARTS[key])) throw new Error(`${key} should fit ${type}`);
+          }
+          const custom={kind:'weapon',type:'scar',parts:{muzzle:{...WEAPON_PARTS.suppressor},grip:{...WEAPON_PARTS.horizontal_grip},stock:{...WEAPON_PARTS.heavy_stock},mag:{...WEAPON_PARTS.ext_quickdraw},optic:{...WEAPON_PARTS.optic_4x},tactical:{...WEAPON_PARTS.rangefinder}}};
+          const fx=weaponPartEffects(custom);if(!(fx.soundMult<1&&fx.spreadMult<.8&&fx.recoilMult<.8))throw new Error('six-slot build not stacking');
+          const safe={id:'safe',kind:'valuable',name:'SAFE',value:1},risk={id:'risk',kind:'valuable',name:'RISK',value:1};
+          const w=createWorld({players:[{inventory:[safe,risk]}],aiCount:0});const id=w.humanIds[0];applyAction(w,id,{type:'secure_item',itemId:'safe'});if(buildSnapshot(w,id).player.secureItemId!=='safe')throw new Error('secure snapshot');removeHumanPlayer(w,id,{drop:true});if(w.corpses.at(-1).items.some(x=>x.id==='safe'))throw new Error('safe corpse drop');
+          console.log('v3.5 review checks passed');
+          NODE
+      - name: Commit review fixes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/sim.js src/net.js src/main.js
+          git commit -m 'fix: guarantee secure-slot recovery and expand shotgun parts' || exit 0
+          git push
