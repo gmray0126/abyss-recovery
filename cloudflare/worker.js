@@ -9,7 +9,7 @@ const CAPACITY = 8;
 const ENTRY_LOCK_MS = 60_000;
 const FIXED = 1 / 30;
 const SNAPSHOT_MS = 50;
-const RECONNECT_GRACE_MS = 30_000;
+const RECONNECT_GRACE_MS = 150_000;
 
 const roomKey = (now = Date.now()) => Math.floor(now / CYCLE_MS);
 const roomId = key => `IND-${String(key).slice(-6)}`;
@@ -17,10 +17,13 @@ const roomId = key => `IND-${String(key).slice(-6)}`;
 export default {
   async fetch(request, env) {
     const now = Date.now();
-    const key = roomKey(now);
+    const currentKey = roomKey(now);
+    const url = new URL(request.url);
+    const requestedKey = Number(url.searchParams.get('roomKey'));
+    const wantsWs = request.headers.get('Upgrade')?.toLowerCase() === 'websocket';
+    const key = wantsWs && Number.isFinite(requestedKey) && requestedKey >= currentKey - 1 && requestedKey <= currentKey ? requestedKey : currentKey;
     const id = env.RAID_ROOMS.idFromName(String(key));
     const stub = env.RAID_ROOMS.get(id);
-    const url = new URL(request.url);
 
     if (request.headers.get('Upgrade')?.toLowerCase() === 'websocket') {
       const target = new URL(request.url);
@@ -266,7 +269,7 @@ export class RaidRoom {
     }
     if (rec.expiresAt > 0 && now > rec.expiresAt) {
       this.expireReconnect(token, rec);
-      this.send(ws, { type: 'resume_denied', reason: '재접속 제한 시간 30초를 초과했습니다.' });
+      this.send(ws, { type: 'resume_denied', reason: '재접속 제한 시간 2분 30초를 초과했습니다.' });
       this.broadcastStatus();
       this.ctx.waitUntil(this.persist());
       return;
@@ -289,7 +292,7 @@ export class RaidRoom {
     const nextToken = this.newResumeToken();
     this.reconnects.set(nextToken, { playerId: rec.playerId, expiresAt: 0 });
     this.setAttachment(ws, { playerId: rec.playerId, fullSent: false, resumeToken: nextToken });
-    this.send(ws, { type: 'joined', data: { playerId: rec.playerId, roomId: roomId(this.key), endsAt: this.endsAt, resumeToken: nextToken, reconnectGraceMs: RECONNECT_GRACE_MS, resumed: true } });
+    this.send(ws, { type: 'joined', data: { playerId: rec.playerId, roomId: roomId(this.key), roomKey: this.key, endsAt: this.endsAt, resumeToken: nextToken, reconnectGraceMs: RECONNECT_GRACE_MS, resumed: true } });
     this.startLoop();
     this.broadcastStatus();
     this.sendSnapshot(ws, rec.playerId, true);
@@ -316,7 +319,7 @@ export class RaidRoom {
     const resumeToken = this.newResumeToken();
     this.reconnects.set(resumeToken, { playerId: id, expiresAt: 0 });
     this.setAttachment(ws, { playerId: id, fullSent: false, resumeToken });
-    this.send(ws, { type: 'joined', data: { playerId: id, roomId: roomId(this.key), endsAt: this.endsAt, resumeToken, reconnectGraceMs: RECONNECT_GRACE_MS, resumed: false } });
+    this.send(ws, { type: 'joined', data: { playerId: id, roomId: roomId(this.key), roomKey: this.key, endsAt: this.endsAt, resumeToken, reconnectGraceMs: RECONNECT_GRACE_MS, resumed: false } });
     this.startLoop();
     this.broadcastStatus();
     this.sendSnapshot(ws, id, true);
