@@ -80,18 +80,20 @@ jobs:
           import {createWorld,applyAction,AMMO_STACK_MAX} from './src/sim.js';
           import {ACTIONS} from './src/protocol.js';
           const ammo=(id,qty,tier=2)=>({id,kind:'ammo',caliber:'9mm',tier,qty,name:`9mm T${tier} 탄약`,value:qty*5});
+          const stacksOf=p=>p.inventory.filter(x=>x.kind==='ammo'&&x.caliber==='9mm'&&x.tier===2);
           let w=createWorld({players:[{inventory:[ammo('old',38)]}],aiCount:0});
           let pid=w.humanIds[0],p=w.actors.find(a=>a.id===pid),c=w.crates[0];c.x=p.x;c.y=p.y;c.opened=true;c.items=[ammo('pick',52)];
           applyAction(w,pid,{type:ACTIONS.LOOT,containerId:c.id,itemId:'pick'});
-          const stacks=p.inventory.filter(x=>x.kind==='ammo'&&x.caliber==='9mm'&&x.tier===2);
+          let stacks=stacksOf(p);
           if(stacks.length!==1||stacks[0].qty!==90)throw new Error('38+52 did not merge to 90');
           w=createWorld({players:[{inventory:[ammo('big',990),...Array.from({length:7},(_,i)=>({id:'v'+i,kind:'valuable',name:'v',value:1}))]}],aiCount:0});
           pid=w.humanIds[0];p=w.actors.find(a=>a.id===pid);c=w.crates[0];c.x=p.x;c.y=p.y;c.opened=true;c.items=[ammo('overflow',20)];
           applyAction(w,pid,{type:ACTIONS.LOOT,containerId:c.id,itemId:'overflow'});
-          if(p.inventory.length!==8||p.inventory.find(x=>x.id==='big')?.qty!==AMMO_STACK_MAX)throw new Error('full bag stack top-up failed');
+          stacks=stacksOf(p);
+          if(p.inventory.length!==8||stacks.length!==1||stacks[0].qty!==AMMO_STACK_MAX)throw new Error('full bag stack top-up failed');
           if(c.items[0]?.qty!==11)throw new Error('partial remainder should stay in container');
           w=createWorld({players:[{inventory:[ammo('a',600),ammo('b',600)]}],aiCount:0});
-          p=w.actors.find(a=>a.id===w.humanIds[0]);const q=p.inventory.filter(x=>x.kind==='ammo'&&x.tier===2).map(x=>x.qty).sort((a,b)=>b-a);
+          p=w.actors.find(a=>a.id===w.humanIds[0]);const q=stacksOf(p).map(x=>x.qty).sort((a,b)=>b-a);
           if(q.length!==2||q[0]!==999||q[1]!==201)throw new Error('raid-start compaction failed');
           console.log('ammo stack tests OK');
           NODE
