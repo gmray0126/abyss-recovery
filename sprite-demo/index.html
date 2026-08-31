@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>SD Sprite Motion Test</title>
+  <style>
+    *{box-sizing:border-box} html,body{margin:0;min-height:100%;background:#15130f;color:#f4efe6;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{display:flex;justify-content:center;padding:18px;touch-action:manipulation}
+    .app{width:min(100%,1100px)}
+    .top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+    .title{font-size:18px;font-weight:800}.sub{font-size:13px;color:#bbb3a7;margin-top:3px}
+    .badges{display:flex;gap:8px;flex-wrap:wrap}.badge{padding:7px 10px;border:1px solid #443f35;border-radius:999px;background:#211e19;font-size:12px;color:#ddd5c7}
+    .stage-wrap{position:relative;border:1px solid #4e493f;border-radius:18px;overflow:hidden;background:#72805e;box-shadow:0 14px 50px rgba(0,0,0,.35)}
+    canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;image-rendering:pixelated;outline:none}
+    .hud{position:absolute;left:12px;top:12px;background:rgba(21,19,15,.82);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:8px 10px;font-size:12px;backdrop-filter:blur(5px)}
+    .hud b{color:#fff}.hint{position:absolute;right:12px;top:12px;background:rgba(21,19,15,.82);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:8px 10px;font-size:12px;color:#ddd5c7;backdrop-filter:blur(5px)}
+    .controls{display:flex;gap:14px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:14px}
+    .pad{display:grid;grid-template-columns:58px 58px 58px;grid-template-rows:58px 58px;gap:7px}
+    button{appearance:none;border:1px solid #4b463c;background:#24211c;color:#f4efe6;border-radius:13px;min-height:46px;padding:0 15px;font-weight:800;font-size:14px;cursor:pointer;user-select:none;-webkit-user-select:none}
+    button:active,.active{background:#756b56!important;border-color:#998d73!important}
+    .up{grid-column:2}.left{grid-column:1}.down{grid-column:2}.right{grid-column:3}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.run{min-width:110px}.reset{min-width:90px}
+    .sheetbox{margin-top:14px;border:1px solid #403b33;border-radius:14px;background:#1e1b17;padding:12px;display:none}.sheetbox.show{display:block}
+    .sheetbox img{display:block;width:256px;max-width:100%;height:auto;image-rendering:pixelated;background:repeating-conic-gradient(#3a352d 0 25%,#29251f 0 50%) 0/20px 20px;border-radius:8px}
+    .sheetbox p{font-size:12px;color:#bdb5a9;margin:8px 0 0}
+    @media(max-width:650px){body{padding:8px}.hint{display:none}.controls{justify-content:center}.actions{justify-content:center;width:100%}.pad{grid-template-columns:64px 64px 64px;grid-template-rows:64px 64px}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="top">
+      <div><div class="title">여성형 SD 스프라이트 실제 이동 테스트</div><div class="sub">우리가 만든 걷기·뛰기 프레임을 그대로 사용합니다. 대체 캐릭터 없음.</div></div>
+      <div class="badges"><span class="badge">WASD / 방향키</span><span class="badge">Shift = 뛰기</span></div>
+    </div>
+
+    <div class="stage-wrap">
+      <canvas id="game" width="960" height="540" tabindex="0" aria-label="캐릭터 이동 테스트"></canvas>
+      <div class="hud"><b id="motion">대기</b> · <span id="direction">정면</span> · frame <span id="frame">0</span></div>
+      <div class="hint">화면을 한 번 클릭한 뒤 조작하세요</div>
+    </div>
+
+    <div class="controls">
+      <div class="pad" aria-label="방향 조작">
+        <button class="up" data-dir="up" type="button">▲</button>
+        <button class="left" data-dir="left" type="button">◀</button>
+        <button class="down" data-dir="down" type="button">▼</button>
+        <button class="right" data-dir="right" type="button">▶</button>
+      </div>
+      <div class="actions">
+        <button id="runBtn" class="run" type="button">뛰기: OFF</button>
+        <button id="resetBtn" class="reset" type="button">중앙으로</button>
+        <button id="sheetBtn" type="button">스프라이트 시트 보기</button>
+      </div>
+    </div>
+
+    <section id="sheetBox" class="sheetbox">
+      <img src="./female_motion.png" alt="여성형 걷기와 뛰기 4방향 스프라이트 시트" />
+      <p>위에서부터 걷기 정면 / 후면 / 왼쪽 / 오른쪽, 뛰기 정면 / 후면 / 왼쪽 / 오른쪽입니다. 각 줄 4프레임입니다.</p>
+    </section>
+  </main>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const sprite = new Image();
+  sprite.src = './female_motion.png';
+
+  const motionEl = document.getElementById('motion');
+  const directionEl = document.getElementById('direction');
+  const frameEl = document.getElementById('frame');
+  const runBtn = document.getElementById('runBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const sheetBtn = document.getElementById('sheetBtn');
+  const sheetBox = document.getElementById('sheetBox');
+
+  const rows = {
+    walk: { down:0, up:1, left:2, right:3 },
+    run:  { down:4, up:5, left:6, right:7 }
+  };
+  const dirLabel = {down:'정면',up:'후면',left:'왼쪽',right:'오른쪽'};
+  const keyDir = {ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right'};
+
+  const keys = new Set();
+  const touch = new Set();
+  let runLock = false;
+  let shift = false;
+  let x = canvas.width/2;
+  let y = canvas.height/2;
+  let dir = 'down';
+  let animFrame = 0;
+  let frameClock = 0;
+  let last = performance.now();
+
+  function drawFloor(){
+    ctx.fillStyle = '#71805d'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle = 'rgba(35,45,28,.12)'; ctx.lineWidth = 1;
+    for(let gx=0; gx<canvas.width; gx+=48){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,canvas.height);ctx.stroke()}
+    for(let gy=0; gy<canvas.height; gy+=48){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(canvas.width,gy);ctx.stroke()}
+    ctx.fillStyle='rgba(255,255,255,.035)';
+    for(let i=0;i<30;i++){const px=(i*173)%canvas.width,py=(i*97)%canvas.height;ctx.fillRect(px,py,3,3)}
+  }
+
+  function movingVector(){
+    const d = new Set([...keys,...touch]);
+    let dx=0,dy=0;
+    if(d.has('left')) dx--;
+    if(d.has('right')) dx++;
+    if(d.has('up')) dy--;
+    if(d.has('down')) dy++;
+    return {dx,dy};
+  }
+
+  function render(moving,running){
+    drawFloor();
+    ctx.save();
+    ctx.globalAlpha=.18;ctx.fillStyle='#182015';ctx.beginPath();ctx.ellipse(x,y+30,35,13,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    if(sprite.complete && sprite.naturalWidth){
+      const row = rows[running?'run':'walk'][dir];
+      const f = moving ? animFrame : 0;
+      const size = 128;
+      ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(sprite, f*32, row*32, 32, 32, Math.round(x-size/2), Math.round(y-size+32), size, size);
+    }
+    motionEl.textContent = moving ? (running?'뛰기':'걷기') : '대기';
+    directionEl.textContent = dirLabel[dir];
+    frameEl.textContent = moving ? animFrame : 0;
+  }
+
+  function loop(now){
+    const dt = Math.min(.05,(now-last)/1000); last=now;
+    let {dx,dy}=movingVector();
+    const moving = dx!==0 || dy!==0;
+    const running = runLock || shift;
+    if(moving){
+      if(dx && dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2}
+      if(Math.abs(dx)>Math.abs(dy)) dir=dx<0?'left':'right'; else if(dy) dir=dy<0?'up':'down';
+      const speed = running ? 260 : 145;
+      x += dx*speed*dt; y += dy*speed*dt;
+      x = Math.max(58,Math.min(canvas.width-58,x));
+      y = Math.max(90,Math.min(canvas.height-40,y));
+      frameClock += dt;
+      const frameTime = running ? .085 : .145;
+      if(frameClock>=frameTime){animFrame=(animFrame+1)%4;frameClock=0}
+    } else {animFrame=0;frameClock=0}
+    render(moving,running);
+    requestAnimationFrame(loop);
+  }
+
+  canvas.addEventListener('pointerdown',()=>canvas.focus());
+  canvas.addEventListener('keydown',e=>{
+    if(keyDir[e.key]){e.preventDefault();keys.add(keyDir[e.key]);dir=keyDir[e.key]}
+    if(e.key==='Shift'){e.preventDefault();shift=true}
+  });
+  canvas.addEventListener('keyup',e=>{
+    if(keyDir[e.key]) keys.delete(keyDir[e.key]);
+    if(e.key==='Shift') shift=false;
+  });
+  canvas.addEventListener('blur',()=>{keys.clear();shift=false});
+
+  document.querySelectorAll('[data-dir]').forEach(btn=>{
+    const d=btn.dataset.dir;
+    const on=e=>{e.preventDefault();touch.add(d);dir=d;btn.classList.add('active');canvas.focus({preventScroll:true})};
+    const off=()=>{touch.delete(d);btn.classList.remove('active')};
+    btn.addEventListener('pointerdown',on);btn.addEventListener('pointerup',off);btn.addEventListener('pointercancel',off);btn.addEventListener('pointerleave',off);
+  });
+
+  runBtn.addEventListener('click',()=>{runLock=!runLock;runBtn.textContent=`뛰기: ${runLock?'ON':'OFF'}`;runBtn.classList.toggle('active',runLock);canvas.focus({preventScroll:true})});
+  resetBtn.addEventListener('click',()=>{x=canvas.width/2;y=canvas.height/2;dir='down';animFrame=0;canvas.focus({preventScroll:true})});
+  sheetBtn.addEventListener('click',()=>{sheetBox.classList.toggle('show');sheetBtn.textContent=sheetBox.classList.contains('show')?'스프라이트 시트 닫기':'스프라이트 시트 보기'});
+
+  sprite.onload=()=>render(false,false);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
