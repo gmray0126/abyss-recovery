@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SD Sprite Movement Test v2</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#15130f;color:#f4efe6;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{display:flex;justify-content:center;padding:16px}.app{width:min(100%,1100px)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}.title{font-weight:900;font-size:18px}.sub{font-size:13px;color:#bcb4a8;margin-top:3px}.badges{display:flex;gap:7px;flex-wrap:wrap}.badge{font-size:12px;padding:7px 10px;border:1px solid #474136;background:#211e19;border-radius:999px}
+.stage{position:relative;overflow:hidden;border:1px solid #4e493f;border-radius:18px;background:#71805d;box-shadow:0 16px 50px rgba(0,0,0,.32)}canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;image-rendering:pixelated;outline:none}.hud,.tip{position:absolute;top:12px;padding:8px 10px;border-radius:11px;background:rgba(20,18,15,.82);border:1px solid rgba(255,255,255,.14);font-size:12px;backdrop-filter:blur(5px)}.hud{left:12px}.tip{right:12px;color:#ddd5c7}.hud b{color:#fff}
+.controls{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin-top:14px}.pad{display:grid;grid-template-columns:60px 60px 60px;grid-template-rows:60px 60px;gap:7px}.pad .up{grid-column:2}.pad .left{grid-column:1}.pad .down{grid-column:2}.pad .right{grid-column:3}button{appearance:none;border:1px solid #4a443a;background:#24211c;color:#f4efe6;border-radius:13px;min-height:48px;padding:0 15px;font-size:14px;font-weight:900;cursor:pointer;user-select:none;-webkit-user-select:none}button:active,.active{background:#766c57!important;border-color:#a19579!important}.actions{display:flex;gap:8px;flex-wrap:wrap}.run{min-width:120px}.note{font-size:12px;color:#aaa195;line-height:1.6;margin-top:12px}.sheetbox{display:none;margin-top:14px;padding:12px;border:1px solid #403b33;border-radius:14px;background:#1e1b17}.sheetbox.show{display:block}.sheetbox img{width:360px;max-width:100%;height:auto;display:block;image-rendering:pixelated;background:repeating-conic-gradient(#302c26 0 25%,#211f1b 0 50%) 0/18px 18px;border-radius:8px}.sheetbox p{font-size:12px;color:#b9b1a5;margin:8px 0 0}
+@media(max-width:650px){body{padding:8px}.tip{display:none}.controls{justify-content:center}.actions{width:100%;justify-content:center}.pad{grid-template-columns:66px 66px 66px;grid-template-rows:66px 66px}}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="top">
+    <div><div class="title">여성형 SD 스프라이트 이동 테스트 v2</div><div class="sub">6프레임 걷기/뛰기 · 알파 누끼 정리본 · 좌우 달리기 보폭 확대</div></div>
+    <div class="badges"><span class="badge">WASD / 방향키</span><span class="badge">Shift = 뛰기</span><span class="badge">6 FPS WALK / 10 FPS RUN</span></div>
+  </div>
+  <div class="stage">
+    <canvas id="game" width="960" height="540" tabindex="0" aria-label="SD 캐릭터 조작 테스트"></canvas>
+    <div class="hud"><b id="motion">대기</b> · <span id="direction">정면</span> · frame <span id="frame">1</span> · 수정 <span id="score">0/5</span></div>
+    <div class="tip">화면 클릭 후 조작 · 노란 수정을 전부 모아보세요</div>
+  </div>
+  <div class="controls">
+    <div class="pad" aria-label="모바일 이동 조작">
+      <button type="button" class="up" data-dir="up">▲</button>
+      <button type="button" class="left" data-dir="left">◀</button>
+      <button type="button" class="down" data-dir="down">▼</button>
+      <button type="button" class="right" data-dir="right">▶</button>
+    </div>
+    <div class="actions">
+      <button type="button" id="runBtn" class="run">뛰기: OFF</button>
+      <button type="button" id="resetBtn">처음부터</button>
+      <button type="button" id="sheetBtn">시트 보기</button>
+    </div>
+  </div>
+  <div class="note">이 페이지는 다른 캐릭터를 대신 그리지 않고 <b>female_motion.png</b>의 실제 프레임만 잘라서 표시합니다. 캐릭터 발 위치를 기준으로 이동시키고, 좌우 달리기도 6프레임을 전부 순환합니다.</div>
+  <section id="sheetBox" class="sheetbox"><img src="./female_motion.png" alt="정리된 여성형 4방향 걷기 뛰기 스프라이트 시트"><p>각 셀 64×64px · 가로 6프레임 × 세로 8방향/상태. 1~4행 걷기(정면/후면/왼쪽/오른쪽), 5~8행 뛰기.</p></section>
+</main>
+<script>
+(()=>{
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+const motionEl=document.getElementById('motion'),dirEl=document.getElementById('direction'),frameEl=document.getElementById('frame'),scoreEl=document.getElementById('score');
+const runBtn=document.getElementById('runBtn'),resetBtn=document.getElementById('resetBtn'),sheetBtn=document.getElementById('sheetBtn'),sheetBox=document.getElementById('sheetBox');
+const sprite=new Image();sprite.src='./female_motion.png';
+const CELL=64, FRAMES=6, DRAW=126;
+const rows={walk:{down:0,up:1,left:2,right:3},run:{down:4,up:5,left:6,right:7}};
+const labels={down:'정면',up:'후면',left:'왼쪽',right:'오른쪽'};
+const keyMap={ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right'};
+const keys=new Set(),touch=new Set();let runLock=false,shift=false,dir='down',anim=0,clock=0,last=performance.now(),x=480,y=300;
+const walls=[{x:145,y:105,w:165,h:30},{x:635,y:115,w:170,h:30},{x:135,y:390,w:190,h:28},{x:620,y:382,w:190,h:28}];
+let gems=[];function newGems(){gems=[{x:190,y:225},{x:755,y:220},{x:470,y:120},{x:480,y:440},{x:735,y:330}].map((g,i)=>({...g,id:i,taken:false}))}
+function reset(){x=480;y=300;dir='down';anim=0;clock=0;newGems();scoreEl.textContent='0/5'}newGems();
+function floor(){ctx.fillStyle='#748460';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.strokeStyle='rgba(35,45,28,.13)';ctx.lineWidth=1;for(let gx=0;gx<=canvas.width;gx+=48){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,canvas.height);ctx.stroke()}for(let gy=0;gy<=canvas.height;gy+=48){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(canvas.width,gy);ctx.stroke()}for(const w of walls){ctx.fillStyle='#4d5942';ctx.fillRect(w.x,w.y,w.w,w.h);ctx.fillStyle='#657258';ctx.fillRect(w.x+4,w.y+4,w.w-8,8)}for(const g of gems){if(g.taken)continue;ctx.save();ctx.translate(g.x,g.y);ctx.rotate(Math.PI/4);ctx.fillStyle='#f1d36b';ctx.fillRect(-8,-8,16,16);ctx.strokeStyle='#5c4b18';ctx.lineWidth=3;ctx.strokeRect(-8,-8,16,16);ctx.restore()}}
+function circleRect(cx,cy,r,o){const qx=Math.max(o.x,Math.min(cx,o.x+o.w)),qy=Math.max(o.y,Math.min(cy,o.y+o.h)),dx=cx-qx,dy=cy-qy;return dx*dx+dy*dy<r*r}
+function canMove(nx,ny){if(nx<42||nx>canvas.width-42||ny<62||ny>canvas.height-34)return false;return !walls.some(w=>circleRect(nx,ny,24,w))}
+function moveVector(){const s=new Set([...keys,...touch]);let dx=0,dy=0;if(s.has('left'))dx--;if(s.has('right'))dx++;if(s.has('up'))dy--;if(s.has('down'))dy++;return{dx,dy}}
+function pickDir(dx,dy){if(Math.abs(dx)>Math.abs(dy))dir=dx<0?'left':'right';else if(dy)dir=dy<0?'up':'down'}
+function drawCharacter(moving,running){if(!sprite.complete||!sprite.naturalWidth)return;const row=rows[running?'run':'walk'][dir],f=moving?anim:0;ctx.save();ctx.globalAlpha=.22;ctx.fillStyle='#172014';ctx.beginPath();ctx.ellipse(x,y+8,28,10,0,0,Math.PI*2);ctx.fill();ctx.restore();ctx.drawImage(sprite,f*CELL,row*CELL,CELL,CELL,x-DRAW/2,y-DRAW+31,DRAW,DRAW)}
+function collect(){let count=0;for(const g of gems){if(!g.taken&&Math.hypot(x-g.x,y-g.y)<30)g.taken=true;if(g.taken)count++}scoreEl.textContent=count+'/5'}
+function render(moving,running){floor();drawCharacter(moving,running);motionEl.textContent=moving?(running?'뛰기':'걷기'):'대기';dirEl.textContent=labels[dir];frameEl.textContent=(moving?anim:0)+1}
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;let{dx,dy}=moveVector();const moving=dx!==0||dy!==0,running=runLock||shift;if(moving){if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2}pickDir(dx,dy);const speed=running?205:112;const nx=x+dx*speed*dt,ny=y+dy*speed*dt;if(canMove(nx,y))x=nx;if(canMove(x,ny))y=ny;clock+=dt;const interval=running?.10:.16;if(clock>=interval){anim=(anim+1)%FRAMES;clock%=interval}collect()}else{anim=0;clock=0}render(moving,running);requestAnimationFrame(loop)}
+canvas.addEventListener('keydown',e=>{if(keyMap[e.key]){e.preventDefault();keys.add(keyMap[e.key]);dir=keyMap[e.key]}if(e.key==='Shift'){e.preventDefault();shift=true}});canvas.addEventListener('keyup',e=>{if(keyMap[e.key])keys.delete(keyMap[e.key]);if(e.key==='Shift')shift=false});canvas.addEventListener('blur',()=>{keys.clear();shift=false});canvas.addEventListener('pointerdown',()=>canvas.focus({preventScroll:true}));
+document.querySelectorAll('[data-dir]').forEach(b=>{const d=b.dataset.dir;const on=e=>{e.preventDefault();touch.add(d);dir=d;b.classList.add('active');canvas.focus({preventScroll:true})};const off=()=>{touch.delete(d);b.classList.remove('active')};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('pointerleave',off)});
+runBtn.addEventListener('click',()=>{runLock=!runLock;runBtn.textContent='뛰기: '+(runLock?'ON':'OFF');runBtn.classList.toggle('active',runLock);canvas.focus({preventScroll:true})});resetBtn.addEventListener('click',()=>{reset();canvas.focus({preventScroll:true})});sheetBtn.addEventListener('click',()=>{sheetBox.classList.toggle('show');sheetBtn.textContent=sheetBox.classList.contains('show')?'시트 닫기':'시트 보기'});
+sprite.onload=()=>{render(false,false);canvas.focus({preventScroll:true})};reset();render(false,false);requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
