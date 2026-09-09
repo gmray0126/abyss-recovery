@@ -16,6 +16,7 @@ var regenerate_button: Button
 func _ready() -> void:
 	board = BoardScript.new()
 	add_child(board)
+	board.generate_map()
 	board.cell_clicked.connect(_on_cell_clicked)
 
 	sera = SeraScript.new()
@@ -57,18 +58,18 @@ func _create_ui() -> void:
 	top.add_child(regenerate_button)
 
 	var left := Panel.new()
-	left.position = Vector2(26, 530)
-	left.size = Vector2(280, 164)
+	left.position = Vector2(20, 150)
+	left.size = Vector2(158, 220)
 	canvas.add_child(left)
 
 	var name := Label.new()
 	name.text = "세라 · 검사"
-	name.position = Vector2(18, 14)
-	name.add_theme_font_size_override("font_size", 24)
+	name.position = Vector2(16, 14)
+	name.add_theme_font_size_override("font_size", 22)
 	left.add_child(name)
 
 	info_label = Label.new()
-	info_label.position = Vector2(20, 54)
+	info_label.position = Vector2(16, 54)
 	info_label.text = "이동력 3\n강/바위 이동 불가\n숲 이동 비용 2\n다리 통행 가능"
 	left.add_child(info_label)
 
