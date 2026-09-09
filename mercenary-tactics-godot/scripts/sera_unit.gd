@@ -6,7 +6,7 @@ var shadow: Polygon2D
 var audio: AudioStreamPlayer
 var moving := false
 var base_sprite_pos := Vector2(0, -40)
-var base_scale := Vector2(0.34, 0.34)
+var base_scale := Vector2(0.64, 0.64)
 
 func setup(texture: Texture2D, clack: AudioStream) -> void:
 	shadow = Polygon2D.new()
