@@ -22,9 +22,6 @@ var top_right := Vector2(988, 150)
 var bottom_right := Vector2(1088, 650)
 var bottom_left := Vector2(192, 650)
 
-func _ready() -> void:
-	generate_map()
-
 func point_at(grid_x: float, grid_y: float) -> Vector2:
 	var u := grid_x / float(SIZE)
 	var v := grid_y / float(SIZE)
@@ -71,31 +68,15 @@ func generate_map(seed_value: int = 0) -> void:
 				terrain[next_row][c] = RIVER
 			row = next_row
 
-	# Bridges only on single-width river columns so they genuinely cross the river.
-	var candidates: Array[int] = []
-	for c in range(1, SIZE - 1):
-		var river_rows: Array[int] = []
-		for r in range(2, 6):
-			if terrain[r][c] == RIVER:
-				river_rows.append(r)
-		if river_rows.size() == 1:
-			candidates.append(c)
-	candidates.shuffle()
-	var bridge_count := min(2, candidates.size())
-	for i in bridge_count:
-		var c := candidates[i]
+	# Two bridge columns. At bends every river cell in the column becomes bridge,
+	# so the crossing always remains passable.
+	var bridge_cols: Array[int] = [1, 2, 3, 4, 5, 6]
+	bridge_cols.shuffle()
+	for i in 2:
+		var c := bridge_cols[i]
 		for r in range(2, 6):
 			if terrain[r][c] == RIVER:
 				terrain[r][c] = BRIDGE
-				break
-
-	# If the river was too bendy, force two safe bridge columns.
-	if bridge_count < 2:
-		for c in [2, 5]:
-			for r in range(2, 6):
-				if terrain[r][c] == RIVER:
-					terrain[r][c] = BRIDGE
-					break
 
 	var free_cells: Array[Vector2i] = []
 	for r in range(2, 6):
