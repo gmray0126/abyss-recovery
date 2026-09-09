@@ -2,13 +2,13 @@ extends Node2D
 
 const BoardScript = preload("res://scripts/board.gd")
 const SeraScript = preload("res://scripts/sera_unit.gd")
-const SERA_TEXTURE = preload("res://assets/sera_sd.png")
-const CLACK_SOUND = preload("res://assets/clack.wav")
+const SERA_TEXTURE: Texture2D = preload("res://assets/sera_sd.png")
+const CLACK_SOUND: AudioStream = preload("res://assets/clack.wav")
 
 var board: TacticalBoard
 var sera: SeraUnit
-var sera_cell := Vector2i(7, 3)
-var move_range := 3
+var sera_cell: Vector2i = Vector2i(7, 3)
+var move_range: int = 3
 var info_label: Label
 var status_label: Label
 var regenerate_button: Button
@@ -16,7 +16,6 @@ var regenerate_button: Button
 func _ready() -> void:
 	board = BoardScript.new()
 	add_child(board)
-	board.generate_map()
 	board.cell_clicked.connect(_on_cell_clicked)
 
 	sera = SeraScript.new()
@@ -29,25 +28,25 @@ func _ready() -> void:
 	_refresh_reachable()
 
 func _create_ui() -> void:
-	var canvas := CanvasLayer.new()
+	var canvas: CanvasLayer = CanvasLayer.new()
 	canvas.layer = 100
 	add_child(canvas)
 
-	var top := Panel.new()
+	var top: Panel = Panel.new()
 	top.position = Vector2(24, 20)
 	top.size = Vector2(1232, 88)
 	canvas.add_child(top)
 
-	var title := Label.new()
+	var title: Label = Label.new()
 	title.text = "흐린 달의 용병단"
 	title.position = Vector2(26, 12)
 	title.add_theme_font_size_override("font_size", 30)
 	top.add_child(title)
 
-	var sub := Label.new()
+	var sub: Label = Label.new()
 	sub.text = "GODOT TACTICAL PROTOTYPE  ·  클릭한 칸으로 세라 이동  ·  R: 전장 재생성"
 	sub.position = Vector2(28, 52)
-	sub.modulate = Color(0.78,0.80,0.78)
+	sub.modulate = Color(0.78, 0.80, 0.78)
 	top.add_child(sub)
 
 	regenerate_button = Button.new()
@@ -57,16 +56,16 @@ func _create_ui() -> void:
 	regenerate_button.pressed.connect(_regenerate)
 	top.add_child(regenerate_button)
 
-	var left := Panel.new()
+	var left: Panel = Panel.new()
 	left.position = Vector2(20, 150)
 	left.size = Vector2(158, 220)
 	canvas.add_child(left)
 
-	var name := Label.new()
-	name.text = "세라 · 검사"
-	name.position = Vector2(16, 14)
-	name.add_theme_font_size_override("font_size", 22)
-	left.add_child(name)
+	var name_label: Label = Label.new()
+	name_label.text = "세라 · 검사"
+	name_label.position = Vector2(16, 14)
+	name_label.add_theme_font_size_override("font_size", 22)
+	left.add_child(name_label)
 
 	info_label = Label.new()
 	info_label.position = Vector2(16, 54)
@@ -81,8 +80,10 @@ func _create_ui() -> void:
 	canvas.add_child(status_label)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
-		_regenerate()
+	if event is InputEventKey:
+		var key_event: InputEventKey = event
+		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_R:
+			_regenerate()
 
 func _on_cell_clicked(cell: Vector2i) -> void:
 	if sera.moving:
