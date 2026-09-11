@@ -12,9 +12,14 @@
     <header class="topbar">
       <div class="brand">
         <div class="brand-mark">☾</div>
-        <div><h1>흐린 달의 용병단</h1><p>TACTICAL PROTOTYPE · WEB V2</p></div>
+        <div>
+          <h1>흐린 달의 용병단</h1>
+          <p>TACTICAL PROTOTYPE · WEB V2</p>
+        </div>
       </div>
-      <div class="top-actions"><button id="regenBtn" class="ghost-btn" type="button">전장 재생성</button></div>
+      <div class="top-actions">
+        <button id="regenBtn" class="ghost-btn" type="button">전장 재생성</button>
+      </div>
     </header>
 
     <main class="game-layout">
@@ -22,16 +27,28 @@
         <div class="portrait-wrap">
           <img id="portraitImg" src="" alt="세라 일러스트" />
           <div class="portrait-shade"></div>
-          <div class="portrait-name"><strong>세라</strong><span>Lv.12 · 검사</span></div>
+          <div class="portrait-name">
+            <strong>세라</strong>
+            <span>Lv.12 · 검사</span>
+          </div>
         </div>
+
         <div class="character-info">
           <div class="hp-row"><span>HP</span><strong>342 / 342</strong></div>
           <div class="hp-track"><div class="hp-fill"></div></div>
+
           <div class="stat-grid">
-            <div><span>공격력</span><strong>48</strong></div><div><span>방어력</span><strong>32</strong></div>
-            <div><span>이동력</span><strong>3</strong></div><div><span>사거리</span><strong>1</strong></div>
+            <div><span>공격력</span><strong>48</strong></div>
+            <div><span>방어력</span><strong>32</strong></div>
+            <div><span>이동력</span><strong>3</strong></div>
+            <div><span>사거리</span><strong>1</strong></div>
           </div>
-          <div class="skill-card"><div class="skill-icon">✦</div><div><strong>돌파</strong><p>전방을 베어내며 진입하는 근접 기술</p></div></div>
+
+          <div class="skill-card">
+            <div class="skill-icon">✦</div>
+            <div><strong>돌파</strong><p>전방을 베어내며 진입하는 근접 기술</p></div>
+          </div>
+
           <div class="action-grid">
             <button id="moveBtn" class="action-btn active" type="button">이동</button>
             <button id="attackBtn" class="action-btn" type="button">공격</button>
@@ -44,15 +61,19 @@
       <section class="battle-stage">
         <div class="stage-frame">
           <canvas id="gameCanvas" width="1200" height="760" aria-label="8x8 전술 전장"></canvas>
-          <div class="stage-badge enemy">ENEMY DEPLOYMENT</div><div class="stage-badge ally">ALLY DEPLOYMENT</div>
+          <div class="stage-badge enemy">ENEMY DEPLOYMENT</div>
+          <div class="stage-badge ally">ALLY DEPLOYMENT</div>
         </div>
-        <div class="status-bar"><div class="status-dot"></div><span id="statusText">세라를 클릭하면 이동 범위와 캐릭터 UI가 열립니다.</span><span class="status-shortcut">ESC 선택 해제 · R 재생성</span></div>
+        <div class="status-bar">
+          <div class="status-dot"></div>
+          <span id="statusText">세라를 클릭하면 이동 범위와 캐릭터 UI가 열립니다.</span>
+          <span class="status-shortcut">ESC 선택 해제 · R 재생성</span>
+        </div>
       </section>
     </main>
   </div>
+
   <div id="toast" class="toast" role="status"></div>
-  <script src="./chunks/portrait-00.js"></script><script src="./chunks/portrait-01.js"></script><script src="./chunks/portrait-02.js"></script><script src="./chunks/portrait-03.js"></script><script src="./chunks/portrait-04.js"></script><script src="./chunks/portrait-05.js"></script><script src="./chunks/portrait-06.js"></script><script src="./chunks/portrait-07.js"></script><script src="./chunks/portrait-08.js"></script><script src="./chunks/portrait-09.js"></script>
-  <script src="./chunks/board-00.js"></script><script src="./chunks/board-01.js"></script><script src="./chunks/board-02.js"></script><script src="./chunks/board-03.js"></script><script src="./chunks/board-04.js"></script>
   <script src="./assets-final.js"></script>
   <script type="module" src="./game.js"></script>
 </body>
