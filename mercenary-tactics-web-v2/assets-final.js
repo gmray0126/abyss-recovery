@@ -1,0 +1,1 @@
+window.MT_ASSETS={seraPortrait:"data:image/webp;base64,"+window._MTP,seraBoard:"data:image/webp;base64,"+window._MTB};delete window._MTP;delete window._MTB;
