@@ -1,1 +1,1 @@
-document.write('<script src="../mercenary-tactics/assets1.js?v=sera-restore"><\/script><script>window.MT_ASSETS={seraPortrait:window.ASSET.s,seraBoard:"../mercenary-tactics/sera_sd_board.png?v=sera-restore"};<\/script>');
+window.MT_ASSETS={seraPortrait:"data:image/webp;base64,"+(window._MTP||""),seraBoard:"../mercenary-tactics/sera_sd_board.png?v=hq-portrait-20260914"};
