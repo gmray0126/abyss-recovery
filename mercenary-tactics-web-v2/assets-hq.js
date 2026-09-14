@@ -1,0 +1,1 @@
+window.MT_ASSETS={seraPortrait:"./sera_portrait_hq.webp?v=hq-direct-20260914",seraBoard:"./sera_board_hq.webp?v=hq-direct-20260914"};
