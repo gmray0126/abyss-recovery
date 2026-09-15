@@ -321,6 +321,14 @@
     };
   }
 
+  if(heroEl){
+    heroEl.addEventListener('pointerdown',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      selectHero();
+    });
+  }
+
   canvas.addEventListener('pointerdown',e=>{
     if(hero.moving) return;
     const p=canvasCoordsFromEvent(e);
