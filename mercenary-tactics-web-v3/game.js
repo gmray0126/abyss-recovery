@@ -42,9 +42,6 @@
     return out;
   }
 
-  // River rule: begin at the left edge, always progress right,
-  // and when changing rows first carve a vertical connector in the same column.
-  // This guarantees one orthogonally connected river from left to right.
   function carveConnectedRiver(){
     riverPath=[];
     let r=2+Math.floor(Math.random()*4);
