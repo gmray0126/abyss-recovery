@@ -2,7 +2,14 @@
   const canvas = document.querySelector('#board');
   const ctx = canvas.getContext('2d');
   const regen = document.querySelector('#regen');
+  const wrap = document.querySelector('.canvas-wrap');
   const heroEl = document.querySelector('.hero-piece');
+
+  const mageEl = document.createElement('div');
+  mageEl.className = 'mage-piece';
+  mageEl.setAttribute('aria-label','아군 별빛 마법사 말');
+  mageEl.innerHTML = '<span class="piece-ring"></span><img src="./assets/mage_star.webp" alt="별빛 마법사" />';
+  wrap.appendChild(mageEl);
 
   const N = 8;
   const T = { GROUND:0, RIVER:1, BRIDGE:2, FOREST:3, ROCK:4 };
@@ -15,7 +22,12 @@
   let phase = 0;
   let reachable = new Map();
   let parents = new Map();
-  const hero = { r:6, c:3, move:3, selected:false, moving:false };
+  let activeUnit = null;
+
+  const units = [
+    { id:'hero', el:heroEl, r:6, c:3, startR:6, startC:3, move:3, selected:false, moving:false },
+    { id:'mage', el:mageEl, r:7, c:4, startR:7, startC:4, move:3, selected:false, moving:false }
+  ];
 
   const lerp = (a,b,t) => a + (b-a)*t;
   const mix = (a,b,t) => ({x:lerp(a.x,b.x,t),y:lerp(a.y,b.y,t)});
@@ -92,20 +104,30 @@
     for(let i=0;i<5&&open.length;i++){const p=open.pop();map[p.r][p.c]=T.ROCK;}
   }
 
+  function clearSelection(){
+    activeUnit=null;
+    reachable.clear();
+    parents.clear();
+    for(const unit of units){ unit.selected=false; updateUnitState(unit); }
+  }
+
   function generate(){
     map=Array.from({length:N},()=>Array(N).fill(T.GROUND));
     carveConnectedRiver();
     addBridges();
     addScenery();
-    hero.r=6;
-    hero.c=3;
-    hero.selected=false;
-    hero.moving=false;
-    map[hero.r][hero.c]=T.GROUND;
+    for(const unit of units){
+      unit.r=unit.startR;
+      unit.c=unit.startC;
+      unit.selected=false;
+      unit.moving=false;
+      map[unit.r][unit.c]=T.GROUND;
+      syncUnitToCell(unit);
+      updateUnitState(unit);
+    }
+    activeUnit=null;
     reachable.clear();
     parents.clear();
-    syncHeroToCell();
-    updateHeroState();
   }
 
   function drawBackdrop(){
@@ -150,17 +172,17 @@
   }
 
   function drawMovementOverlay(){
-    if(!hero.selected || hero.moving) return;
+    if(!activeUnit || !activeUnit.selected || activeUnit.moving) return;
 
     for(const k of reachable.keys()){
       const [r,c]=k.split(',').map(Number);
-      if(r===hero.r && c===hero.c) continue;
+      if(r===activeUnit.r && c===activeUnit.c) continue;
       const p=poly(r,c);
       fill(p,'rgba(100,210,235,.26)');
       stroke(p,'rgba(146,232,250,.88)',2.4);
     }
 
-    const current=poly(hero.r,hero.c);
+    const current=poly(activeUnit.r,activeUnit.c);
     fill(current,'rgba(235,204,92,.20)');
     stroke(current,'rgba(245,219,117,.92)',2.8);
   }
@@ -186,19 +208,23 @@
     stroke(outline,'rgba(191,199,181,.22)',2);
   }
 
-  function moveCost(r,c){
+  function unitAt(r,c){ return units.find(unit=>unit.r===r&&unit.c===c); }
+
+  function moveCost(r,c,unit){
     const t=map[r][c];
     if(t===T.RIVER || t===T.ROCK) return Infinity;
+    const occupying=unitAt(r,c);
+    if(occupying && occupying!==unit) return Infinity;
     if(t===T.FOREST) return 2;
     return 1;
   }
 
-  function computeReachable(){
+  function computeReachable(unit){
     reachable=new Map();
     parents=new Map();
-    const startKey=key(hero.r,hero.c);
+    const startKey=key(unit.r,unit.c);
     reachable.set(startKey,0);
-    const queue=[{r:hero.r,c:hero.c,cost:0}];
+    const queue=[{r:unit.r,c:unit.c,cost:0}];
 
     while(queue.length){
       queue.sort((a,b)=>a.cost-b.cost);
@@ -208,10 +234,10 @@
       for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){
         const nr=cur.r+dr,nc=cur.c+dc;
         if(nr<0||nr>=N||nc<0||nc>=N) continue;
-        const step=moveCost(nr,nc);
+        const step=moveCost(nr,nc,unit);
         if(!Number.isFinite(step)) continue;
         const nextCost=cur.cost+step;
-        if(nextCost>hero.move) continue;
+        if(nextCost>unit.move) continue;
         const nk=key(nr,nc);
         if(!reachable.has(nk) || nextCost<reachable.get(nk)){
           reachable.set(nk,nextCost);
@@ -222,12 +248,12 @@
     }
   }
 
-  function buildPath(targetR,targetC){
+  function buildPath(unit,targetR,targetC){
     const targetKey=key(targetR,targetC);
-    if(!reachable.has(targetKey) || (targetR===hero.r&&targetC===hero.c)) return [];
+    if(!reachable.has(targetKey) || (targetR===unit.r&&targetC===unit.c)) return [];
     const path=[];
     let cur={r:targetR,c:targetC};
-    while(cur.r!==hero.r || cur.c!==hero.c){
+    while(cur.r!==unit.r || cur.c!==unit.c){
       path.unshift(cur);
       const prev=parents.get(key(cur.r,cur.c));
       if(!prev) return [];
@@ -255,26 +281,26 @@
     return null;
   }
 
-  function setHeroVisualPosition(x,y){
-    if(!heroEl) return;
-    heroEl.style.left=`${x/canvas.width*100}%`;
-    heroEl.style.top=`${y/canvas.height*100}%`;
+  function setUnitVisualPosition(unit,x,y){
+    if(!unit.el) return;
+    unit.el.style.left=`${x/canvas.width*100}%`;
+    unit.el.style.top=`${y/canvas.height*100}%`;
   }
 
-  function syncHeroToCell(){
-    const p=center(hero.r,hero.c);
-    setHeroVisualPosition(p.x,p.y);
+  function syncUnitToCell(unit){
+    const p=center(unit.r,unit.c);
+    setUnitVisualPosition(unit,p.x,p.y);
   }
 
-  function updateHeroState(){
-    if(!heroEl) return;
-    heroEl.classList.toggle('selected',hero.selected);
-    heroEl.classList.toggle('moving',hero.moving);
+  function updateUnitState(unit){
+    if(!unit.el) return;
+    unit.el.classList.toggle('selected',unit.selected);
+    unit.el.classList.toggle('moving',unit.moving);
   }
 
-  function animateStep(nextCell){
+  function animateStep(unit,nextCell){
     return new Promise(resolve=>{
-      const from=center(hero.r,hero.c);
+      const from=center(unit.r,unit.c);
       const to=center(nextCell.r,nextCell.c);
       const duration=190;
       const started=performance.now();
@@ -283,34 +309,38 @@
         const raw=Math.min(1,(now-started)/duration);
         const t=1-Math.pow(1-raw,3);
         const hop=Math.sin(Math.PI*raw)*11;
-        setHeroVisualPosition(lerp(from.x,to.x,t),lerp(from.y,to.y,t)-hop);
+        setUnitVisualPosition(unit,lerp(from.x,to.x,t),lerp(from.y,to.y,t)-hop);
         if(raw<1){ requestAnimationFrame(tick); return; }
-        hero.r=nextCell.r;
-        hero.c=nextCell.c;
-        syncHeroToCell();
+        unit.r=nextCell.r;
+        unit.c=nextCell.c;
+        syncUnitToCell(unit);
         resolve();
       }
       requestAnimationFrame(tick);
     });
   }
 
-  async function moveHero(path){
-    if(!path.length || hero.moving) return;
-    hero.moving=true;
-    hero.selected=false;
+  async function moveUnit(unit,path){
+    if(!path.length || unit.moving) return;
+    unit.moving=true;
+    unit.selected=false;
     reachable.clear();
     parents.clear();
-    updateHeroState();
-    for(const cell of path) await animateStep(cell);
-    hero.moving=false;
-    updateHeroState();
+    updateUnitState(unit);
+    for(const cell of path) await animateStep(unit,cell);
+    unit.moving=false;
+    activeUnit=null;
+    updateUnitState(unit);
   }
 
-  function selectHero(){
-    if(hero.moving) return;
-    hero.selected=true;
-    computeReachable();
-    updateHeroState();
+  function selectUnit(unit){
+    if(units.some(u=>u.moving)) return;
+    for(const other of units){
+      other.selected=other===unit;
+      updateUnitState(other);
+    }
+    activeUnit=unit;
+    computeReachable(unit);
   }
 
   function canvasCoordsFromEvent(e){
@@ -321,40 +351,37 @@
     };
   }
 
-  if(heroEl){
-    heroEl.addEventListener('pointerdown',e=>{
+  for(const unit of units){
+    if(!unit.el) continue;
+    unit.el.addEventListener('pointerdown',e=>{
       e.preventDefault();
       e.stopPropagation();
-      selectHero();
+      selectUnit(unit);
     });
   }
 
   canvas.addEventListener('pointerdown',e=>{
-    if(hero.moving) return;
+    if(units.some(u=>u.moving)) return;
     const p=canvasCoordsFromEvent(e);
     const cell=cellAtCanvasPoint(p.x,p.y);
     if(!cell) return;
 
-    if(cell.r===hero.r && cell.c===hero.c){
-      selectHero();
+    const clickedUnit=unitAt(cell.r,cell.c);
+    if(clickedUnit){
+      selectUnit(clickedUnit);
       return;
     }
 
-    if(hero.selected && reachable.has(key(cell.r,cell.c))){
-      const path=buildPath(cell.r,cell.c);
-      moveHero(path);
+    if(activeUnit && activeUnit.selected && reachable.has(key(cell.r,cell.c))){
+      const path=buildPath(activeUnit,cell.r,cell.c);
+      moveUnit(activeUnit,path);
     }
   });
 
   regen.addEventListener('click',generate);
   window.addEventListener('keydown',e=>{
     if((e.key==='r'||e.key==='R')&&!e.repeat) generate();
-    if(e.key==='Escape'&&!hero.moving){
-      hero.selected=false;
-      reachable.clear();
-      parents.clear();
-      updateHeroState();
-    }
+    if(e.key==='Escape'&&!units.some(u=>u.moving)) clearSelection();
   });
 
   function frame(now){
