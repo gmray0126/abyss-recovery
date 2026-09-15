@@ -1,295 +1,557 @@
-(() => {
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  const statusText = document.getElementById('statusText');
-  const regenBtn = document.getElementById('regenBtn');
-  const waitBtn = document.getElementById('waitBtn');
-  const moveBtn = document.getElementById('moveBtn');
-  const boardImg = new Image();
-  boardImg.src = './assets/sera_board.webp?v=sera-art-1';
+const canvas = document.querySelector('#game');
+const ctx = canvas.getContext('2d');
+const statusText = document.querySelector('#statusText');
+const regenBtn = document.querySelector('#regenBtn');
+const waitBtn = document.querySelector('#waitBtn');
 
-  const COLS = 8;
-  const ROWS = 8;
-  const tileW = 112;
-  const tileH = 64;
-  const originX = 130;
-  const originY = 130;
+const SIZE = 8;
+const PLAIN = 0;
+const RIVER = 1;
+const BRIDGE = 2;
+const FOREST = 3;
+const ROCK = 4;
 
-  const terrainColors = {
-    plain: '#8f9278',
-    forest: '#76886b',
-    rock: '#6c6c65',
-    river: '#4297c5',
-    bridge: '#4790bb'
+const corners = {
+  tl: { x: 155, y: 125 },
+  tr: { x: 1045, y: 125 },
+  br: { x: 1150, y: 690 },
+  bl: { x: 50, y: 690 },
+};
+
+let terrain = [];
+let unit = { r: 7, c: 3 };
+let selected = false;
+let reachable = new Map();
+let hover = null;
+let anim = null;
+let pulse = 0;
+let audioCtx = null;
+
+const lerp = (a, b, t) => a + (b - a) * t;
+const mixPoint = (a, b, t) => ({ x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) });
+const key = (r, c) => `${r},${c}`;
+const inBounds = (r, c) => r >= 0 && r < SIZE && c >= 0 && c < SIZE;
+const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+
+function pointAt(gx, gy) {
+  const u = gx / SIZE;
+  const v = gy / SIZE;
+  const top = mixPoint(corners.tl, corners.tr, u);
+  const bottom = mixPoint(corners.bl, corners.br, u);
+  return mixPoint(top, bottom, v);
+}
+
+function cellPoly(r, c) {
+  return [pointAt(c, r), pointAt(c + 1, r), pointAt(c + 1, r + 1), pointAt(c, r + 1)];
+}
+
+function cellCenter(r, c) {
+  const p = cellPoly(r, c);
+  return {
+    x: (p[0].x + p[1].x + p[2].x + p[3].x) / 4,
+    y: (p[0].y + p[1].y + p[2].y + p[3].y) / 4,
   };
+}
 
-  let unit = { col: 4, row: 6, move: 3, selected: true, moving: false, px: 0, py: 0, tx: 0, ty: 0 };
-  let hoverCell = null;
-  let reachable = new Set();
-  let parents = new Map();
-  let grid = [];
-
-  function key(c, r) { return `${c},${r}`; }
-  function inBounds(c, r) { return c >= 0 && c < COLS && r >= 0 && r < ROWS; }
-  function tileTopLeft(c, r) { return { x: originX + c * tileW * 0.9, y: originY + r * tileH * 0.82 }; }
-  function tileCenter(c, r) { const p = tileTopLeft(c, r); return { x: p.x + tileW / 2, y: p.y + tileH / 2 }; }
-  function tilePolygon(c, r) {
-    const p = tileTopLeft(c, r); return [
-      { x: p.x, y: p.y + 8 },
-      { x: p.x + tileW - 4, y: p.y },
-      { x: p.x + tileW, y: p.y + tileH - 12 },
-      { x: p.x + 8, y: p.y + tileH }
-    ];
+function shuffle(arr) {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
   }
-  function pointInPoly(x, y, poly) {
-    let inside = false;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      const xi = poly[i].x, yi = poly[i].y;
-      const xj = poly[j].x, yj = poly[j].y;
-      const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-9) + xi);
-      if (intersect) inside = !inside;
+  return out;
+}
+
+function generateMap() {
+  terrain = Array.from({ length: SIZE }, () => Array(SIZE).fill(PLAIN));
+
+  let row = rand(2, 5);
+  const riverCells = [];
+  for (let c = 0; c < SIZE; c++) {
+    terrain[row][c] = RIVER;
+    riverCells.push({ r: row, c });
+    if (c < SIZE - 1) {
+      const roll = Math.random();
+      let next = row;
+      if (roll < 0.28) next = Math.max(2, row - 1);
+      else if (roll > 0.72) next = Math.min(5, row + 1);
+      if (next !== row) {
+        terrain[next][c] = RIVER;
+        riverCells.push({ r: next, c });
+      }
+      row = next;
     }
-    return inside;
   }
-  function findCellAt(x, y) {
-    for (let r = ROWS - 1; r >= 0; r--) {
-      for (let c = COLS - 1; c >= 0; c--) {
-        if (pointInPoly(x, y, tilePolygon(c, r))) return { col: c, row: r };
+
+  const bridgeCols = shuffle([1, 2, 3, 4, 5, 6]).slice(0, 2);
+  for (const c of bridgeCols) {
+    for (let r = 2; r <= 5; r++) {
+      if (terrain[r][c] === RIVER) terrain[r][c] = BRIDGE;
+    }
+  }
+
+  let open = [];
+  for (let r = 2; r <= 5; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      if (terrain[r][c] === PLAIN) open.push({ r, c });
+    }
+  }
+  open = shuffle(open);
+  for (let i = 0; i < 7 && open.length; i++) {
+    const p = open.pop();
+    terrain[p.r][p.c] = FOREST;
+  }
+  for (let i = 0; i < 4 && open.length; i++) {
+    const p = open.pop();
+    terrain[p.r][p.c] = ROCK;
+  }
+
+  unit = { r: 7, c: 3 };
+  selected = false;
+  reachable.clear();
+  anim = null;
+  setStatus('가운데 세라 말을 클릭해서 시작하세요.');
+}
+
+function passable(r, c) {
+  return inBounds(r, c) && terrain[r][c] !== RIVER && terrain[r][c] !== ROCK;
+}
+
+function moveCost(r, c) {
+  return terrain[r][c] === FOREST ? 2 : 1;
+}
+
+function findPath(start, goal, maxCost = 3) {
+  if (!passable(goal.r, goal.c)) return [];
+  if (start.r === goal.r && start.c === goal.c) return [];
+
+  const frontier = [{ ...start, cost: 0 }];
+  const best = new Map([[key(start.r, start.c), 0]]);
+  const parent = new Map();
+  const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+
+  while (frontier.length) {
+    frontier.sort((a, b) => a.cost - b.cost);
+    const cur = frontier.shift();
+    if (cur.r === goal.r && cur.c === goal.c) break;
+
+    for (const [dr, dc] of dirs) {
+      const nr = cur.r + dr;
+      const nc = cur.c + dc;
+      if (!passable(nr, nc)) continue;
+      const nextCost = cur.cost + moveCost(nr, nc);
+      if (nextCost > maxCost) continue;
+      const k = key(nr, nc);
+      if (!best.has(k) || nextCost < best.get(k)) {
+        best.set(k, nextCost);
+        parent.set(k, { r: cur.r, c: cur.c });
+        frontier.push({ r: nr, c: nc, cost: nextCost });
       }
     }
-    return null;
   }
 
-  function makeGrid() {
-    grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => 'plain'));
-    let riverRow = 2 + Math.floor(Math.random() * 2);
-    for (let c = 0; c < COLS; c++) {
-      if (Math.random() < 0.33 && c > 0 && c < COLS - 1) riverRow += Math.random() < 0.5 ? -1 : 1;
-      riverRow = Math.max(2, Math.min(4, riverRow));
-      grid[riverRow][c] = 'river';
-      if (Math.random() < 0.35 && riverRow + 1 < ROWS) grid[riverRow + 1][c] = 'river';
-    }
-    const bridgeCols = [1 + Math.floor(Math.random() * 2), 4 + Math.floor(Math.random() * 2)];
-    for (const c of bridgeCols) {
-      for (let r = 0; r < ROWS; r++) if (grid[r][c] === 'river') grid[r][c] = 'bridge';
-    }
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (grid[r][c] !== 'plain') continue;
-        const n = Math.random();
-        if (n < 0.12) grid[r][c] = 'forest';
-        else if (n < 0.18) grid[r][c] = 'rock';
-      }
-    }
-    unit.col = 4; unit.row = 6; unit.selected = true; unit.moving = false;
-    const ctr = tileCenter(unit.col, unit.row); unit.px = ctr.x; unit.py = ctr.y;
-    computeReachable();
-  }
+  const goalKey = key(goal.r, goal.c);
+  if (!best.has(goalKey)) return [];
 
-  function moveCost(type) {
-    if (type === 'river' || type === 'rock') return Infinity;
-    if (type === 'forest') return 2;
-    return 1;
+  const path = [];
+  let cur = { ...goal };
+  while (cur.r !== start.r || cur.c !== start.c) {
+    path.unshift({ ...cur });
+    cur = parent.get(key(cur.r, cur.c));
   }
+  return path;
+}
 
-  function computeReachable() {
-    reachable = new Set([key(unit.col, unit.row)]);
-    parents = new Map();
-    const costs = new Map([[key(unit.col, unit.row), 0]]);
-    const queue = [{ c: unit.col, r: unit.row, cost: 0 }];
-    while (queue.length) {
-      queue.sort((a, b) => a.cost - b.cost);
-      const cur = queue.shift();
-      const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-      for (const [dc, dr] of dirs) {
-        const nc = cur.c + dc, nr = cur.r + dr;
-        if (!inBounds(nc, nr)) continue;
-        const cost = moveCost(grid[nr][nc]);
-        if (!Number.isFinite(cost)) continue;
-        const next = cur.cost + cost;
-        const nk = key(nc, nr);
-        if (next > unit.move) continue;
-        if (!costs.has(nk) || next < costs.get(nk)) {
-          costs.set(nk, next);
-          reachable.add(nk);
-          parents.set(nk, key(cur.c, cur.r));
-          queue.push({ c: nc, r: nr, cost: next });
-        }
-      }
+function refreshReachable() {
+  reachable.clear();
+  if (!selected) return;
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      const path = findPath(unit, { r, c }, 3);
+      if (path.length) reachable.set(key(r, c), path);
     }
   }
+}
 
-  function reconstructPath(destC, destR) {
-    const path = [];
-    let current = key(destC, destR);
-    if (!reachable.has(current)) return path;
-    while (current !== key(unit.col, unit.row)) {
-      const [c, r] = current.split(',').map(Number);
-      path.unshift({ c, r });
-      current = parents.get(current);
-      if (!current) break;
-    }
-    return path;
+function selectUnit(value) {
+  selected = value;
+  if (selected) {
+    refreshReachable();
+    setStatus('세라 선택됨 · 푸른 칸을 클릭하면 이동합니다.');
+  } else {
+    reachable.clear();
+    setStatus('선택 해제 · 세라 말을 클릭하세요.');
+  }
+}
+
+function moveUnit(target) {
+  const path = reachable.get(key(target.r, target.c));
+  if (!path || anim) return;
+  reachable.clear();
+  anim = {
+    path,
+    index: 0,
+    from: { ...unit },
+    started: performance.now(),
+    duration: 180,
+  };
+  setStatus(`${cellName(unit)} → ${cellName(target)} 이동 중…`);
+}
+
+function cellName(cell) {
+  return `${'ABCDEFGH'[cell.c]}${8 - cell.r}`;
+}
+
+function currentUnit(now) {
+  if (!anim) {
+    const p = cellCenter(unit.r, unit.c);
+    return { x: p.x, y: p.y, hop: 0, squash: 0 };
   }
 
-  function animateMove(path) {
-    if (!path.length) return;
-    unit.moving = true;
-    let step = 0;
-    function nextStep() {
-      if (step >= path.length) {
-        unit.moving = false;
-        computeReachable();
-        statusText.textContent = '세라가 이동했습니다. 다른 칸도 테스트해보세요.';
-        draw();
-        return;
-      }
-      const target = path[step];
-      const start = tileCenter(unit.col, unit.row);
-      const end = tileCenter(target.c, target.r);
-      const duration = 220;
-      const startTime = performance.now();
-      function frame(now) {
-        const t = Math.min(1, (now - startTime) / duration);
-        const ease = 1 - Math.pow(1 - t, 3);
-        unit.px = start.x + (end.x - start.x) * ease;
-        unit.py = start.y + (end.y - start.y) * ease - Math.sin(ease * Math.PI) * 12;
-        draw();
-        if (t < 1) requestAnimationFrame(frame);
-        else {
-          unit.col = target.c; unit.row = target.r;
-          unit.px = end.x; unit.py = end.y;
-          step += 1; nextStep();
-        }
-      }
-      requestAnimationFrame(frame);
-    }
-    nextStep();
-  }
+  const target = anim.path[anim.index];
+  const raw = Math.min(1, (now - anim.started) / anim.duration);
+  const t = raw < 0.5 ? 2 * raw * raw : 1 - Math.pow(-2 * raw + 2, 2) / 2;
+  const a = cellCenter(anim.from.r, anim.from.c);
+  const b = cellCenter(target.r, target.c);
+  const pos = mixPoint(a, b, t);
+  const hop = Math.sin(Math.PI * raw) * 12;
+  const squash = raw > 0.84 ? Math.sin(((raw - 0.84) / 0.16) * Math.PI) * 0.08 : 0;
 
-  function drawTile(c, r) {
-    const poly = tilePolygon(c, r);
-    const type = grid[r][c];
-    ctx.beginPath();
-    ctx.moveTo(poly[0].x, poly[0].y);
-    for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i].x, poly[i].y);
-    ctx.closePath();
-    ctx.fillStyle = terrainColors[type];
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(24,34,30,0.55)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    if (type === 'river') {
-      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-      ctx.lineWidth = 1.4;
-      for (let i = 0; i < 3; i++) {
-        ctx.beginPath();
-        const p = tileTopLeft(c, r);
-        ctx.moveTo(p.x + 22, p.y + 20 + i * 7);
-        ctx.quadraticCurveTo(p.x + 48, p.y + 16 + i * 7, p.x + 74, p.y + 20 + i * 7);
-        ctx.stroke();
-      }
-    }
-    if (type === 'bridge') {
-      const p = tileTopLeft(c, r);
-      ctx.fillStyle = '#a97a46';
-      ctx.fillRect(p.x + 18, p.y + 22, tileW - 34, 12);
-      ctx.fillStyle = '#87704f';
-      for (let i = 0; i < 6; i++) ctx.fillRect(p.x + 22 + i * 13, p.y + 21, 8, 14);
-    }
-    if (type === 'forest') {
-      const p = tileTopLeft(c, r);
-      ctx.fillStyle = '#395842';
-      const trees = [[30,40],[46,28],[61,38]];
-      trees.forEach(([dx, dy]) => {
-        ctx.beginPath(); ctx.moveTo(p.x+dx, p.y+dy-18); ctx.lineTo(p.x+dx-10, p.y+dy+2); ctx.lineTo(p.x+dx+10, p.y+dy+2); ctx.closePath(); ctx.fill();
-        ctx.fillRect(p.x+dx-1.5, p.y+dy+2, 3, 8);
-      });
-    }
-    if (type === 'rock') {
-      const p = tileTopLeft(c, r);
-      ctx.fillStyle = '#c1c5ba';
-      ctx.beginPath();
-      ctx.moveTo(p.x + 42, p.y + 40); ctx.lineTo(p.x + 53, p.y + 28); ctx.lineTo(p.x + 68, p.y + 31); ctx.lineTo(p.x + 75, p.y + 44); ctx.lineTo(p.x + 66, p.y + 52); ctx.lineTo(p.x + 47, p.y + 50); ctx.closePath();
-      ctx.fill();
-    }
-    const k = key(c, r);
-    if (unit.selected && reachable.has(k) && k !== key(unit.col, unit.row)) {
-      ctx.fillStyle = 'rgba(139, 238, 255, 0.22)';
-      ctx.beginPath(); ctx.moveTo(poly[0].x, poly[0].y); for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i].x, poly[i].y); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = 'rgba(132, 230, 255, 0.8)'; ctx.lineWidth = 2; ctx.stroke();
-    }
-    if (hoverCell && hoverCell.col === c && hoverCell.row === r) {
-      ctx.strokeStyle = 'rgba(246, 224, 145, 0.92)';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-    }
-  }
-
-  function drawUnit() {
-    const x = unit.px || tileCenter(unit.col, unit.row).x;
-    const y = unit.py || tileCenter(unit.col, unit.row).y;
-    ctx.beginPath();
-    ctx.ellipse(x, y + 20, 28, 10, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(203,179,109,0.65)';
-    ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(226, 203, 112, 0.8)';
-    ctx.stroke();
-
-    if (boardImg.complete && boardImg.naturalWidth > 0) {
-      const h = 152;
-      const w = h * (boardImg.naturalWidth / boardImg.naturalHeight);
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(boardImg, x - w / 2, y - h + 12, w, h);
+  if (raw >= 1) {
+    unit = { ...target };
+    clack();
+    anim.index++;
+    if (anim.index >= anim.path.length) {
+      anim = null;
+      refreshReachable();
+      setStatus(`${cellName(unit)} 도착 · 계속 선택된 상태입니다.`);
     } else {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(x - 22, y - 52, 44, 52);
+      anim.from = { ...target };
+      anim.started = now;
     }
   }
 
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) drawTile(c, r);
-    drawUnit();
-  }
+  return { x: pos.x, y: pos.y, hop, squash };
+}
 
-  function onPointer(ev) {
-    const rect = canvas.getBoundingClientRect();
-    const x = (ev.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (ev.clientY - rect.top) * (canvas.height / rect.height);
-    const cell = findCellAt(x, y);
-    hoverCell = cell;
-    if (!cell || unit.moving) { draw(); return; }
-    if (ev.type === 'pointerdown') {
-      const center = tileCenter(unit.col, unit.row);
-      const dist = Math.hypot(x - center.x, y - center.y);
-      if (dist < 60) {
-        unit.selected = true;
-        computeReachable();
-        statusText.textContent = '이동할 칸을 선택하세요.';
-      } else if (unit.selected && reachable.has(key(cell.col, cell.row))) {
-        const path = reconstructPath(cell.col, cell.row);
-        statusText.textContent = '세라가 이동 중입니다.';
-        animateMove(path);
+function setStatus(text) {
+  statusText.textContent = text;
+}
+
+function clack() {
+  try {
+    audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+    const gain = audioCtx.createGain();
+    const osc = audioCtx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(180 + Math.random() * 28, now);
+    osc.frequency.exponentialRampToValueAtTime(95, now + 0.055);
+    gain.gain.setValueAtTime(0.045, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.065);
+  } catch {}
+}
+
+function fillPoly(points, color) {
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function strokePoly(points, color, width = 1) {
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+  ctx.closePath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.stroke();
+}
+
+function drawBackdrop() {
+  const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  g.addColorStop(0, '#111813');
+  g.addColorStop(0.55, '#0a0f0c');
+  g.addColorStop(1, '#060906');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const glow = ctx.createRadialGradient(910, 70, 0, 910, 70, 250);
+  glow.addColorStop(0, 'rgba(220,225,205,.13)');
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(620, -100, 580, 430);
+}
+
+function drawBoard() {
+  const outline = [corners.tl, corners.tr, corners.br, corners.bl];
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.58)';
+  ctx.shadowBlur = 34;
+  ctx.shadowOffsetY = 22;
+  fillPoly(outline, '#151c18');
+  ctx.restore();
+
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      const poly = cellPoly(r, c);
+      const type = terrain[r][c];
+      let color = (r + c) % 2 ? '#79836d' : '#858d78';
+      if (r <= 1) color = (r + c) % 2 ? '#7b7968' : '#878573';
+      if (r >= 6) color = (r + c) % 2 ? '#718272' : '#7d8c7c';
+      if (type === RIVER || type === BRIDGE) color = '#3f94b0';
+      if (type === FOREST) color = '#526e57';
+      if (type === ROCK) color = '#64675f';
+
+      fillPoly(poly, color);
+      strokePoly(poly, 'rgba(20,28,23,.78)', 1.5);
+
+      const center = cellCenter(r, c);
+      if (type === RIVER || type === BRIDGE) drawWater(center, c);
+      if (type === BRIDGE) drawBridge(poly);
+      if (type === FOREST) drawForest(center);
+      if (type === ROCK) drawRock(center);
+
+      if (reachable.has(key(r, c))) {
+        fillPoly(poly, 'rgba(81,215,235,.27)');
+        strokePoly(poly, 'rgba(137,234,246,.92)', 2.1);
+      }
+
+      if (selected && unit.r === r && unit.c === c) {
+        fillPoly(poly, 'rgba(224,190,94,.18)');
+        strokePoly(poly, 'rgba(244,214,118,.95)', 2.3);
+      }
+
+      if (hover && hover.r === r && hover.c === c) {
+        strokePoly(poly, 'rgba(255,239,182,.98)', 2.4);
       }
     }
-    draw();
+  }
+}
+
+function drawWater(p, seed) {
+  ctx.save();
+  ctx.globalAlpha = 0.22;
+  ctx.strokeStyle = '#d7f4f7';
+  ctx.lineWidth = 1.2;
+  for (let i = -1; i <= 1; i++) {
+    const y = p.y + i * 10 + Math.sin(pulse * 1.5 + seed) * 2;
+    ctx.beginPath();
+    ctx.moveTo(p.x - 26, y);
+    ctx.quadraticCurveTo(p.x, y - 3, p.x + 26, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawBridge(poly) {
+  const left = { x: (poly[0].x + poly[3].x) / 2, y: (poly[0].y + poly[3].y) / 2 };
+  const right = { x: (poly[1].x + poly[2].x) / 2, y: (poly[1].y + poly[2].y) / 2 };
+  ctx.save();
+  ctx.strokeStyle = '#9b7148';
+  ctx.lineWidth = 9;
+  for (let i = 0; i < 6; i++) {
+    const a = mixPoint(left, right, (i + 0.12) / 6);
+    const b = mixPoint(left, right, (i + 0.84) / 6);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawTree(x, y, s) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.fillStyle = '#294936';
+  ctx.beginPath();
+  ctx.moveTo(0, -18);
+  ctx.lineTo(-12, 8);
+  ctx.lineTo(12, 8);
+  ctx.fill();
+  ctx.fillStyle = '#3a6045';
+  ctx.beginPath();
+  ctx.moveTo(0, -11);
+  ctx.lineTo(-10, 12);
+  ctx.lineTo(10, 12);
+  ctx.fill();
+  ctx.fillStyle = '#4a3d2b';
+  ctx.fillRect(-2, 9, 4, 9);
+  ctx.restore();
+}
+
+function drawForest(p) {
+  drawTree(p.x - 13, p.y + 3, 0.86);
+  drawTree(p.x + 5, p.y - 4, 0.72);
+  drawTree(p.x + 19, p.y + 7, 0.55);
+}
+
+function drawRock(p) {
+  const pts = [[-15,7],[-10,-6],[1,-12],[14,-4],[17,8],[6,12],[-8,11]]
+    .map(([x, y]) => ({ x: p.x + x, y: p.y + y }));
+  fillPoly(pts, '#a3a49b');
+  strokePoly(pts, '#4a4e48', 1.4);
+}
+
+function drawUnit(u) {
+  const { x, y, hop, squash } = u;
+  ctx.save();
+
+  const shadowScale = 1 - hop / 58;
+  ctx.fillStyle = 'rgba(0,0,0,.42)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + 10, 34 * shadowScale, 11 * shadowScale, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (selected) {
+    const a = 0.64 + Math.sin(pulse * 4) * 0.2;
+    ctx.strokeStyle = `rgba(246,211,104,${a})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(x, y + 7, 42, 14, 0, 0, Math.PI * 2);
+    ctx.stroke();
   }
 
-  canvas.addEventListener('pointermove', onPointer);
-  canvas.addEventListener('pointerdown', onPointer);
-  regenBtn.addEventListener('click', () => { makeGrid(); statusText.textContent = '전장을 다시 생성했습니다.'; draw(); });
-  waitBtn.addEventListener('click', () => { unit.selected = false; reachable.clear(); statusText.textContent = '선택을 해제했습니다.'; draw(); });
-  moveBtn.addEventListener('click', () => { unit.selected = true; computeReachable(); statusText.textContent = '이동할 칸을 선택하세요.'; draw(); });
-  window.addEventListener('keydown', (ev) => {
-    if (ev.key.toLowerCase() === 'r') { makeGrid(); statusText.textContent = '전장을 다시 생성했습니다.'; draw(); }
-    if (ev.key === 'Escape') { unit.selected = false; reachable.clear(); statusText.textContent = '선택을 해제했습니다.'; draw(); }
-  });
+  ctx.translate(x, y - hop - 8);
+  ctx.scale(1 + squash, 1 - squash * 0.55);
 
-  boardImg.onload = () => draw();
-  makeGrid();
-  draw();
-})();
+  ctx.fillStyle = '#f0edf0';
+  ctx.strokeStyle = '#2a2b30';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, -54, 18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#d9d2dc';
+  ctx.beginPath();
+  ctx.moveTo(-18, -59);
+  ctx.quadraticCurveTo(-28, -80, -5, -81);
+  ctx.quadraticCurveTo(10, -82, 20, -61);
+  ctx.quadraticCurveTo(6, -72, -2, -66);
+  ctx.quadraticCurveTo(-10, -75, -18, -59);
+  ctx.fill();
+
+  ctx.fillStyle = '#202329';
+  ctx.beginPath();
+  ctx.moveTo(-20, -39);
+  ctx.lineTo(20, -39);
+  ctx.lineTo(30, 4);
+  ctx.lineTo(0, 18);
+  ctx.lineTo(-30, 4);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = '#c5a95d';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-8, -35);
+  ctx.lineTo(4, 6);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#e7e7e7';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(17, -30);
+  ctx.lineTo(37, 18);
+  ctx.stroke();
+  ctx.strokeStyle = '#666a70';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(17, -30);
+  ctx.lineTo(37, 18);
+  ctx.stroke();
+
+  ctx.fillStyle = '#f4bfc5';
+  ctx.beginPath();
+  ctx.arc(-6, -55, 2.5, 0, Math.PI * 2);
+  ctx.arc(6, -55, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function pointInPoly(p, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    const hit = ((a.y > p.y) !== (b.y > p.y)) &&
+      (p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x);
+    if (hit) inside = !inside;
+  }
+  return inside;
+}
+
+function pointerCell(evt) {
+  const rect = canvas.getBoundingClientRect();
+  const p = {
+    x: (evt.clientX - rect.left) * canvas.width / rect.width,
+    y: (evt.clientY - rect.top) * canvas.height / rect.height,
+  };
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      if (pointInPoly(p, cellPoly(r, c))) return { r, c };
+    }
+  }
+  return null;
+}
+
+canvas.addEventListener('pointermove', (e) => {
+  hover = pointerCell(e);
+  canvas.style.cursor = hover ? 'pointer' : 'default';
+});
+
+canvas.addEventListener('pointerleave', () => {
+  hover = null;
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  if (anim) return;
+  if (audioCtx?.state === 'suspended') audioCtx.resume();
+  const cell = pointerCell(e);
+  if (!cell) return;
+
+  if (!selected) {
+    if (cell.r === unit.r && cell.c === unit.c) selectUnit(true);
+    else setStatus('세라 말을 먼저 클릭하세요.');
+    return;
+  }
+
+  if (cell.r === unit.r && cell.c === unit.c) {
+    setStatus('세라가 선택되어 있습니다 · 푸른 칸을 클릭하세요.');
+    return;
+  }
+
+  if (reachable.has(key(cell.r, cell.c))) moveUnit(cell);
+  else setStatus('그 칸은 이동력 3 안에서 갈 수 없습니다.');
+});
+
+regenBtn.addEventListener('click', generateMap);
+waitBtn.addEventListener('click', () => selectUnit(false));
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') selectUnit(false);
+  if ((e.key === 'r' || e.key === 'R') && !e.repeat) generateMap();
+});
+
+function frame(now) {
+  pulse = now / 1000;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBackdrop();
+  drawBoard();
+  drawUnit(currentUnit(now));
+  requestAnimationFrame(frame);
+}
+
+generateMap();
+requestAnimationFrame(frame);
