@@ -2,6 +2,7 @@
   const canvas = document.querySelector('#board');
   const ctx = canvas.getContext('2d');
   const regen = document.querySelector('#regen');
+  const heroEl = document.querySelector('.hero-piece');
 
   const N = 8;
   const T = { GROUND:0, RIVER:1, BRIDGE:2, FOREST:3, ROCK:4 };
@@ -12,6 +13,9 @@
   let map = [];
   let riverPath = [];
   let phase = 0;
+  let reachable = new Map();
+  let parents = new Map();
+  const hero = { r:6, c:3, move:3, selected:false, moving:false };
 
   const lerp = (a,b,t) => a + (b-a)*t;
   const mix = (a,b,t) => ({x:lerp(a.x,b.x,t),y:lerp(a.y,b.y,t)});
@@ -93,6 +97,15 @@
     carveConnectedRiver();
     addBridges();
     addScenery();
+    hero.r=6;
+    hero.c=3;
+    hero.selected=false;
+    hero.moving=false;
+    map[hero.r][hero.c]=T.GROUND;
+    reachable.clear();
+    parents.clear();
+    syncHeroToCell();
+    updateHeroState();
   }
 
   function drawBackdrop(){
@@ -136,6 +149,22 @@
     ctx.strokeStyle='#684b32';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(a.x,a.y-7);ctx.lineTo(b.x,b.y-7);ctx.moveTo(a.x,a.y+7);ctx.lineTo(b.x,b.y+7);ctx.stroke();ctx.restore();
   }
 
+  function drawMovementOverlay(){
+    if(!hero.selected || hero.moving) return;
+
+    for(const k of reachable.keys()){
+      const [r,c]=k.split(',').map(Number);
+      if(r===hero.r && c===hero.c) continue;
+      const p=poly(r,c);
+      fill(p,'rgba(100,210,235,.26)');
+      stroke(p,'rgba(146,232,250,.88)',2.4);
+    }
+
+    const current=poly(hero.r,hero.c);
+    fill(current,'rgba(235,204,92,.20)');
+    stroke(current,'rgba(245,219,117,.92)',2.8);
+  }
+
   function drawBoard(){
     const outline=[corners.tl,corners.tr,corners.br,corners.bl];
     ctx.save();ctx.shadowColor='rgba(0,0,0,.62)';ctx.shadowBlur=38;ctx.shadowOffsetY=25;fill(outline,'#111813');ctx.restore();
@@ -153,8 +182,172 @@
       if(t===T.FOREST)drawForest(cp);
       if(t===T.ROCK)drawRock(cp);
     }
+    drawMovementOverlay();
     stroke(outline,'rgba(191,199,181,.22)',2);
   }
+
+  function moveCost(r,c){
+    const t=map[r][c];
+    if(t===T.RIVER || t===T.ROCK) return Infinity;
+    if(t===T.FOREST) return 2;
+    return 1;
+  }
+
+  function computeReachable(){
+    reachable=new Map();
+    parents=new Map();
+    const startKey=key(hero.r,hero.c);
+    reachable.set(startKey,0);
+    const queue=[{r:hero.r,c:hero.c,cost:0}];
+
+    while(queue.length){
+      queue.sort((a,b)=>a.cost-b.cost);
+      const cur=queue.shift();
+      if(cur.cost!==reachable.get(key(cur.r,cur.c))) continue;
+
+      for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){
+        const nr=cur.r+dr,nc=cur.c+dc;
+        if(nr<0||nr>=N||nc<0||nc>=N) continue;
+        const step=moveCost(nr,nc);
+        if(!Number.isFinite(step)) continue;
+        const nextCost=cur.cost+step;
+        if(nextCost>hero.move) continue;
+        const nk=key(nr,nc);
+        if(!reachable.has(nk) || nextCost<reachable.get(nk)){
+          reachable.set(nk,nextCost);
+          parents.set(nk,{r:cur.r,c:cur.c});
+          queue.push({r:nr,c:nc,cost:nextCost});
+        }
+      }
+    }
+  }
+
+  function buildPath(targetR,targetC){
+    const targetKey=key(targetR,targetC);
+    if(!reachable.has(targetKey) || (targetR===hero.r&&targetC===hero.c)) return [];
+    const path=[];
+    let cur={r:targetR,c:targetC};
+    while(cur.r!==hero.r || cur.c!==hero.c){
+      path.unshift(cur);
+      const prev=parents.get(key(cur.r,cur.c));
+      if(!prev) return [];
+      cur=prev;
+    }
+    return path;
+  }
+
+  function pointInPoly(x,y,points){
+    let inside=false;
+    for(let i=0,j=points.length-1;i<points.length;j=i++){
+      const xi=points[i].x,yi=points[i].y,xj=points[j].x,yj=points[j].y;
+      const hit=((yi>y)!==(yj>y)) && (x<(xj-xi)*(y-yi)/((yj-yi)||1e-9)+xi);
+      if(hit) inside=!inside;
+    }
+    return inside;
+  }
+
+  function cellAtCanvasPoint(x,y){
+    for(let r=N-1;r>=0;r--){
+      for(let c=N-1;c>=0;c--){
+        if(pointInPoly(x,y,poly(r,c))) return {r,c};
+      }
+    }
+    return null;
+  }
+
+  function setHeroVisualPosition(x,y){
+    if(!heroEl) return;
+    heroEl.style.left=`${x/canvas.width*100}%`;
+    heroEl.style.top=`${y/canvas.height*100}%`;
+  }
+
+  function syncHeroToCell(){
+    const p=center(hero.r,hero.c);
+    setHeroVisualPosition(p.x,p.y);
+  }
+
+  function updateHeroState(){
+    if(!heroEl) return;
+    heroEl.classList.toggle('selected',hero.selected);
+    heroEl.classList.toggle('moving',hero.moving);
+  }
+
+  function animateStep(nextCell){
+    return new Promise(resolve=>{
+      const from=center(hero.r,hero.c);
+      const to=center(nextCell.r,nextCell.c);
+      const duration=190;
+      const started=performance.now();
+
+      function tick(now){
+        const raw=Math.min(1,(now-started)/duration);
+        const t=1-Math.pow(1-raw,3);
+        const hop=Math.sin(Math.PI*raw)*11;
+        setHeroVisualPosition(lerp(from.x,to.x,t),lerp(from.y,to.y,t)-hop);
+        if(raw<1){ requestAnimationFrame(tick); return; }
+        hero.r=nextCell.r;
+        hero.c=nextCell.c;
+        syncHeroToCell();
+        resolve();
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  async function moveHero(path){
+    if(!path.length || hero.moving) return;
+    hero.moving=true;
+    hero.selected=false;
+    reachable.clear();
+    parents.clear();
+    updateHeroState();
+    for(const cell of path) await animateStep(cell);
+    hero.moving=false;
+    updateHeroState();
+  }
+
+  function selectHero(){
+    if(hero.moving) return;
+    hero.selected=true;
+    computeReachable();
+    updateHeroState();
+  }
+
+  function canvasCoordsFromEvent(e){
+    const rect=canvas.getBoundingClientRect();
+    return {
+      x:(e.clientX-rect.left)*(canvas.width/rect.width),
+      y:(e.clientY-rect.top)*(canvas.height/rect.height)
+    };
+  }
+
+  canvas.addEventListener('pointerdown',e=>{
+    if(hero.moving) return;
+    const p=canvasCoordsFromEvent(e);
+    const cell=cellAtCanvasPoint(p.x,p.y);
+    if(!cell) return;
+
+    if(cell.r===hero.r && cell.c===hero.c){
+      selectHero();
+      return;
+    }
+
+    if(hero.selected && reachable.has(key(cell.r,cell.c))){
+      const path=buildPath(cell.r,cell.c);
+      moveHero(path);
+    }
+  });
+
+  regen.addEventListener('click',generate);
+  window.addEventListener('keydown',e=>{
+    if((e.key==='r'||e.key==='R')&&!e.repeat) generate();
+    if(e.key==='Escape'&&!hero.moving){
+      hero.selected=false;
+      reachable.clear();
+      parents.clear();
+      updateHeroState();
+    }
+  });
 
   function frame(now){
     phase=now/1000;
@@ -164,8 +357,6 @@
     requestAnimationFrame(frame);
   }
 
-  regen.addEventListener('click',generate);
-  window.addEventListener('keydown',e=>{ if((e.key==='r'||e.key==='R')&&!e.repeat)generate(); });
   generate();
   requestAnimationFrame(frame);
 })();
