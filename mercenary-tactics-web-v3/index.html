@@ -17,7 +17,13 @@
     </header>
 
     <section class="board-shell">
-      <canvas id="board" width="1280" height="800" aria-label="8×8 기울어진 전술 보드"></canvas>
+      <div class="canvas-wrap">
+        <canvas id="board" width="1280" height="800" aria-label="8×8 기울어진 전술 보드"></canvas>
+        <div class="hero-piece" aria-label="아군 검사 말">
+          <span class="piece-ring"></span>
+          <img src="./assets/hero_red_knight.webp" alt="붉은 망토의 검사" />
+        </div>
+      </div>
       <div class="legend" aria-label="지형 범례">
         <span><i class="swatch ground"></i>땅</span>
         <span><i class="swatch forest"></i>풀숲</span>
