@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#090d0b" />
+  <title>흐린 달의 용병단 · Web V3</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <h1>흐린 달의 용병단</h1>
+        <p>WEB V3 · CLEAN TEST BUILD</p>
+      </div>
+      <button id="regenBtn" type="button">전장 재생성</button>
+    </header>
+
+    <main class="layout">
+      <aside class="panel">
+        <div class="portrait-placeholder" aria-hidden="true">
+          <div class="moon">☾</div>
+          <span>세라 초상화 자리</span>
+        </div>
+        <div class="name-row">
+          <strong>세라</strong>
+          <span>Lv.12 · 검사</span>
+        </div>
+        <div class="hp-row"><span>HP</span><strong>342 / 342</strong></div>
+        <div class="hp-bar"><i></i></div>
+        <div class="stats">
+          <div><span>공격력</span><strong>48</strong></div>
+          <div><span>방어력</span><strong>32</strong></div>
+          <div><span>이동력</span><strong>3</strong></div>
+          <div><span>사거리</span><strong>1</strong></div>
+        </div>
+        <div class="skill"><b>✦ 돌파</b><span>전방을 베어내며 진입하는 근접 기술</span></div>
+        <div class="actions">
+          <button class="active" type="button">이동</button>
+          <button type="button" disabled>공격</button>
+          <button type="button" disabled>스킬</button>
+          <button id="waitBtn" type="button">대기</button>
+        </div>
+      </aside>
+
+      <section class="stage-wrap">
+        <div class="stage">
+          <canvas id="game" width="1200" height="760"></canvas>
+          <div class="badge enemy">ENEMY DEPLOYMENT</div>
+          <div class="badge ally">ALLY DEPLOYMENT</div>
+        </div>
+        <div class="status"><span id="statusText">가운데 세라 말을 클릭해서 시작하세요.</span></div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
