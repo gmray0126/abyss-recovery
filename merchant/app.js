@@ -18,11 +18,11 @@ const ITEMS = {
 };
 
 const CITIES = {
-  capital:{name:"왕도",desc:"귀족·군부가 돈을 쓰는 대도시",travel:0,mods:{bread:1.15,wheat:1.2,iron:1.08,sword:1.08,armor:1.12,herb:1.1,potion:1.15,gem:1.32,spice:1.25,mana:1.2,beer:1.15,holy:1.2}},
-  farm:{name:"풍요 평원",desc:"곡물과 술이 넘치는 농업지대",travel:14,mods:{bread:.72,wheat:.58,iron:1.28,sword:1.22,armor:1.3,herb:.83,potion:1.03,gem:1.2,spice:1.16,mana:1.14,beer:.65,holy:1.05}},
-  mine:{name:"철산 광산도시",desc:"철은 싸고 빵은 귀한 광산도시",travel:18,mods:{bread:1.35,wheat:1.26,iron:.58,sword:.76,armor:.78,herb:1.12,potion:1.12,gem:1.04,spice:1.22,mana:1.12,beer:1.28,holy:1.05}},
-  port:{name:"청해 항구",desc:"향신료·보석이 쏟아지는 무역항",travel:22,mods:{bread:1,wheat:.95,iron:1.02,sword:1.05,armor:1.08,herb:1,potion:1,gem:.84,spice:.56,mana:1.04,beer:.92,holy:1.1}},
-  arcane:{name:"마도도시 아르카나",desc:"마법석·포션이 생활필수품인 도시",travel:26,mods:{bread:1.2,wheat:1.16,iron:1.12,sword:1.04,armor:1.08,herb:.88,potion:.72,gem:1.15,spice:1.12,mana:.54,beer:1.12,holy:1.18}}
+  capital:{name:"왕도",desc:"평시 치안이 가장 좋지만 거래 수수료가 매우 비싼 대도시",travel:0,fee:.12,mods:{bread:1.15,wheat:1.2,iron:1.08,sword:1.08,armor:1.12,herb:1.1,potion:1.15,gem:1.32,spice:1.25,mana:1.2,beer:1.15,holy:1.2}},
+  farm:{name:"풍요 평원",desc:"곡물과 술이 넘치는 농업지대",travel:14,fee:.03,mods:{bread:.72,wheat:.58,iron:1.28,sword:1.22,armor:1.3,herb:.83,potion:1.03,gem:1.2,spice:1.16,mana:1.14,beer:.65,holy:1.05}},
+  mine:{name:"철산 광산도시",desc:"철은 싸고 빵은 귀한 광산도시",travel:18,fee:.04,mods:{bread:1.35,wheat:1.26,iron:.58,sword:.76,armor:.78,herb:1.12,potion:1.12,gem:1.04,spice:1.22,mana:1.12,beer:1.28,holy:1.05}},
+  port:{name:"청해 항구",desc:"향신료·보석이 쏟아지는 무역항",travel:22,fee:.06,mods:{bread:1,wheat:.95,iron:1.02,sword:1.05,armor:1.08,herb:1,potion:1,gem:.84,spice:.56,mana:1.04,beer:.92,holy:1.1}},
+  arcane:{name:"마도도시 아르카나",desc:"마법석·포션이 생활필수품인 도시",travel:26,fee:.05,mods:{bread:1.2,wheat:1.16,iron:1.12,sword:1.04,armor:1.08,herb:.88,potion:.72,gem:1.15,spice:1.12,mana:.54,beer:1.12,holy:1.18}}
 };
 
 const EVENTS = [
@@ -54,6 +54,75 @@ const EVENTS = [
 const BASE_DEMAND = {food:1.05,metal:.82,weapon:.72,alchemy:.84,luxury:.62,magic:.7};
 const RANK_KEY = "fantasyMerchantRanksV2";
 let S;
+
+function isWarActive(){
+  return S.active.some(e => e.tag === "전쟁" || e.n.includes("마왕"));
+}
+function capitalIsSafe(){
+  return S.city === "capital" && !isWarActive();
+}
+function contractFlavor(item){
+  const cat = ITEMS[item].cat;
+  if(cat === "weapon") return pick(["기사단 창고가 비었습니다","경비대장이 숫자를 잘못 셌습니다","귀족 자제가 갑자기 기사 놀이에 빠졌습니다"]);
+  if(cat === "food") return pick(["시장님의 야식이 끊겼습니다","축제 준비가 하루 늦었습니다","주방장이 재고를 다 태웠습니다"]);
+  if(cat === "alchemy" || cat === "magic") return pick(["마법대학 실험실이 또 터졌습니다","연금술사가 계산을 틀렸습니다","치유사 길드가 비상 주문을 넣었습니다"]);
+  return pick(["귀족 결혼식이 코앞입니다","상단 하나가 통째로 길을 잃었습니다","왕실 창고 담당자가 휴가를 갔습니다"]);
+}
+function generateContractOffer(){
+  if(S.contractActive || S.contractDoneDay === S.day){ S.contractOffer = null; return; }
+  const cities = Object.keys(CITIES);
+  const item = pick(Object.keys(ITEMS));
+  let target = pick(cities);
+  if(Math.random() < .75){
+    const away = cities.filter(c => c !== S.city);
+    target = pick(away);
+  }
+  const qty = 3 + Math.floor(Math.random() * 4);
+  const deadline = S.day + 3;
+  const reward = Math.round(ITEMS[item].base * qty * (1.75 + Math.random() * .45) + 55);
+  S.contractOffer = {
+    item,target,qty,deadline,reward,
+    title:contractFlavor(item)
+  };
+}
+function generateSpecialDeal(){
+  S.specialDeal = null;
+  if(Math.random() > .52) return;
+  const held = Object.keys(ITEMS).filter(k => S.inv[k] > 0);
+  const type = Math.random() < .5 ? "buy" : "sell";
+  let item;
+  if(type === "sell" && held.length && Math.random() < .75) item = pick(held);
+  else item = pick(Object.keys(ITEMS));
+  const qty = 2 + Math.floor(Math.random() * 4);
+  const market = S.prices[item] || ITEMS[item].base;
+  if(type === "buy"){
+    const each = Math.max(1,Math.round(market * (.62 + Math.random() * .16)));
+    S.specialDeal = {
+      type,item,qty,each,
+      text:pick([
+        "후드를 눌러쓴 상인이 골목에서 손짓합니다. 출처는 묻지 말랍니다.",
+        "마차 바퀴가 빠진 상인이 오늘 안에만 떨이로 넘긴답니다.",
+        "세관 직원이 오기 전에 빨리 팔아야 한다는 상인이 있습니다."
+      ])
+    };
+  }else{
+    const each = Math.round(market * (1.32 + Math.random() * .30));
+    S.specialDeal = {
+      type,item,qty,each,
+      text:pick([
+        "정체불명의 수집가가 시세를 무시한 가격을 부릅니다.",
+        "귀족 집사가 오늘 안에 꼭 필요하다며 웃돈을 얹었습니다.",
+        "모험가 파티가 출발 직전이라 가격표를 볼 정신이 없답니다."
+      ])
+    };
+  }
+}
+function checkContractDeadline(){
+  if(S.contractActive && S.day > S.contractActive.deadline){
+    toast("길드 의뢰 기한을 넘겼습니다. 담당자가 깊은 한숨을 쉽니다.");
+    S.contractActive = null;
+  }
+}
 
 function fee(){
   const t = (S.capacity - 20) / 5;
@@ -147,7 +216,8 @@ function init(){
     inv:{}, orders:[], prices:{}, prev:{}, world:{},
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
-    travelOpen:false, gameOver:false, peak:1000, cause:""
+    travelOpen:false, gameOver:false, peak:1000, cause:"",
+    contractOffer:null,contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -157,6 +227,8 @@ function init(){
   seedWorld();
   newIntel();
   refreshCurrentMarket();
+  generateContractOffer();
+  generateSpecialDeal();
   $("#gameOver").classList.add("hidden");
   $("#travelPanel").classList.add("hidden");
   render();
@@ -215,8 +287,12 @@ function processOrders(){
     let sold = 0;
     for(let i=0;i<o.qty;i++) if(Math.random() < chance) sold++;
     if(sold > 0){
-      S.cash += sold * o.ask;
-      soldText.push(ITEMS[o.item].name + " " + sold + "개");
+      const gross = sold * o.ask;
+      const rate = CITIES[o.city].fee || 0;
+      const commission = Math.round(gross * rate);
+      const payout = gross - commission;
+      S.cash += payout;
+      soldText.push(ITEMS[o.item].name + " " + sold + "개 " + fmt(payout) + (commission ? " (수수료 -" + fmt(commission) + ")" : ""));
     }
     if(sold < o.qty) keep.push(Object.assign({},o,{qty:o.qty-sold}));
   }
@@ -224,27 +300,31 @@ function processOrders(){
   if(soldText.length) toast("판매 체결: " + soldText.join(", "));
 }
 function trouble(){
+  if(capitalIsSafe()) return;
   if(Math.random() > .24) return;
-  if(Math.random() < .48){
+
+  if(Math.random() < .5){
     if(S.guard){
-      toast("도적이 나타났지만 호위대가 막았습니다.");
+      toast(isWarActive() && S.city === "capital"
+        ? "전시 혼란을 틈탄 도적을 호위대가 막았습니다."
+        : "도적이 나타났지만 호위대가 막았습니다.");
     }else{
       const loss = Math.min(Math.max(0,S.cash - 1),Math.round(45 + Math.random() * 105));
       if(loss > 0){
         S.cash -= loss;
-        toast("도적에게 " + fmt(loss) + " 털렸습니다.");
+        toast((isWarActive() && S.city === "capital" ? "전시 혼란 속 도적에게 " : "도적에게 ") + fmt(loss) + " 털렸습니다.");
       }
     }
   }else{
     if(S.insurance){
-      toast("창고 사고가 났지만 보험사가 이를 악물고 보상했습니다.");
+      toast("쥐떼가 창고를 습격했지만 보험사가 보상했습니다.");
     }else{
       const candidates = Object.keys(ITEMS).filter(k => S.inv[k] > 0);
       if(candidates.length){
         const k = pick(candidates);
-        const loss = Math.max(1,Math.ceil(S.inv[k] * .2));
+        const loss = Math.max(1,Math.ceil(S.inv[k] * (.12 + Math.random() * .13)));
         S.inv[k] -= loss;
-        toast(ITEMS[k].name + " " + loss + "개가 창고 사고로 사라졌습니다.");
+        toast("쥐떼가 " + ITEMS[k].name + " " + loss + "개를 먹어치웠습니다.");
       }
     }
   }
@@ -279,12 +359,15 @@ function advanceDay(dest){
   newIntel();
   processOrders();
   trouble();
+  checkContractDeadline();
 
   if(S.cash <= 0){
     bankrupt("하루 비용을 버티지 못함");
     return;
   }
   refreshCurrentMarket();
+  if(!S.contractActive) generateContractOffer();
+  generateSpecialDeal();
   S.peak = Math.max(S.peak,net());
   render();
 }
@@ -314,12 +397,98 @@ function upgrade(){
 }
 function oneDayService(key,cost,label){
   if(checkBlocked()) return;
+  if(capitalIsSafe()){
+    toast("왕도는 평시 도적·쥐 피해가 없어 이 서비스가 필요 없습니다.");
+    return;
+  }
   if(S[key]) return;
   if(S.cash <= cost){ toast(label + " 비용을 내면 파산합니다."); return; }
   S.cash -= cost;
   S[key] = true;
   toast(label + "이 오늘 하루 적용됩니다.");
   render();
+}
+function acceptContract(){
+  if(checkBlocked() || !S.contractOffer) return;
+  S.contractActive = Object.assign({},S.contractOffer);
+  S.contractOffer = null;
+  toast("길드 의뢰를 수락했습니다. " + S.contractActive.deadline + "일차까지 납품하세요.");
+  render();
+}
+function deliverContract(){
+  if(checkBlocked() || !S.contractActive) return;
+  const c = S.contractActive;
+  if(S.city !== c.target){ toast(CITIES[c.target].name + "에서 납품해야 합니다."); return; }
+  if(S.inv[c.item] < c.qty){ toast(ITEMS[c.item].name + "이 " + c.qty + "개 필요합니다."); return; }
+  S.inv[c.item] -= c.qty;
+  S.cash += c.reward;
+  S.completedContracts += 1;
+  S.contractDoneDay = S.day;
+  S.contractActive = null;
+  S.contractOffer = null;
+  toast("의뢰 완료! 보상 " + fmt(c.reward) + "을 받았습니다.");
+  render();
+}
+function useSpecialDeal(){
+  if(checkBlocked() || !S.specialDeal) return;
+  const d = S.specialDeal;
+  if(d.type === "buy"){
+    const total = d.each * d.qty;
+    const needCap = ITEMS[d.item].w * d.qty;
+    if(S.cash <= total){ toast("이 거래를 하면 파산합니다."); return; }
+    if(used() + needCap > S.capacity){ toast("운송 한도가 부족합니다."); return; }
+    S.cash -= total;
+    S.inv[d.item] += d.qty;
+    toast("수상한 거래 성사. " + ITEMS[d.item].name + " " + d.qty + "개를 " + fmt(total) + "에 샀습니다.");
+  }else{
+    if(S.inv[d.item] < d.qty){ toast(ITEMS[d.item].name + " " + d.qty + "개가 필요합니다."); return; }
+    const total = d.each * d.qty;
+    S.inv[d.item] -= d.qty;
+    S.cash += total;
+    toast("특수 구매자에게 즉시 판매! " + fmt(total) + " 입금.");
+  }
+  S.specialDeal = null;
+  render();
+}
+function renderExtras(){
+  const contractBox = $("#contractBox");
+  if(S.contractActive){
+    const c = S.contractActive;
+    const canDeliver = S.city === c.target && S.inv[c.item] >= c.qty;
+    contractBox.innerHTML =
+      "<h3>" + c.title + "</h3>" +
+      "<p><b>" + CITIES[c.target].name + "</b>에 <b>" + ITEMS[c.item].name + " " + c.qty + "개</b> 납품</p>" +
+      '<div class="contract-meta"><span>기한 ' + c.deadline + '일차</span><span>보상 ' + fmt(c.reward) + '</span><span>현재 보유 ' + S.inv[c.item] + '개</span></div>' +
+      '<button id="deliverContractBtn"' + (canDeliver ? "" : " disabled") + '>의뢰 납품</button>';
+  }else if(S.contractOffer){
+    const c = S.contractOffer;
+    contractBox.innerHTML =
+      "<h3>" + c.title + "</h3>" +
+      "<p><b>" + CITIES[c.target].name + "</b>에 <b>" + ITEMS[c.item].name + " " + c.qty + "개</b>가 필요합니다.</p>" +
+      '<div class="contract-meta"><span>기한 ' + c.deadline + '일차</span><span>보상 ' + fmt(c.reward) + '</span></div>' +
+      '<button id="acceptContractBtn">의뢰 수락</button>';
+  }else{
+    contractBox.innerHTML = '<p class="success-note">오늘은 새 의뢰가 없습니다. 내일 다시 확인하세요.</p>';
+  }
+
+  const dealBox = $("#specialDealBox");
+  if(!S.specialDeal){
+    dealBox.innerHTML = '<p class="muted">오늘은 수상한 사람이 안 보입니다. 오히려 더 수상합니다.</p>';
+  }else{
+    const d = S.specialDeal;
+    const total = d.each * d.qty;
+    if(d.type === "buy"){
+      dealBox.innerHTML =
+        "<p>" + d.text + "</p><h3>" + ITEMS[d.item].name + " " + d.qty + "개 떨이</h3>" +
+        '<div class="deal-price">총 ' + fmt(total) + '</div>' +
+        '<button id="specialDealBtn">묻지 말고 산다</button>';
+    }else{
+      dealBox.innerHTML =
+        "<p>" + d.text + "</p><h3>" + ITEMS[d.item].name + " " + d.qty + "개 급구</h3>" +
+        '<div class="deal-price">즉시 ' + fmt(total) + '</div>' +
+        '<button id="specialDealBtn"' + (S.inv[d.item] >= d.qty ? "" : " disabled") + '>즉시 판매</button>';
+    }
+  }
 }
 
 function render(){
@@ -334,6 +503,7 @@ function render(){
   $("#feeStat").textContent = fmt(fee());
   $("#capStat").textContent = used() + " / " + S.capacity;
   $("#marketTitle").textContent = CITIES[S.city].name + " 시장";
+  $("#feeBadge").textContent = "판매 수수료 " + Math.round((CITIES[S.city].fee || 0) * 100) + "%";
   $("#capBar").style.width = Math.min(100,used()/S.capacity*100) + "%";
 
   const inv = Object.keys(ITEMS).filter(k => S.inv[k] > 0).map(k => ITEMS[k].name + " " + S.inv[k] + "개");
@@ -347,7 +517,9 @@ function render(){
 
   $("#insuranceBtn").textContent = S.insurance ? "창고 보험 활성" : "창고 보험 40G";
   $("#guardBtn").textContent = S.guard ? "호위대 활성" : "호위대 50G";
-  $("#serviceText").textContent = [S.insurance && "보험",S.guard && "호위대"].filter(Boolean).join(" · ") || "오늘은 무방비입니다.";
+  $("#serviceText").textContent = capitalIsSafe()
+    ? "왕도 평시: 도적·쥐 피해 없음 · 대신 판매 수수료 " + Math.round(CITIES.capital.fee * 100) + "%"
+    : ([S.insurance && "보험",S.guard && "호위대"].filter(Boolean).join(" · ") || (isWarActive() && S.city === "capital" ? "전시 중: 왕도 안전 효과 해제" : "오늘은 무방비입니다."));
 
   $("#newsBox").innerHTML = "<b>[" + S.today.tag + "] " + S.today.n + "</b><p>" + S.today.txt + "</p>";
   $("#rumorBox").innerHTML = "<p>" + S.rumor + "</p>";
@@ -355,6 +527,7 @@ function render(){
   $("#informantBtn").disabled = S.informant || S.gameOver || S.travelOpen;
   $("#endDayBtn").disabled = S.gameOver || S.travelOpen;
 
+  renderExtras();
   renderMarket();
   renderOrders();
   renderTravel();
@@ -365,8 +538,8 @@ function render(){
     });
   }else{
     $("#upgradeBtn").disabled = S.travelOpen;
-    $("#insuranceBtn").disabled = S.insurance || S.travelOpen;
-    $("#guardBtn").disabled = S.guard || S.travelOpen;
+    $("#insuranceBtn").disabled = S.insurance || S.travelOpen || capitalIsSafe();
+    $("#guardBtn").disabled = S.guard || S.travelOpen || capitalIsSafe();
   }
 }
 function renderMarket(){
@@ -415,7 +588,7 @@ function renderOrders(){
     row.className = "order";
     row.innerHTML =
       "<div><b>" + ITEMS[o.item].name + " " + o.qty + "개</b><p>" +
-      CITIES[o.city].name + " · 희망가 " + fmt(o.ask) + " · " + (S.day-o.listed) +
+      CITIES[o.city].name + " · 희망가 " + fmt(o.ask) + " · 수수료 " + Math.round((CITIES[o.city].fee || 0) * 100) + "% · " + (S.day-o.listed) +
       '일째</p></div><button data-cancel="' + i + '">회수</button>';
     box.appendChild(row);
   });
@@ -479,6 +652,13 @@ $("#orders").addEventListener("click",(e) => {
 $("#travelChoices").addEventListener("click",(e) => {
   const b = e.target.closest("[data-travel]");
   if(b) advanceDay(b.dataset.travel);
+});
+$("#contractBox").addEventListener("click",(e) => {
+  if(e.target.closest("#acceptContractBtn")) acceptContract();
+  if(e.target.closest("#deliverContractBtn")) deliverContract();
+});
+$("#specialDealBox").addEventListener("click",(e) => {
+  if(e.target.closest("#specialDealBtn")) useSpecialDeal();
 });
 $("#endDayBtn").addEventListener("click",openTravel);
 $("#travelCancel").addEventListener("click",() => {
