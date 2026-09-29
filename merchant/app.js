@@ -117,7 +117,7 @@ const EVENTS = [
 
 const BASE_DEMAND = {food:1.05,metal:.82,weapon:.72,alchemy:.84,luxury:.62,magic:.7};
 const RANK_KEY = "fantasyMerchantRanksV2";
-const ENDING_GOALS = {day:100,wealth:50000,contracts:10,trialDays:7};
+const ENDING_GOALS = {day:100,wealth:100000,contracts:10,trialDays:7};
 const EVENT_BY_ID = Object.fromEntries(EVENTS.map(e => [e.id,e]));
 const CHOICE_EVENTS = [
   {id:"customs_bribe",title:"세관원이 서류를 유심히 봅니다",text:"세관원이 '서류에 아주 작은 문제가 있군요'라며 손가락 두 개를 비빕니다.",options:[
@@ -462,7 +462,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -477,9 +477,13 @@ function init(){
   maybeGenerateChoiceEvent();
   $("#gameOver").classList.add("hidden");
   $("#endingPanel").classList.add("hidden");
+  $("#endingRankName").value = "";
+  $("#endingRankStatus").textContent = "클리어 기록은 모든 플레이어가 보는 공용 랭킹에 등록할 수 있습니다.";
+  $("#saveSharedRank").textContent = "공용 랭킹에 저장";
+  $("#saveSharedRank").disabled = false;
   $("#travelPanel").classList.add("hidden");
   render();
-  renderRanks();
+  loadSharedRanks();
 }
 
 function bankrupt(cause){
@@ -1027,8 +1031,13 @@ function render(){
 
   if(S.gameOver || S.ending){
     document.querySelectorAll("button").forEach(b => {
-      if(!["restart","endingRestart","saveRank","clearRank"].includes(b.id)) b.disabled = true;
+      if(!["restart","endingRestart","saveSharedRank","rankRefresh"].includes(b.id)) b.disabled = true;
     });
+    if(S.ending){
+      $("#saveSharedRank").disabled = !!S.rankSaved;
+      $("#rankRefresh").disabled = false;
+      $("#endingRestart").disabled = false;
+    }
   }else{
     $("#upgradeBtn").disabled = S.travelOpen;
     $("#insuranceBtn").disabled = S.insurance || S.travelOpen || capitalIsSafe();
@@ -1112,25 +1121,76 @@ function renderTravel(){
     box.appendChild(card);
   }
 }
-function getRanks(){
-  try{ return JSON.parse(localStorage.getItem(RANK_KEY) || "[]"); }
-  catch{ return []; }
-}
-function saveRank(){
-  const name = $("#rankName").value.trim() || "무명 상인";
-  const list = getRanks();
-  list.push({name,score:Math.round(S.peak),day:S.day});
-  list.sort((a,b) => b.score - a.score);
-  localStorage.setItem(RANK_KEY,JSON.stringify(list.slice(0,20)));
-  toast("랭킹에 기록했습니다.");
+let sharedRanks = [];
+let rankLoading = false;
+
+async function loadSharedRanks(){
+  if(rankLoading) return;
+  rankLoading = true;
+  const list = $("#rankList");
+  if(list) list.innerHTML = '<li class="muted">공용 랭킹 불러오는 중...</li>';
+  try{
+    const res = await fetch("/api/merchant-rankings",{cache:"no-store"});
+    if(!res.ok) throw new Error("rank fetch failed");
+    const data = await res.json();
+    sharedRanks = Array.isArray(data.rankings) ? data.rankings : [];
+  }catch{
+    sharedRanks = [];
+    if(list) list.innerHTML = '<li class="muted">랭킹 서버에 연결하지 못했습니다.</li>';
+    rankLoading = false;
+    return;
+  }
+  rankLoading = false;
   renderRanks();
 }
-function renderRanks(){
-  const list = getRanks();
-  $("#rankList").innerHTML = list.length
-    ? list.slice(0,10).map(x => "<li><b>" + escapeHtml(x.name) + "</b> · " + fmt(x.score) + ' <span class="muted">' + x.day + "일</span></li>").join("")
-    : '<li class="muted">아직 기록 없음</li>';
+async function saveSharedRank(){
+  if(!S.ending || S.rankSaved) return;
+  const input = $("#endingRankName");
+  const status = $("#endingRankStatus");
+  const name = (input?.value || "").trim();
+  if(!name){
+    status.textContent = "상단 이름을 입력해주세요.";
+    input?.focus();
+    return;
+  }
+  const btn = $("#saveSharedRank");
+  btn.disabled = true;
+  status.textContent = "공용 랭킹에 저장 중...";
+  try{
+    const res = await fetch("/api/merchant-rankings",{
+      method:"POST",
+      headers:{"content-type":"application/json"},
+      body:JSON.stringify({
+        name,
+        wealth:Math.round(net()),
+        peak:Math.round(S.peak),
+        day:S.day,
+        contracts:S.completedContracts
+      })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.message || "save failed");
+    S.rankSaved = true;
+    sharedRanks = Array.isArray(data.rankings) ? data.rankings : sharedRanks;
+    status.textContent = "공용 랭킹에 저장했습니다.";
+    btn.textContent = "저장 완료";
+    renderRanks();
+  }catch{
+    btn.disabled = false;
+    status.textContent = "저장에 실패했습니다. 잠시 후 다시 눌러주세요.";
+  }
 }
+function renderRanks(){
+  const list = $("#rankList");
+  if(!list) return;
+  list.innerHTML = sharedRanks.length
+    ? sharedRanks.slice(0,10).map((x,i) =>
+      "<li><b>" + (i+1) + "위 · " + escapeHtml(x.name) + "</b> · " +
+      fmt(x.wealth) + ' <span class="muted">' + x.day + "일 · 의뢰 " + x.contracts + "회</span></li>"
+    ).join("")
+    : '<li class="muted">아직 등록된 클리어 기록이 없습니다.</li>';
+}
+
 function escapeHtml(s){
   return s.replace(/[&<>"']/g,m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 }
@@ -1180,11 +1240,7 @@ $("#insuranceBtn").addEventListener("click",() => oneDayService("insurance",40,"
 $("#guardBtn").addEventListener("click",() => oneDayService("guard",50,"호위대"));
 $("#restart").addEventListener("click",init);
 $("#endingRestart").addEventListener("click",init);
-$("#saveRank").addEventListener("click",saveRank);
-$("#clearRank").addEventListener("click",() => {
-  localStorage.removeItem(RANK_KEY);
-  renderRanks();
-  toast("이 기기의 랭킹을 초기화했습니다.");
-});
+$("#saveSharedRank").addEventListener("click",saveSharedRank);
+$("#rankRefresh").addEventListener("click",loadSharedRanks);
 
 init();
