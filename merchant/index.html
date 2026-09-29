@@ -45,7 +45,12 @@
       <h2 id="endingTitle">왕실 공인 대상인이 되었습니다.</h2>
       <p id="endingText"></p>
       <div class="ending-stats" id="endingStats"></div>
-      <button id="endingRestart" class="primary wide">새 상단 시작</button>
+      <div class="ending-rank-form">
+        <input id="endingRankName" maxlength="16" placeholder="랭킹에 표시할 상단 이름">
+        <button id="saveSharedRank" class="primary">공용 랭킹에 저장</button>
+      </div>
+      <p id="endingRankStatus" class="mini muted">클리어 기록은 모든 플레이어가 보는 공용 랭킹에 등록할 수 있습니다.</p>
+      <button id="endingRestart" class="wide">새 상단 시작</button>
     </div>
   </section>
 
@@ -53,10 +58,9 @@
     <h2>파산했습니다.</h2>
     <p id="gameOverText"></p>
     <div class="row">
-      <input id="rankName" maxlength="16" placeholder="상단 이름">
-      <button id="saveRank">기록 저장</button>
       <button id="restart">새 상단</button>
     </div>
+    <p class="mini muted">공용 랭킹은 게임을 클리어한 상단만 등록됩니다.</p>
   </section>
 
   <main class="layout">
@@ -183,11 +187,11 @@
 
       <section class="panel">
         <div class="panel-head compact">
-          <h2>내 기기 랭킹</h2>
-          <button id="clearRank" class="ghost">초기화</button>
+          <h2>공용 클리어 랭킹</h2>
+          <button id="rankRefresh" class="ghost">새로고침</button>
         </div>
         <ol id="rankList" class="rank-list"></ol>
-        <p class="mini muted">현재는 이 기기 기록입니다. 공용 온라인 랭킹은 DB 연결 시 전환할 수 있습니다.</p>
+        <p class="mini muted">엔딩을 본 상단만 등록됩니다. 모든 플레이어가 같은 순위표를 봅니다.</p>
       </section>
     </aside>
   </main>
