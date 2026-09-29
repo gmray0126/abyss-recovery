@@ -422,6 +422,7 @@ function renderOrders(){
 }
 function renderTravel(){
   const panel = $("#travelPanel");
+  document.body.classList.toggle("modal-open",S.travelOpen);
   if(!S.travelOpen){
     panel.classList.add("hidden");
     return;
@@ -480,6 +481,12 @@ $("#travelChoices").addEventListener("click",(e) => {
   if(b) advanceDay(b.dataset.travel);
 });
 $("#endDayBtn").addEventListener("click",openTravel);
+$("#travelCancel").addEventListener("click",() => {
+  if(!S.gameOver){
+    S.travelOpen = false;
+    render();
+  }
+});
 $("#informantBtn").addEventListener("click",useInformant);
 $("#upgradeBtn").addEventListener("click",upgrade);
 $("#insuranceBtn").addEventListener("click",() => oneDayService("insurance",40,"창고 보험"));
