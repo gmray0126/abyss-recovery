@@ -108,7 +108,11 @@ const EVENTS = [
   {id:"meteor",n:"마법석 운석 낙하",tag:"발견",txt:"밤하늘에서 마법석이 떨어졌습니다. 학자와 사기꾼이 같은 속도로 현장에 도착했습니다.",p:{mana:.62,gem:1.12,potion:1.08},d:{mana:.72,gem:1.18},days:2},
   {id:"adventurer_boom",n:"모험가 길드 신규 가입 폭증",tag:"경기",txt:"젊은이들이 전부 모험가가 되겠답니다. 검, 갑옷, 포션이 잘 팔립니다.",p:{sword:1.28,armor:1.3,potion:1.32},d:{sword:1.5,armor:1.5,potion:1.55},days:3},
   {id:"adventurer_quit",n:"모험가 절반이 첫 슬라임 보고 은퇴",tag:"정정",txt:"신규 모험가들이 현실을 깨달았습니다. 중고 장비가 시장에 쏟아집니다.",p:{sword:.68,armor:.7,potion:.88},d:{sword:.58,armor:.6,potion:.85},days:2},
-  {id:"royal_lottery",n:"왕실 복권 대박 당첨자 등장",tag:"유행",txt:"평민 한 명이 갑자기 부자가 됐습니다. 따라 사려는 사람들 때문에 보석과 향신료가 뜁니다.",p:{gem:1.22,spice:1.18},d:{gem:1.38,spice:1.32},days:2}
+  {id:"royal_lottery",n:"왕실 복권 대박 당첨자 등장",tag:"유행",txt:"평민 한 명이 갑자기 부자가 됐습니다. 따라 사려는 사람들 때문에 보석과 향신료가 뜁니다.",p:{gem:1.22,spice:1.18},d:{gem:1.38,spice:1.32},days:2},
+  {id:"royal_curfew",n:"왕실 야간 통행금지령",tag:"통제",blockedCities:["capital"],txt:"왕도가 이틀간 통행금지에 들어갔습니다. 왕도 출입이 막혀 길드 의뢰 일정이 꼬이기 시작했습니다.",p:{bread:1.12,beer:.9,holy:1.08},d:{bread:1.2,beer:.8,holy:1.15},days:2},
+  {id:"great_bridge_collapse",n:"철산 대교 붕괴",tag:"교통",blockedCities:["mine"],txt:"광산도시로 이어지는 대교가 무너졌습니다. 복구 전까지 철산 광산도시 출입이 금지됩니다.",p:{iron:1.25,sword:1.12,armor:1.12},d:{iron:1.35},days:2},
+  {id:"port_quarantine",n:"청해 항구 검역 봉쇄",tag:"통제",blockedCities:["port"],txt:"정체불명의 열병 신고로 항구가 봉쇄됐습니다. 배도 마차도 들어오고 나갈 수 없습니다.",p:{spice:1.32,gem:1.2,potion:1.25},d:{spice:1.4,potion:1.4},days:2},
+  {id:"arcane_lockdown",n:"마도도시 마력폭주 봉쇄",tag:"마법",blockedCities:["arcane"],txt:"도시 외곽 마법진이 폭주해 아르카나 출입이 전면 통제됐습니다. 교수들은 '예정된 실험'이라고 주장합니다.",p:{mana:1.35,potion:1.2},d:{mana:1.5,potion:1.3},days:2}
 ];
 
 const BASE_DEMAND = {food:1.05,metal:.82,weapon:.72,alchemy:.84,luxury:.62,magic:.7};
@@ -156,6 +160,15 @@ function isWarActive(){
 function capitalIsSafe(){
   return S.city === "capital" && !isWarActive();
 }
+function travelBlockEvent(dest){
+  if(dest === S.city) return null;
+  return S.active.find(e => e.blockedCities && (e.blockedCities.includes(dest) || e.blockedCities.includes(S.city))) || null;
+}
+function contractPenalty(type,reward){
+  const rate = type === "rush" ? .70 : type === "sale" ? .50 : type === "courier" ? .45 : .45;
+  const floor = type === "rush" ? 120 : type === "sale" ? 90 : 70;
+  return Math.max(floor,Math.round(reward * rate));
+}
 function contractFlavor(item){
   const cat = ITEMS[item].cat;
   if(cat === "weapon") return pick(["기사단 창고가 비었습니다","경비대장이 숫자를 잘못 셌습니다","귀족 자제가 갑자기 기사 놀이에 빠졌습니다"]);
@@ -172,27 +185,30 @@ function makeContractOffer(){
   const qty = 2 + Math.floor(Math.random() * 5);
 
   if(type === "courier"){
+    const reward = 90 + Math.floor(Math.random() * 80);
     return {
-      type,target,deadline:S.day + 2,
-      reward:90 + Math.floor(Math.random() * 80),
+      type,target,deadline:S.day + 2,reward,
+      penalty:contractPenalty(type,reward),
       title:pick(["봉인된 편지를 전달해주세요","길드 장부 긴급 배송","귀족 계약서 당일 전달"]),
       desc:CITIES[target].name + "의 길드 지부에 서류를 전달"
     };
   }
 
   if(type === "sale"){
+    const reward = Math.round(ITEMS[item].base * qty * .65 + 90);
     return {
-      type,item,target,qty,progress:0,deadline:S.day + 4,
-      reward:Math.round(ITEMS[item].base * qty * .65 + 90),
+      type,item,target,qty,progress:0,deadline:S.day + 4,reward,
+      penalty:contractPenalty(type,reward),
       title:pick(["시장 점유율을 보여주세요","길드 판촉 지원 요청","판매 실적 긴급 모집"]),
       desc:CITIES[target].name + " 정규 시장에서 " + ITEMS[item].name + " " + qty + "개 판매"
     };
   }
 
   const rush = type === "rush";
+  const reward = Math.round(ITEMS[item].base * qty * (rush ? 2.45 : 1.85) + (rush ? 95 : 55));
   return {
-    type,item,target,qty,deadline:S.day + (rush ? 2 : 3),
-    reward:Math.round(ITEMS[item].base * qty * (rush ? 2.45 : 1.85) + (rush ? 95 : 55)),
+    type,item,target,qty,deadline:S.day + (rush ? 2 : 3),reward,
+    penalty:contractPenalty(type,reward),
     title:rush ? pick(["오늘 안에 사람 하나 살려야 합니다","왕실 급전보급 요청","마차가 출발하기 직전입니다"]) : contractFlavor(item),
     desc:CITIES[target].name + "에 " + ITEMS[item].name + " " + qty + "개 납품"
   };
@@ -240,10 +256,19 @@ function generateSpecialDeal(){
 }
 function checkContractDeadline(){
   if(S.contractActive && S.day > S.contractActive.deadline){
-    toast("길드 의뢰 기한을 넘겼습니다. 담당자가 깊은 한숨을 쉽니다.");
+    const c = S.contractActive;
+    const penalty = c.penalty || contractPenalty(c.type,c.reward || 100);
+    S.cash -= penalty;
     S.contractActive = null;
     S.contractOffers = [];
+    toast("의뢰 실패! 계약 위약금 " + fmt(penalty) + "을 지불했습니다.");
+    if(S.cash <= 0){
+      bankrupt("의뢰 실패 위약금을 감당하지 못함");
+      return false;
+    }
+    return true;
   }
+  return true;
 }
 
 function merchantTier(){
@@ -540,6 +565,11 @@ function openTravel(){
 }
 function advanceDay(dest){
   if(!S.travelOpen || S.gameOver) return;
+  const blocked = travelBlockEvent(dest);
+  if(blocked){
+    toast(blocked.n + " 때문에 " + CITIES[dest].name + " 이동이 불가능합니다.");
+    return;
+  }
   const moveCost = dest === S.city ? 0 : CITIES[dest].travel;
   const total = moveCost + fee();
   if(S.cash <= total){
@@ -564,7 +594,7 @@ function advanceDay(dest){
   processOrders();
   trouble();
   checkCourierContract();
-  checkContractDeadline();
+  if(checkContractDeadline() === false) return;
   if(!applyWeeklySettlement()) return;
 
   if(S.cash <= 0){
@@ -848,7 +878,7 @@ function renderExtras(){
     contractBox.innerHTML =
       '<span class="contract-type">' + typeName + ' · 진행 중</span><h3>' + c.title + '</h3>' +
       '<p>' + (c.desc || "") + '</p>' +
-      '<div class="contract-meta"><span>기한 ' + c.deadline + '일차</span><span>보상 ' + fmt(c.reward) + '</span></div>' +
+      '<div class="contract-meta"><span>기한 ' + c.deadline + '일차</span><span>보상 ' + fmt(c.reward) + '</span><span class="contract-penalty">실패 위약금 -' + fmt(c.penalty || 0) + '</span></div>' +
       action;
   }else{
     const offers = S.contractOffers || [];
@@ -857,7 +887,7 @@ function renderExtras(){
     }else{
       contractBox.innerHTML = '<div class="contract-board">' + offers.map((c,i) => {
         const typeName = c.type === "rush" ? "긴급 납품" : c.type === "courier" ? "운송" : c.type === "sale" ? "판매 목표" : "납품";
-        return '<article class="contract-offer"><span class="contract-type">' + typeName + '</span><h3>' + c.title + '</h3><p>' + c.desc + '</p><div class="contract-meta"><span>기한 ' + c.deadline + '일차</span><span>보상 ' + fmt(c.reward) + '</span></div><button data-contract="' + i + '">이 의뢰 수락</button></article>';
+        return '<article class="contract-offer"><span class="contract-type">' + typeName + '</span><h3>' + c.title + '</h3><p>' + c.desc + '</p><div class="contract-meta"><span>기한 ' + c.deadline + '일차</span><span>보상 ' + fmt(c.reward) + '</span><span class="contract-penalty">실패 -' + fmt(c.penalty || 0) + '</span></div><button data-contract="' + i + '">이 의뢰 수락</button></article>';
       }).join("") + '</div>';
     }
   }
@@ -1004,13 +1034,16 @@ function renderTravel(){
 
   for(const [id,c] of Object.entries(CITIES)){
     const stay = id === S.city;
+    const blocked = travelBlockEvent(id);
     const card = document.createElement("article");
-    card.className = "travel-card";
+    card.className = "travel-card" + (blocked ? " travel-blocked" : "");
+    const status = blocked
+      ? '<span class="mini travel-ban">⛔ ' + blocked.n + ' · 출입 금지</span>'
+      : '<span class="mini muted">' + (stay ? "이동비 없음" : "이동비 " + fmt(c.travel)) + " + 유지비 " + fmt(fee()) + '</span>';
     card.innerHTML =
       "<b>" + (stay ? "여기서 하루 더 · " : "") + c.name + "</b><p>" + c.desc + "</p>" +
-      '<span class="mini muted">' + (stay ? "이동비 없음" : "이동비 " + fmt(c.travel)) +
-      " + 유지비 " + fmt(fee()) + '</span><button data-travel="' + id + '">' +
-      (stay ? "체류" : "이동") + "</button>";
+      status + '<button data-travel="' + id + '"' + (blocked ? " disabled" : "") + ">" +
+      (stay ? "체류" : blocked ? "통행 금지" : "이동") + "</button>";
     box.appendChild(card);
   }
 }
