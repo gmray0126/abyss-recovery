@@ -29,6 +29,16 @@
     <article><small>운송량</small><b id="capStat">0 / 20</b></article>
   </section>
 
+  <section id="choiceEventPanel" class="choice-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="choiceTitle">
+    <div class="choice-modal panel">
+      <span class="choice-kicker">돌발 선택지</span>
+      <h2 id="choiceTitle">무슨 일이 생겼습니다.</h2>
+      <p id="choiceText"></p>
+      <div id="choiceOptions" class="choice-options"></div>
+      <p class="mini muted">결정하기 전에는 다른 행동을 할 수 없습니다.</p>
+    </div>
+  </section>
+
   <section id="gameOver" class="panel game-over hidden">
     <h2>파산했습니다.</h2>
     <p id="gameOverText"></p>
@@ -74,7 +84,7 @@
         </div>
         <div class="content-grid">
           <article class="feature-card">
-            <span class="label">상인 길드 의뢰</span>
+            <span class="label">상인 길드 게시판 · 3개 중 선택</span>
             <div id="contractBox"></div>
           </article>
           <article class="feature-card">
