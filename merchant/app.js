@@ -84,7 +84,13 @@ const EVENTS = [
 
   {id:"potion_heresy",n:"성직자들이 포션을 이단으로 규정",tag:"종교",txt:"회복 포션 불매운동이 시작됐습니다. 성수 판매상들은 매우 신앙심이 깊어졌습니다.",p:{potion:.52,holy:1.7},d:{potion:.3,holy:2},days:3,follow:{id:"church_invest",chance:.42}},
   {id:"church_invest",n:"성직자들이 포션 회사에 투자",tag:"막장",chainOnly:true,txt:"교단이 갑자기 새 교리를 발표했습니다. 투자설은 부인했습니다.",p:{potion:1.65,holy:.86},d:{potion:1.9,holy:.75},days:2},
-  {id:"hero_ad",n:"유명 용사가 검 광고",tag:"유행",txt:"“마왕도 한 방!” 광고가 대박 났습니다. 실제 마왕은 인터뷰를 거부했습니다.",p:{sword:1.48},d:{sword:1.85},days:2,follow:{id:"hero_axe",chance:.72}},
+  {id:"antihero_foundation",n:"반용사 경제피해대책위원회 결성",tag:"단체",chainOnly:true,txt:"용사의 한마디에 재고가 폭등락하자 상인들이 '반용사 경제피해대책위원회'를 만들었습니다. 첫 회의 안건은 용사 광고 금지입니다.",p:{sword:.82,armor:.9,beer:1.16},d:{sword:.72,armor:.82,beer:1.3},days:2,follow:{id:"antihero_rally",chance:.78}},
+  {id:"antihero_rally",n:"반용사 단체 대규모 시위",tag:"단체",chainOnly:true,txt:"'용사는 마왕만 잡고 시세는 건드리지 마라!'라는 현수막이 왕도 앞을 뒤덮었습니다. 구경꾼 때문에 맥주와 빵은 잘 팔립니다.",p:{sword:.68,armor:.78,beer:1.38,bread:1.2},d:{sword:.5,armor:.65,beer:1.7,bread:1.35},days:2,follow:{id:"hero_fan_counter",chance:.55}},
+  {id:"hero_fan_counter",n:"용사 팬클럽 맞불 집회",tag:"유행",chainOnly:true,txt:"용사 팬클럽이 '우리 용사님이 뭘 잘못했냐'며 맞불 집회를 열었습니다. 검 굿즈가 다시 팔립니다.",p:{sword:1.38,gem:1.15,beer:1.2},d:{sword:1.65,gem:1.25,beer:1.3},days:2,follow:{id:"hero_axe",chance:.7}},
+  {id:"antihero_lawsuit",n:"상인연합, 용사에게 시세조작 손해배상 청구",tag:"단체",txt:"반용사 단체가 용사의 인터뷰 한마디로 손해를 봤다며 집단소송을 냈습니다. 변호사들은 보석으로 수임료를 받습니다.",p:{sword:.8,gem:1.28,spice:1.12},d:{sword:.7,gem:1.45},days:2},
+  {id:"antihero_boycott",n:"반용사 단체 '검 안 사기 운동'",tag:"단체",txt:"용사가 또 검을 칭찬하자 반용사 상인연합이 검 불매운동을 시작했습니다. 갑옷은 왜 같이 안 사는지 아무도 모릅니다.",p:{sword:.58,armor:.88,beer:1.18},d:{sword:.38,armor:.8,beer:1.28},days:2},
+  {id:"antihero_merch",n:"반용사 굿즈 대박",tag:"단체",txt:"반용사 단체의 '시세를 지켜라' 배지가 유행했습니다. 보석상들이 배지를 금으로 만들기 시작했습니다.",p:{gem:1.3,beer:1.15},d:{gem:1.5,beer:1.25},days:2},
+  {id:"hero_ad",n:"유명 용사가 검 광고",tag:"유행",txt:"“마왕도 한 방!” 광고가 대박 났습니다. 실제 마왕은 인터뷰를 거부했습니다.",p:{sword:1.48},d:{sword:1.85},days:2,follow:{id:"antihero_foundation",chance:.72}},
   {id:"hero_axe",n:"유명 용사는 사실 도끼 유저",tag:"정정",chainOnly:true,txt:"광고 촬영용으로만 검을 들었다는 사실이 밝혀졌습니다.",p:{sword:.7},d:{sword:.55},days:2},
   {id:"hero_fast",n:"용사가 마왕을 너무 빨리 잡았습니다",tag:"세계",txt:"전쟁 특수가 조기 종료됐습니다. 대신 전국에서 축하 연회가 열립니다.",p:{sword:.66,armor:.7,spice:1.42,beer:1.5},d:{sword:.5,armor:.55,spice:1.7,beer:1.8},days:3,follow:{id:"demon_return",chance:.38}},
   {id:"demon_return",n:"마왕 부활",tag:"전쟁",chainOnly:true,txt:"사흘 전에 잡힌 마왕이 “2페이즈였다”고 주장하며 돌아왔습니다.",p:{sword:1.72,armor:1.75,potion:1.4,holy:1.55},d:{sword:2,armor:2,potion:1.7,holy:1.8},days:3},
@@ -108,6 +114,40 @@ const EVENTS = [
 const BASE_DEMAND = {food:1.05,metal:.82,weapon:.72,alchemy:.84,luxury:.62,magic:.7};
 const RANK_KEY = "fantasyMerchantRanksV2";
 const EVENT_BY_ID = Object.fromEntries(EVENTS.map(e => [e.id,e]));
+const CHOICE_EVENTS = [
+  {id:"customs_bribe",title:"세관원이 서류를 유심히 봅니다",text:"세관원이 '서류에 아주 작은 문제가 있군요'라며 손가락 두 개를 비빕니다.",options:[
+    {label:"60G를 조용히 건넨다",effect:"bribe"},
+    {label:"원칙대로 검사받는다",effect:"inspection"}
+  ]},
+  {id:"wounded_adventurer",title:"부상당한 모험가",text:"길가에 쓰러진 모험가가 포션 하나만 달라고 합니다. 등에 멘 주머니는 꽤 무거워 보입니다.",options:[
+    {label:"포션 1개를 준다",effect:"help_adventurer"},
+    {label:"못 본 척 지나간다",effect:"ignore_adventurer"}
+  ]},
+  {id:"mystery_mana",title:"수상한 마법석 상자",text:"마법사가 '절대 폭발하지 않습니다'라고 세 번 강조하며 상자를 110G에 넘기려 합니다.",options:[
+    {label:"110G에 산다",effect:"buy_mystery"},
+    {label:"세 번 강조한 게 더 수상하다",effect:"skip_mystery"}
+  ]},
+  {id:"smuggler_request",title:"밀수업자의 부탁",text:"밀수업자가 잠깐만 마차 밑에 상자를 숨겨달라고 합니다. 상자에서는 가끔 '야옹' 소리가 납니다.",options:[
+    {label:"숨겨주고 사례금을 노린다",effect:"hide_smuggler"},
+    {label:"경비대에 신고한다",effect:"report_smuggler"}
+  ]},
+  {id:"antihero_donation",title:"반용사 단체 모금함",text:"'용사는 마왕만 잡고 경제에는 손대지 마라!'라고 적힌 모금함이 놓여 있습니다.",options:[
+    {label:"50G 후원한다",effect:"support_antihero"},
+    {label:"용사도 먹고살아야지",effect:"support_hero"}
+  ]},
+  {id:"merchant_tip",title:"술 취한 대상인의 귀띔",text:"대상인이 '내일은 이게 오른다'며 품목 하나를 속삭입니다. 문제는 꽤 취해 있습니다.",options:[
+    {label:"30G 주고 끝까지 듣는다",effect:"buy_tip"},
+    {label:"취객 정보는 거른다",effect:"skip_tip"}
+  ]},
+  {id:"broken_wagon",title:"길드 마차가 길을 막았습니다",text:"바퀴가 부러진 길드 마차가 도움을 요청합니다. 고치면 오늘 장사는 조금 귀찮아지지만 사례는 해준답니다.",options:[
+    {label:"80G를 들여 수리를 돕는다",effect:"repair_wagon"},
+    {label:"길은 넓으니 돌아간다",effect:"skip_wagon"}
+  ]},
+  {id:"gamble_crate",title:"내용물 미확인 화물",text:"창고 관리인이 주인 없는 상자를 75G에 처분합니다. 안에는 무엇이 들었는지 아무도 모릅니다.",options:[
+    {label:"75G에 상자를 산다",effect:"buy_crate"},
+    {label:"남의 불행은 사지 않는다",effect:"skip_crate"}
+  ]}
+];
 let S;
 
 function isWarActive(){
@@ -123,22 +163,48 @@ function contractFlavor(item){
   if(cat === "alchemy" || cat === "magic") return pick(["마법대학 실험실이 또 터졌습니다","연금술사가 계산을 틀렸습니다","치유사 길드가 비상 주문을 넣었습니다"]);
   return pick(["귀족 결혼식이 코앞입니다","상단 하나가 통째로 길을 잃었습니다","왕실 창고 담당자가 휴가를 갔습니다"]);
 }
-function generateContractOffer(){
-  if(S.contractActive || S.contractDoneDay === S.day){ S.contractOffer = null; return; }
+function makeContractOffer(){
   const cities = Object.keys(CITIES);
   const item = pick(Object.keys(ITEMS));
-  let target = pick(cities);
-  if(Math.random() < .75){
-    const away = cities.filter(c => c !== S.city);
-    target = pick(away);
+  const types = ["delivery","delivery","rush","courier","sale"];
+  const type = pick(types);
+  let target = pick(cities.filter(c => c !== S.city));
+  const qty = 2 + Math.floor(Math.random() * 5);
+
+  if(type === "courier"){
+    return {
+      type,target,deadline:S.day + 2,
+      reward:90 + Math.floor(Math.random() * 80),
+      title:pick(["봉인된 편지를 전달해주세요","길드 장부 긴급 배송","귀족 계약서 당일 전달"]),
+      desc:CITIES[target].name + "의 길드 지부에 서류를 전달"
+    };
   }
-  const qty = 3 + Math.floor(Math.random() * 4);
-  const deadline = S.day + 3;
-  const reward = Math.round(ITEMS[item].base * qty * (1.75 + Math.random() * .45) + 55);
-  S.contractOffer = {
-    item,target,qty,deadline,reward,
-    title:contractFlavor(item)
+
+  if(type === "sale"){
+    return {
+      type,item,target,qty,progress:0,deadline:S.day + 4,
+      reward:Math.round(ITEMS[item].base * qty * .65 + 90),
+      title:pick(["시장 점유율을 보여주세요","길드 판촉 지원 요청","판매 실적 긴급 모집"]),
+      desc:CITIES[target].name + " 정규 시장에서 " + ITEMS[item].name + " " + qty + "개 판매"
+    };
+  }
+
+  const rush = type === "rush";
+  return {
+    type,item,target,qty,deadline:S.day + (rush ? 2 : 3),
+    reward:Math.round(ITEMS[item].base * qty * (rush ? 2.45 : 1.85) + (rush ? 95 : 55)),
+    title:rush ? pick(["오늘 안에 사람 하나 살려야 합니다","왕실 급전보급 요청","마차가 출발하기 직전입니다"]) : contractFlavor(item),
+    desc:CITIES[target].name + "에 " + ITEMS[item].name + " " + qty + "개 납품"
   };
+}
+function generateContractOffer(){
+  if(S.contractActive || S.contractDoneDay === S.day){
+    S.contractOffers = [];
+    S.contractOffer = null;
+    return;
+  }
+  S.contractOffers = [makeContractOffer(),makeContractOffer(),makeContractOffer()];
+  S.contractOffer = S.contractOffers[0] || null;
 }
 function generateSpecialDeal(){
   S.specialDeal = null;
@@ -176,6 +242,7 @@ function checkContractDeadline(){
   if(S.contractActive && S.day > S.contractActive.deadline){
     toast("길드 의뢰 기한을 넘겼습니다. 담당자가 깊은 한숨을 쉽니다.");
     S.contractActive = null;
+    S.contractOffers = [];
   }
 }
 
@@ -232,6 +299,7 @@ function toast(t){
 }
 function checkBlocked(){
   if(S.gameOver){ toast("이미 파산했습니다."); return true; }
+  if(S.choiceEvent){ toast("돌발 선택지부터 결정해주세요."); return true; }
   if(S.travelOpen){ toast("내일 이동지를 먼저 골라주세요."); return true; }
   return false;
 }
@@ -290,7 +358,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -302,6 +370,7 @@ function init(){
   refreshCurrentMarket();
   generateContractOffer();
   generateSpecialDeal();
+  maybeGenerateChoiceEvent();
   $("#gameOver").classList.add("hidden");
   $("#travelPanel").classList.add("hidden");
   render();
@@ -365,6 +434,7 @@ function processOrders(){
       const commission = Math.round(gross * rate);
       const payout = gross - commission;
       S.cash += payout;
+      updateSaleContract(o.item,o.city,sold);
       soldText.push(ITEMS[o.item].name + " " + sold + "개 " + fmt(payout) + (commission ? " (수수료 -" + fmt(commission) + ")" : ""));
     }
     if(sold < o.qty) keep.push(Object.assign({},o,{qty:o.qty-sold}));
@@ -432,6 +502,7 @@ function advanceDay(dest){
   newIntel();
   processOrders();
   trouble();
+  checkCourierContract();
   checkContractDeadline();
 
   if(S.cash <= 0){
@@ -441,6 +512,7 @@ function advanceDay(dest){
   refreshCurrentMarket();
   if(!S.contractActive) generateContractOffer();
   generateSpecialDeal();
+  maybeGenerateChoiceEvent();
   S.peak = Math.max(S.peak,net());
   render();
 }
@@ -481,27 +553,139 @@ function oneDayService(key,cost,label){
   toast(label + "이 오늘 하루 적용됩니다.");
   render();
 }
-function acceptContract(){
-  if(checkBlocked() || !S.contractOffer) return;
-  S.contractActive = Object.assign({},S.contractOffer);
+function acceptContract(index=0){
+  if(checkBlocked()) return;
+  const offer = S.contractOffers?.[index] || S.contractOffer;
+  if(!offer) return;
+  S.contractActive = Object.assign({},offer,{progress:offer.progress || 0});
+  S.contractOffers = [];
   S.contractOffer = null;
-  toast("길드 의뢰를 수락했습니다. " + S.contractActive.deadline + "일차까지 납품하세요.");
+  toast("길드 의뢰를 수락했습니다. " + S.contractActive.deadline + "일차까지 완료하세요.");
   render();
+}
+function completeContract(message="의뢰 완료!"){
+  if(!S.contractActive) return;
+  const reward = S.contractActive.reward;
+  S.cash += reward;
+  S.completedContracts += 1;
+  S.contractDoneDay = S.day;
+  S.contractActive = null;
+  S.contractOffers = [];
+  S.contractOffer = null;
+  toast(message + " 보상 " + fmt(reward) + "을 받았습니다.");
 }
 function deliverContract(){
   if(checkBlocked() || !S.contractActive) return;
   const c = S.contractActive;
+  if(c.type === "courier"){
+    if(S.city !== c.target){ toast(CITIES[c.target].name + "에 도착해야 합니다."); return; }
+    completeContract("서류 전달 완료!");
+    render();
+    return;
+  }
+  if(c.type === "sale"){
+    toast("이 의뢰는 정규 시장에서 실제 판매가 체결되어야 진행됩니다.");
+    return;
+  }
   if(S.city !== c.target){ toast(CITIES[c.target].name + "에서 납품해야 합니다."); return; }
   if(S.inv[c.item] < c.qty){ toast(ITEMS[c.item].name + "이 " + c.qty + "개 필요합니다."); return; }
   S.inv[c.item] -= c.qty;
-  S.cash += c.reward;
-  S.completedContracts += 1;
-  S.contractDoneDay = S.day;
-  S.contractActive = null;
-  S.contractOffer = null;
-  toast("의뢰 완료! 보상 " + fmt(c.reward) + "을 받았습니다.");
+  completeContract(c.type === "rush" ? "긴급 납품 성공!" : "납품 완료!");
   render();
 }
+function updateSaleContract(item,city,qty){
+  const c = S.contractActive;
+  if(!c || c.type !== "sale" || c.item !== item || c.target !== city) return;
+  c.progress = Math.min(c.qty,(c.progress || 0) + qty);
+  if(c.progress >= c.qty) completeContract("길드 판매 목표 달성!");
+}
+function checkCourierContract(){
+  const c = S.contractActive;
+  if(c && c.type === "courier" && S.city === c.target){
+    completeContract("길드 서류 전달 완료!");
+  }
+}
+function maybeGenerateChoiceEvent(){
+  if(S.gameOver || S.choiceEvent || S.choiceResolvedDay === S.day) return;
+  if(Math.random() < .34) S.choiceEvent = Object.assign({},pick(CHOICE_EVENTS));
+}
+function resolveChoice(effect){
+  if(!S.choiceEvent || S.gameOver) return;
+  const finish = (msg) => {
+    S.choiceResolvedDay = S.day;
+    S.choiceEvent = null;
+    toast(msg);
+    if(S.cash <= 0){ bankrupt("돌발 사건 비용을 감당하지 못함"); return; }
+    render();
+  };
+
+  if(effect === "bribe"){
+    if(S.cash <= 60){ toast("60G가 없습니다."); return; }
+    S.cash -= 60; finish("세관원은 갑자기 서류가 완벽하다고 말했습니다."); return;
+  }
+  if(effect === "inspection"){
+    if(Math.random() < .25){
+      const fine = 80; S.cash -= fine; finish("세관원이 트집을 잡아 " + fmt(fine) + " 벌금을 매겼습니다.");
+    }else finish("검사가 끝났습니다. 아무 일도 없었습니다. 괜히 긴장했습니다.");
+    return;
+  }
+  if(effect === "help_adventurer"){
+    if(S.inv.potion < 1){ toast("포션이 없습니다."); return; }
+    S.inv.potion--; const tip = 120 + Math.floor(Math.random()*81); S.cash += tip;
+    finish("모험가가 살아났다며 사례금 " + fmt(tip) + "을 줬습니다."); return;
+  }
+  if(effect === "ignore_adventurer"){ finish("모험가는 뒤에서 욕한 것 같지만 잘 들리진 않았습니다."); return; }
+  if(effect === "buy_mystery"){
+    if(S.cash <= 110){ toast("110G가 없습니다."); return; }
+    S.cash -= 110;
+    if(Math.random() < .68){ const q=2+Math.floor(Math.random()*3); S.inv.mana += q; finish("진짜였습니다! 마법석 " + q + "개를 건졌습니다."); }
+    else { const loss=70; S.cash -= loss; finish("폭발했습니다. 수리비로 " + fmt(loss) + "까지 들었습니다."); }
+    return;
+  }
+  if(effect === "skip_mystery"){ finish("멀리서 폭발음이 들렸습니다. 좋은 판단이었던 것 같습니다."); return; }
+  if(effect === "hide_smuggler"){
+    if(Math.random() < .65){ const pay=150; S.cash += pay; finish("밀수업자가 약속대로 " + fmt(pay) + "을 두고 사라졌습니다."); }
+    else { const fine=130; S.cash -= fine; finish("경비대가 상자를 발견했습니다. 벌금 " + fmt(fine) + ". 상자 속 야옹이는 도망갔습니다."); }
+    return;
+  }
+  if(effect === "report_smuggler"){ S.cash += 70; finish("경비대가 신고 포상금 70G를 줬습니다."); return; }
+  if(effect === "support_antihero"){
+    if(S.cash <= 50){ toast("50G가 없습니다."); return; }
+    S.cash -= 50; S.pendingFollow = {id:"antihero_rally",chance:.92}; finish("반용사 단체가 후원자를 '경제수호자'라고 부르기 시작했습니다."); return;
+  }
+  if(effect === "support_hero"){ S.pendingFollow = {id:"hero_fan_counter",chance:.8}; finish("용사 팬클럽이 무료 배지를 줬습니다. 팔 수는 없습니다."); return; }
+  if(effect === "buy_tip"){
+    if(S.cash <= 30){ toast("30G가 없습니다."); return; }
+    S.cash -= 30; S.rumor = "[취객 제보] " + marketRumor(); finish("대상인이 비밀이라며 주변 모두에게 같은 말을 했습니다."); return;
+  }
+  if(effect === "skip_tip"){ finish("대상인은 3분 뒤 탁자 밑에서 잠들었습니다."); return; }
+  if(effect === "repair_wagon"){
+    if(S.cash <= 80){ toast("80G가 없습니다."); return; }
+    S.cash -= 80; S.cash += 150; finish("길드가 수리비와 사례를 합쳐 150G를 지급했습니다."); return;
+  }
+  if(effect === "skip_wagon"){ finish("뒤에서 길드 직원이 이름을 적는 것 같았지만 신경 쓰지 않았습니다."); return; }
+  if(effect === "buy_crate"){
+    if(S.cash <= 75){ toast("75G가 없습니다."); return; }
+    S.cash -= 75;
+    const item = pick(Object.keys(ITEMS)); const q = 1 + Math.floor(Math.random()*4);
+    S.inv[item] += q; finish("상자 안에는 " + ITEMS[item].name + " " + q + "개가 들어 있었습니다."); return;
+  }
+  finish("아무 일도 일어나지 않았습니다.");
+}
+function renderChoiceEvent(){
+  const panel = $("#choiceEventPanel");
+  if(!S.choiceEvent){
+    panel.classList.add("hidden");
+    return;
+  }
+  panel.classList.remove("hidden");
+  $("#choiceTitle").textContent = S.choiceEvent.title;
+  $("#choiceText").textContent = S.choiceEvent.text;
+  $("#choiceOptions").innerHTML = S.choiceEvent.options.map((o,i) =>
+    '<button data-choice="' + i + '">' + o.label + '</button>'
+  ).join("");
+}
+
 function sellBlackMarket(item,qty){
   if(checkBlocked()) return;
   if(S.city === "capital"){
@@ -588,23 +772,33 @@ function renderExtras(){
   const contractBox = $("#contractBox");
   if(S.contractActive){
     const c = S.contractActive;
-    const canDeliver = S.city === c.target && S.inv[c.item] >= c.qty;
+    const pct = c.type === "sale" ? Math.round(((c.progress || 0) / c.qty) * 100) : 0;
+    let action = "";
+    if(c.type === "sale"){
+      action = '<div class="contract-progress"><i style="width:' + pct + '%"></i></div><p>판매 진행 ' + (c.progress || 0) + ' / ' + c.qty + '</p><button disabled>정규 시장 체결로 진행</button>';
+    }else if(c.type === "courier"){
+      action = '<button id="deliverContractBtn"' + (S.city === c.target ? "" : " disabled") + '>서류 전달</button>';
+    }else{
+      const canDeliver = S.city === c.target && S.inv[c.item] >= c.qty;
+      action = '<button id="deliverContractBtn"' + (canDeliver ? "" : " disabled") + '>의뢰 납품</button>';
+    }
+    const typeName = c.type === "rush" ? "긴급 납품" : c.type === "courier" ? "운송" : c.type === "sale" ? "판매 목표" : "납품";
     contractBox.innerHTML =
-      "<h3>" + c.title + "</h3>" +
-      "<p><b>" + CITIES[c.target].name + "</b>에 <b>" + ITEMS[c.item].name + " " + c.qty + "개</b> 납품</p>" +
-      '<div class="contract-meta"><span>기한 ' + c.deadline + '일차</span><span>보상 ' + fmt(c.reward) + '</span><span>현재 보유 ' + S.inv[c.item] + '개</span></div>' +
-      '<button id="deliverContractBtn"' + (canDeliver ? "" : " disabled") + '>의뢰 납품</button>';
-  }else if(S.contractOffer){
-    const c = S.contractOffer;
-    contractBox.innerHTML =
-      "<h3>" + c.title + "</h3>" +
-      "<p><b>" + CITIES[c.target].name + "</b>에 <b>" + ITEMS[c.item].name + " " + c.qty + "개</b>가 필요합니다.</p>" +
+      '<span class="contract-type">' + typeName + ' · 진행 중</span><h3>' + c.title + '</h3>' +
+      '<p>' + (c.desc || "") + '</p>' +
       '<div class="contract-meta"><span>기한 ' + c.deadline + '일차</span><span>보상 ' + fmt(c.reward) + '</span></div>' +
-      '<button id="acceptContractBtn">의뢰 수락</button>';
+      action;
   }else{
-    contractBox.innerHTML = '<p class="success-note">오늘은 새 의뢰가 없습니다. 내일 다시 확인하세요.</p>';
+    const offers = S.contractOffers || [];
+    if(!offers.length){
+      contractBox.innerHTML = '<p class="success-note">오늘은 새 의뢰가 없습니다. 내일 다시 확인하세요.</p>';
+    }else{
+      contractBox.innerHTML = '<div class="contract-board">' + offers.map((c,i) => {
+        const typeName = c.type === "rush" ? "긴급 납품" : c.type === "courier" ? "운송" : c.type === "sale" ? "판매 목표" : "납품";
+        return '<article class="contract-offer"><span class="contract-type">' + typeName + '</span><h3>' + c.title + '</h3><p>' + c.desc + '</p><div class="contract-meta"><span>기한 ' + c.deadline + '일차</span><span>보상 ' + fmt(c.reward) + '</span></div><button data-contract="' + i + '">이 의뢰 수락</button></article>';
+      }).join("") + '</div>';
+    }
   }
-
   const dealBox = $("#specialDealBox");
   if(!S.specialDeal){
     dealBox.innerHTML = '<p class="muted">오늘은 수상한 사람이 안 보입니다. 오히려 더 수상합니다.</p>';
@@ -667,6 +861,7 @@ function render(){
   renderBlackMarket();
   renderOrders();
   renderTravel();
+  renderChoiceEvent();
 
   if(S.gameOver){
     document.querySelectorAll("button").forEach(b => {
@@ -794,8 +989,15 @@ $("#travelChoices").addEventListener("click",(e) => {
   if(b) advanceDay(b.dataset.travel);
 });
 $("#contractBox").addEventListener("click",(e) => {
-  if(e.target.closest("#acceptContractBtn")) acceptContract();
+  const offer = e.target.closest("[data-contract]");
+  if(offer) acceptContract(Number(offer.dataset.contract));
   if(e.target.closest("#deliverContractBtn")) deliverContract();
+});
+$("#choiceOptions").addEventListener("click",(e) => {
+  const b = e.target.closest("[data-choice]");
+  if(!b || !S.choiceEvent) return;
+  const option = S.choiceEvent.options[Number(b.dataset.choice)];
+  if(option) resolveChoice(option.effect);
 });
 $("#specialDealBox").addEventListener("click",(e) => {
   if(e.target.closest("#specialDealBtn")) useSpecialDeal();
