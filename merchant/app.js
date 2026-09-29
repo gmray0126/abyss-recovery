@@ -246,9 +246,27 @@ function checkContractDeadline(){
   }
 }
 
+function merchantTier(){
+  const wealth = net();
+  if(wealth >= 20000) return {name:"대형 상단",overhead:110,level:3};
+  if(wealth >= 8000) return {name:"중형 상단",overhead:45,level:2};
+  if(wealth >= 3000) return {name:"소상단",overhead:15,level:1};
+  return {name:"행상인",overhead:0,level:0};
+}
+function settlementRate(){
+  if(S.day < 14) return .04;
+  return Math.min(.06,.04 + Math.floor(S.day / 14) * .005);
+}
+function nextSettlementDay(){
+  return S.day % 7 === 0 ? S.day + 7 : S.day + (7 - (S.day % 7));
+}
+function projectedSettlement(){
+  return Math.max(80,Math.round(net() * settlementRate()));
+}
 function fee(){
   const t = (S.capacity - 20) / 5;
-  return Math.round(10 + t * 8 + t * t * 2);
+  const caravan = Math.round(10 + t * 8 + t * t * 2);
+  return caravan + merchantTier().overhead;
 }
 function upgradeCost(){
   const t = (S.capacity - 20) / 5;
@@ -358,7 +376,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -419,15 +437,31 @@ function cancelOrder(i){
 }
 function processOrders(){
   const keep = [];
-  let soldText = [];
+  const soldText = [];
+  const capacityLeft = {};
+
   for(const o of S.orders){
+    const key = o.city + ":" + o.item;
+    if(capacityLeft[key] == null){
+      const d0 = demand(o.item,o.city);
+      capacityLeft[key] = Math.max(1,Math.round(1 + d0 * 2.4 + Math.random() * 2.5));
+    }
+
     const currentMarket = S.world[o.city][o.item] || S.prices[o.item];
     const premium = o.ask / Math.max(1,currentMarket);
     const age = S.day - o.listed;
     let chance = .15 * demand(o.item,o.city) * (1 + age * .15) / Math.max(.72,premium);
     chance = Math.max(.02,Math.min(.93,chance));
+
     let sold = 0;
-    for(let i=0;i<o.qty;i++) if(Math.random() < chance) sold++;
+    const possible = Math.min(o.qty,capacityLeft[key]);
+    for(let i=0;i<possible;i++){
+      if(Math.random() < chance){
+        sold++;
+        capacityLeft[key]--;
+      }
+    }
+
     if(sold > 0){
       const gross = sold * o.ask;
       const rate = CITIES[o.city].fee || 0;
@@ -437,14 +471,20 @@ function processOrders(){
       updateSaleContract(o.item,o.city,sold);
       soldText.push(ITEMS[o.item].name + " " + sold + "개 " + fmt(payout) + (commission ? " (수수료 -" + fmt(commission) + ")" : ""));
     }
+
     if(sold < o.qty) keep.push(Object.assign({},o,{qty:o.qty-sold}));
   }
+
   S.orders = keep;
   if(soldText.length) toast("판매 체결: " + soldText.join(", "));
 }
 function trouble(){
   if(capitalIsSafe()) return;
-  if(Math.random() > .24) return;
+
+  const extraRisk = Math.min(.18,Math.max(0,S.day - 10) * .008);
+  if(Math.random() > .24 + extraRisk) return;
+
+  const tier = merchantTier();
 
   if(Math.random() < .5){
     if(S.guard){
@@ -452,10 +492,11 @@ function trouble(){
         ? "전시 혼란을 틈탄 도적을 호위대가 막았습니다."
         : "도적이 나타났지만 호위대가 막았습니다.");
     }else{
-      const loss = Math.min(Math.max(0,S.cash - 1),Math.round(45 + Math.random() * 105));
+      const rate = .08 + Math.random() * .08 + tier.level * .015;
+      const loss = Math.min(Math.max(0,S.cash - 1),Math.max(60,Math.round(S.cash * rate)));
       if(loss > 0){
         S.cash -= loss;
-        toast((isWarActive() && S.city === "capital" ? "전시 혼란 속 도적에게 " : "도적에게 ") + fmt(loss) + " 털렸습니다.");
+        toast((isWarActive() && S.city === "capital" ? "전시 혼란 속 도적에게 " : "도적에게 ") + fmt(loss) + " 털렸습니다. 큰 상단일수록 표적이 되기 쉽습니다.");
       }
     }
   }else{
@@ -464,13 +505,33 @@ function trouble(){
     }else{
       const candidates = Object.keys(ITEMS).filter(k => S.inv[k] > 0);
       if(candidates.length){
-        const k = pick(candidates);
-        const loss = Math.max(1,Math.ceil(S.inv[k] * (.12 + Math.random() * .13)));
-        S.inv[k] -= loss;
-        toast("쥐떼가 " + ITEMS[k].name + " " + loss + "개를 먹어치웠습니다.");
+        const hits = Math.min(candidates.length,tier.level >= 2 ? 2 : 1);
+        const damaged = [];
+        for(let h=0;h<hits;h++){
+          const k = pick(candidates.filter(x => !damaged.some(v => v.k === x)));
+          if(!k) break;
+          const rate = tier.level >= 2 ? (.20 + Math.random() * .16) : (.12 + Math.random() * .13);
+          const loss = Math.max(1,Math.ceil(S.inv[k] * rate));
+          S.inv[k] -= loss;
+          damaged.push({k,loss});
+        }
+        toast("쥐떼 습격: " + damaged.map(x => ITEMS[x.k].name + " " + x.loss + "개").join(", ") + " 손실.");
       }
     }
   }
+}
+function applyWeeklySettlement(){
+  if(S.day < 7 || S.day % 7 !== 0) return true;
+  const rate = settlementRate();
+  const due = Math.max(80,Math.round(net() * rate));
+  S.cash -= due;
+  S.lastSettlement = {day:S.day,due,rate};
+  toast("상인 길드 주간 결산: 자산의 " + Math.round(rate * 1000) / 10 + "% · " + fmt(due) + " 납부.");
+  if(S.cash <= 0){
+    bankrupt("주간 결산금을 감당하지 못함");
+    return false;
+  }
+  return true;
 }
 function openTravel(){
   if(checkBlocked()) return;
@@ -504,6 +565,7 @@ function advanceDay(dest){
   trouble();
   checkCourierContract();
   checkContractDeadline();
+  if(!applyWeeklySettlement()) return;
 
   if(S.cash <= 0){
     bankrupt("하루 비용을 버티지 못함");
@@ -842,6 +904,11 @@ function render(){
   S.capacity += 5;
   $("#upgradeHint").textContent = "확장 후 유지비 " + fmt(fee()) + "/일";
   S.capacity = old;
+  const tier = merchantTier();
+  $("#lateGameText").textContent =
+    "상단 규모: " + tier.name +
+    (tier.overhead ? " · 추가 운영비 " + fmt(tier.overhead) + "/일" : "") +
+    " · 다음 길드 결산 " + nextSettlementDay() + "일차 (현재 예상 " + fmt(projectedSettlement()) + ")";
 
   $("#insuranceBtn").textContent = S.insurance ? "창고 보험 활성" : "창고 보험 40G";
   $("#guardBtn").textContent = S.guard ? "호위대 활성" : "호위대 50G";
