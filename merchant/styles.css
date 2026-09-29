@@ -311,3 +311,11 @@ body.modal-open{overflow:hidden}
 @media(max-width:680px){
   .ending-stats{grid-template-columns:1fr 1fr}
 }
+
+.ending-rank-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin:14px 0 7px}
+.ending-rank-form input{width:100%}
+.rank-list li{padding:4px 0}
+@media(max-width:680px){
+  .ending-rank-form{grid-template-columns:1fr}
+  .ending-rank-form button{width:100%}
+}
