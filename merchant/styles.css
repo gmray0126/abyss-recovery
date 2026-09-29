@@ -237,3 +237,30 @@ body.modal-open{overflow:hidden}
   .content-grid{grid-template-columns:1fr}
   .badges{justify-content:flex-start}
 }
+
+.black-market-badge{background:#efe3d2!important;color:#4c3424!important;border-color:#a98f70!important}
+.black-market-locked{
+  border:1px dashed #b8a282;
+  border-radius:12px;
+  background:#f4eadc;
+  padding:14px;
+  color:#4f4337
+}
+.black-market-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+.black-market-item{
+  border:1px solid #d8c9b1;
+  border-radius:13px;
+  background:#fffdf8;
+  padding:12px
+}
+.black-market-item .bm-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.black-market-item h3{margin:0;font-size:16px;color:#1d1712}
+.black-market-price{font-weight:900;color:#7b3f1e}
+.black-market-meta{font-size:12px;color:#5d5246;margin-top:4px}
+.black-market-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.black-market-actions button{background:#3f342c;color:#fff;border-color:#2e261f}
+.black-market-actions button:hover{background:#2f2721}
+.black-market-risk{margin-top:8px;font-size:12px;color:#8a2f2f;font-weight:800}
+@media(max-width:680px){
+  .black-market-list{grid-template-columns:1fr}
+}
