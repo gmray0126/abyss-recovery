@@ -26,33 +26,88 @@ const CITIES = {
 };
 
 const EVENTS = [
-  {n:"도적떼 출몰",tag:"위험",txt:"북부 교역로에 도적떼가 나타났습니다. 빵과 호위장비가 귀해집니다.",p:{bread:1.42,wheat:1.3,sword:1.25,armor:1.2},d:{bread:1.6,wheat:1.35,sword:1.45,armor:1.35},days:3},
-  {n:"평화의 시대",tag:"정치",txt:"왕이 “이제 전쟁은 질렸다”고 선언했습니다. 무기상들이 동시에 한숨을 쉽니다.",p:{sword:.58,armor:.62,gem:1.28,spice:1.22,beer:1.12},d:{sword:.35,armor:.4,gem:1.5,spice:1.5,beer:1.3},days:4},
-  {n:"왕실 대규모 징집",tag:"전쟁",txt:"징집령이 내려졌습니다. 군부가 검과 갑옷을 보이는 족족 사들이고 있습니다.",p:{sword:1.72,armor:1.82,iron:1.32,bread:1.16},d:{sword:2.2,armor:2.25,iron:1.5,bread:1.3},days:3},
-  {n:"왕이 빵을 금지했습니다",tag:"막장",txt:"아침 식사 중 이가 아팠다는 이유로 왕이 빵 금지령을 내렸습니다.",p:{bread:.42,wheat:.78,beer:1.15},d:{bread:.2,wheat:.7,beer:1.35},days:2},
-  {n:"빵 금지령 철회",tag:"막장",txt:"왕실 치과의사가 문제는 빵이 아니라 충치였다고 밝혔습니다.",p:{bread:1.55,wheat:1.22},d:{bread:1.8,wheat:1.25},days:2},
-  {n:"고블린 광부 노조 파업",tag:"노동",txt:"“곡괭이도 쉬어야 한다!” 고블린 광부들이 파업에 돌입했습니다.",p:{iron:1.65,sword:1.18,armor:1.18},d:{iron:1.7,sword:1.2,armor:1.2},days:3},
-  {n:"고블린 노조 협상 타결",tag:"노동",txt:"밀린 광석이 한꺼번에 시장으로 쏟아집니다.",p:{iron:.55,sword:.88,armor:.9},d:{iron:.7,sword:.9,armor:.9},days:3},
-  {n:"마법대학 시험기간",tag:"학사",txt:"학생들이 밤샘 중입니다. 마법석, 포션, 맥주가 동시에 팔립니다.",p:{mana:1.5,potion:1.45,beer:1.28},d:{mana:1.8,potion:1.7,beer:1.5},days:3},
-  {n:"성직자들이 포션을 이단으로 규정",tag:"종교",txt:"회복 포션 불매운동이 시작됐습니다. 성수 판매상들은 매우 신앙심이 깊어졌습니다.",p:{potion:.52,holy:1.7},d:{potion:.3,holy:2},days:3},
-  {n:"성직자들이 포션 회사에 투자",tag:"막장",txt:"교단이 갑자기 새 교리를 발표했습니다. 투자설은 부인했습니다.",p:{potion:1.65,holy:.86},d:{potion:1.9,holy:.75},days:2},
-  {n:"유명 용사가 검 광고",tag:"유행",txt:"“마왕도 한 방!” 광고가 대박 났습니다. 실제 마왕은 인터뷰를 거부했습니다.",p:{sword:1.48},d:{sword:1.85},days:2},
-  {n:"유명 용사는 사실 도끼 유저",tag:"정정",txt:"광고 촬영용으로만 검을 들었다는 사실이 밝혀졌습니다.",p:{sword:.7},d:{sword:.55},days:2},
-  {n:"용사가 마왕을 너무 빨리 잡았습니다",tag:"세계",txt:"전쟁 특수가 조기 종료됐습니다. 대신 전국에서 축하 연회가 열립니다.",p:{sword:.66,armor:.7,spice:1.42,beer:1.5},d:{sword:.5,armor:.55,spice:1.7,beer:1.8},days:3},
-  {n:"마왕 부활",tag:"세계",txt:"사흘 전에 잡힌 마왕이 “2페이즈였다”고 주장하며 돌아왔습니다.",p:{sword:1.72,armor:1.75,potion:1.4,holy:1.55},d:{sword:2,armor:2,potion:1.7,holy:1.8},days:3},
-  {n:"왕실 갑옷 패션 유행",tag:"유행",txt:"귀족들이 전쟁도 없는데 갑옷을 입고 무도회에 나타나기 시작했습니다.",p:{armor:1.55,gem:1.15},d:{armor:1.8,gem:1.25},days:2},
-  {n:"갑옷은 너무 무겁습니다",tag:"유행",txt:"귀족들이 허리 통증을 호소하며 갑옷 패션을 버렸습니다.",p:{armor:.62,potion:1.12},d:{armor:.45,potion:1.2},days:2},
-  {n:"대풍년",tag:"농업",txt:"곡창지대가 기록적인 수확을 냈습니다.",p:{wheat:.55,bread:.72,beer:.8},d:{wheat:.72,bread:.8,beer:.9},days:4},
-  {n:"메뚜기떼",tag:"재난",txt:"대풍년 기사를 읽은 메뚜기들이 몰려왔습니다.",p:{wheat:1.8,bread:1.62,beer:1.22},d:{wheat:1.9,bread:1.75,beer:1.3},days:3},
-  {n:"왕실 회계관이 0을 하나 더 썼습니다",tag:"행정",txt:"왕실 발주서 수량이 열 배로 찍혔습니다. 아직 아무도 실수를 인정하지 않습니다.",p:{sword:1.35,armor:1.32,bread:1.2},d:{sword:1.7,armor:1.65,bread:1.35},days:1},
-  {n:"드래곤이 세관을 점거했습니다",tag:"막장",txt:"통행료로 금화 대신 양고기를 요구 중입니다. 항구 물동량이 꼬였습니다.",p:{spice:1.35,gem:1.28,bread:1.12},d:{spice:1.45,gem:1.35,bread:1.2},days:2},
-  {n:"왕실 연금술사가 포션을 물에 탔습니다",tag:"사기",txt:"포션 신뢰도가 추락했습니다. 약초상만 신났습니다.",p:{potion:.48,herb:1.42},d:{potion:.3,herb:1.6},days:2},
-  {n:"마법사가 금을 복제했습니다",tag:"마법",txt:"보석상들이 울고 있습니다. 문제는 복제 금이 3일 뒤 치즈로 변한다는 소문입니다.",p:{gem:.58,spice:1.05},d:{gem:.45},days:2},
-  {n:"복제 금이 치즈로 변했습니다",tag:"정정",txt:"금값은 돌아왔고 왕도는 치즈 냄새로 뒤덮였습니다.",p:{gem:1.6,bread:1.12,beer:1.15},d:{gem:1.75},days:2}
+  {id:"bandits",n:"도적떼 출몰",tag:"위험",noCapital:true,txt:"북부 교역로에 도적떼가 나타났습니다. 식량과 호위장비가 귀해집니다.",p:{bread:1.42,wheat:1.3,sword:1.25,armor:1.2},d:{bread:1.6,wheat:1.35,sword:1.45,armor:1.35},days:3},
+  {id:"rat_swarm",n:"쥐떼 창궐",tag:"재난",noCapital:true,txt:"곡물창고마다 쥐가 바글거립니다. 고양이 값은 데이터에 없어서 다행입니다.",p:{wheat:1.35,bread:1.28,beer:1.12},d:{wheat:1.45,bread:1.35},days:2},
+  {id:"border_tension",n:"국경 긴장 고조",tag:"전쟁",txt:"국경 초소가 병력을 늘리고 있습니다. 아직 전쟁은 아니지만 상인들은 이미 갑옷을 사고 있습니다.",p:{sword:1.28,armor:1.34,iron:1.2,holy:1.08},d:{sword:1.45,armor:1.5,iron:1.3},days:2,follow:{id:"conscription",chance:.45}},
+  {id:"peace",n:"평화 협정 체결",tag:"정치",txt:"왕국과 이웃 나라가 악수했습니다. 무기상들은 악수 대신 계산기를 두드립니다.",p:{sword:.62,armor:.66,gem:1.25,spice:1.2,beer:1.12},d:{sword:.4,armor:.45,gem:1.45,spice:1.4,beer:1.25},days:4},
+  {id:"conscription",n:"왕실 대규모 징집",tag:"전쟁",chainOnly:true,txt:"징집령이 내려졌습니다. 군부가 검과 갑옷을 보이는 족족 사들이고 있습니다.",p:{sword:1.72,armor:1.82,iron:1.32,bread:1.16},d:{sword:2.2,armor:2.25,iron:1.5,bread:1.3},days:3,follow:{id:"war_supply",chance:.55}},
+  {id:"war_supply",n:"전선 보급난",tag:"전쟁",chainOnly:true,txt:"보급마차가 늦어졌습니다. 병사들이 검보다 빵과 포션을 더 찾는 중입니다.",p:{bread:1.55,potion:1.48,herb:1.25,holy:1.2},d:{bread:1.9,potion:1.8,herb:1.4},days:2,follow:{id:"victory_feast",chance:.35}},
+  {id:"victory_feast",n:"승전 축하연",tag:"축제",chainOnly:true,txt:"전쟁이 끝났습니다. 검은 창고로, 맥주와 향신료는 식탁으로 갑니다.",p:{sword:.68,armor:.72,beer:1.48,spice:1.4,gem:1.22},d:{sword:.55,armor:.6,beer:1.75,spice:1.65,gem:1.3},days:3},
+
+  {id:"bread_ban",n:"왕이 빵을 금지했습니다",tag:"막장",cities:["capital"],txt:"아침 식사 중 이가 아팠다는 이유로 왕이 빵 금지령을 내렸습니다.",p:{bread:.42,wheat:.78,beer:1.15},d:{bread:.2,wheat:.7,beer:1.35},days:2,follow:{id:"bread_black",chance:.65}},
+  {id:"bread_black",n:"왕도 뒷골목에 빵 밀거래",tag:"막장",cities:["capital"],chainOnly:true,txt:"금지된 빵 한 덩이가 향신료보다 비싸졌다는 소문입니다. 경비대는 못 들은 척합니다.",p:{bread:1.75,wheat:1.25},d:{bread:1.9,wheat:1.35},days:1,follow:{id:"bread_repeal",chance:.85}},
+  {id:"bread_repeal",n:"빵 금지령 철회",tag:"정정",cities:["capital"],chainOnly:true,txt:"왕실 치과의사가 문제는 빵이 아니라 충치였다고 밝혔습니다.",p:{bread:1.3,wheat:1.12},d:{bread:1.45,wheat:1.15},days:2},
+  {id:"royal_feast",n:"왕실 대연회 개최",tag:"축제",cities:["capital"],txt:"왕궁이 사흘 동안 연회를 엽니다. 보석, 향신료, 맥주가 미친 듯이 팔립니다.",p:{gem:1.48,spice:1.52,beer:1.38,bread:1.16},d:{gem:1.75,spice:1.85,beer:1.65,bread:1.25},days:3},
+  {id:"royal_wedding",n:"왕실 결혼식 발표",tag:"왕실",cities:["capital"],txt:"왕실 결혼식이 잡혔습니다. 귀족들이 보석과 향신료를 싹쓸이합니다.",p:{gem:1.65,spice:1.42,armor:1.08},d:{gem:2,spice:1.65},days:3,follow:{id:"wedding_cancel",chance:.18}},
+  {id:"wedding_cancel",n:"왕실 결혼식 돌연 취소",tag:"막장",cities:["capital"],chainOnly:true,txt:"신랑이 도망갔다는 소문이 있습니다. 보석상들은 더 빠르게 도망가고 싶어합니다.",p:{gem:.58,spice:.72,beer:1.3},d:{gem:.45,spice:.6,beer:1.45},days:2},
+  {id:"armor_fashion",n:"왕실 갑옷 패션 유행",tag:"유행",cities:["capital"],txt:"귀족들이 전쟁도 없는데 갑옷을 입고 무도회에 나타나기 시작했습니다.",p:{armor:1.55,gem:1.15},d:{armor:1.8,gem:1.25},days:2,follow:{id:"armor_heavy",chance:.7}},
+  {id:"armor_heavy",n:"갑옷은 너무 무겁습니다",tag:"유행",cities:["capital"],chainOnly:true,txt:"귀족들이 허리 통증을 호소하며 갑옷 패션을 버렸습니다.",p:{armor:.62,potion:1.15},d:{armor:.45,potion:1.25},days:2},
+  {id:"royal_accounting",n:"왕실 회계관이 0을 하나 더 썼습니다",tag:"행정",cities:["capital"],txt:"왕실 발주서 수량이 열 배로 찍혔습니다. 아직 아무도 실수를 인정하지 않습니다.",p:{sword:1.35,armor:1.32,bread:1.2},d:{sword:1.7,armor:1.65,bread:1.35},days:1},
+  {id:"tax_audit",n:"상인 세무조사 주간",tag:"행정",cities:["capital"],txt:"왕실 세무관들이 시장을 돌아다닙니다. 귀족들은 현금 대신 보석으로 거래하기 시작했습니다.",p:{gem:1.25,spice:.92},d:{gem:1.4,spice:.85},days:2},
+
+  {id:"goblin_strike",n:"고블린 광부 노조 파업",tag:"노동",cities:["mine"],txt:"“곡괭이도 쉬어야 한다!” 고블린 광부들이 파업에 돌입했습니다.",p:{iron:1.72,sword:1.22,armor:1.22,beer:1.15},d:{iron:1.8,sword:1.25,armor:1.25,beer:1.3},days:3,follow:{id:"goblin_deal",chance:.75}},
+  {id:"goblin_deal",n:"고블린 노조 협상 타결",tag:"노동",cities:["mine"],chainOnly:true,txt:"밀린 광석이 한꺼번에 시장으로 쏟아집니다. 노조는 맥주 보너스를 얻었습니다.",p:{iron:.52,sword:.86,armor:.88,beer:1.25},d:{iron:.65,sword:.88,armor:.9,beer:1.4},days:3},
+  {id:"cave_in",n:"광산 갱도 붕괴",tag:"재난",cities:["mine"],txt:"주요 갱도가 무너졌습니다. 철괴 공급이 멈추고 포션 수요가 급증합니다.",p:{iron:1.58,potion:1.38,herb:1.2},d:{iron:1.65,potion:1.7,herb:1.35},days:3},
+  {id:"new_vein",n:"대형 철광맥 발견",tag:"발견",cities:["mine"],txt:"광산 깊은 곳에서 거대한 철광맥이 발견됐습니다. 광부들이 신났고 철값은 울었습니다.",p:{iron:.58,sword:.8,armor:.82},d:{iron:.75,sword:.88,armor:.9},days:4,follow:{id:"iron_flood",chance:.5}},
+  {id:"iron_flood",n:"철괴 재고 산더미",tag:"과잉",cities:["mine"],chainOnly:true,txt:"새 광맥에서 너무 많이 캤습니다. 창고에 철괴를 쌓을 곳이 없습니다.",p:{iron:.46,sword:.76,armor:.78},d:{iron:.55,sword:.82,armor:.85},days:2},
+  {id:"forge_fire",n:"대장간 화재",tag:"사고",cities:["mine"],txt:"대형 대장간에 불이 났습니다. 완성품은 줄고 철괴 재고만 남았습니다.",p:{sword:1.5,armor:1.55,iron:.82},d:{sword:1.7,armor:1.75,iron:.75},days:2},
+  {id:"dwarf_festival",n:"드워프 맥주 축제",tag:"축제",cities:["mine"],txt:"광부들이 곡괭이를 내려놓고 맥주잔을 들었습니다. 오늘만큼은 철보다 맥주가 중요합니다.",p:{beer:1.7,bread:1.2,iron:1.08},d:{beer:2,bread:1.3},days:2},
+  {id:"mine_monster",n:"갱도에서 거대 슬라임 발견",tag:"괴물",cities:["mine"],txt:"광부들이 작업을 거부하고 있습니다. 검, 포션, 성수가 갑자기 팔립니다.",p:{sword:1.3,potion:1.45,holy:1.5,iron:1.22},d:{sword:1.55,potion:1.75,holy:1.8},days:2},
+
+  {id:"bumper_crop",n:"대풍년",tag:"농업",cities:["farm"],txt:"곡창지대가 기록적인 수확을 냈습니다. 밀 가격이 바닥을 긁고 있습니다.",p:{wheat:.5,bread:.68,beer:.78},d:{wheat:.65,bread:.78,beer:.85},days:4,follow:{id:"locust",chance:.28}},
+  {id:"locust",n:"메뚜기떼 습격",tag:"재난",cities:["farm"],chainOnly:true,txt:"대풍년 기사를 읽은 메뚜기들이 몰려왔습니다.",p:{wheat:1.9,bread:1.68,beer:1.24},d:{wheat:2,bread:1.8,beer:1.35},days:3},
+  {id:"drought",n:"평원 가뭄",tag:"재난",cities:["farm"],txt:"비가 오지 않습니다. 곡물 생산량이 줄고 약초도 말라갑니다.",p:{wheat:1.55,bread:1.4,herb:1.3,beer:1.2},d:{wheat:1.65,bread:1.5,herb:1.35},days:3,follow:{id:"rain",chance:.55}},
+  {id:"rain",n:"기적의 폭우",tag:"날씨",cities:["farm"],chainOnly:true,txt:"드디어 비가 옵니다. 너무 많이 와서 농부들이 약간 불안해합니다.",p:{wheat:.75,herb:.82,bread:.9},d:{wheat:.85,herb:.9},days:2},
+  {id:"mill_fire",n:"대형 제분소 화재",tag:"사고",cities:["farm"],txt:"밀은 넘치는데 빵을 만들 곳이 부족합니다.",p:{wheat:.72,bread:1.65},d:{wheat:.78,bread:1.85},days:2},
+  {id:"harvest_festival",n:"수확제",tag:"축제",cities:["farm"],txt:"평원 전체가 축제 분위기입니다. 빵과 맥주가 순식간에 사라집니다.",p:{bread:1.25,beer:1.5,spice:1.12},d:{bread:1.55,beer:1.85,spice:1.2},days:2},
+  {id:"giant_pumpkin",n:"세계 최대 호박 수확",tag:"막장",cities:["farm"],txt:"호박 하나가 마차보다 큽니다. 구경꾼이 몰려와 빵과 맥주만 잘 팔리고 있습니다.",p:{bread:1.18,beer:1.32},d:{bread:1.35,beer:1.55},days:1},
+  {id:"brew_contest",n:"왕국 맥주 품평회",tag:"축제",cities:["farm"],txt:"양조장들이 체면을 걸었습니다. 밀과 맥주가 동시에 동납니다.",p:{wheat:1.22,beer:1.62},d:{wheat:1.35,beer:1.9},days:2},
+
+  {id:"customs_strike",n:"항구 세관 파업",tag:"노동",cities:["port"],txt:"세관 직원들이 서류를 내려놓았습니다. 수입품이 배 안에 갇혔습니다.",p:{spice:1.55,gem:1.42,mana:1.18},d:{spice:1.7,gem:1.55},days:3,follow:{id:"customs_backlog",chance:.7}},
+  {id:"customs_backlog",n:"세관 업무 재개, 창고 폭발 직전",tag:"과잉",cities:["port"],chainOnly:true,txt:"밀린 화물이 한꺼번에 풀렸습니다. 향신료 자루가 길을 막고 있습니다.",p:{spice:.48,gem:.7,mana:.86},d:{spice:.6,gem:.75},days:3},
+  {id:"pirates",n:"해적 봉쇄",tag:"위험",cities:["port"],txt:"해적선이 항로를 막았습니다. 수입품과 포션 가격이 뛰고 있습니다.",p:{spice:1.62,gem:1.4,potion:1.2,sword:1.18},d:{spice:1.8,gem:1.5,sword:1.35},days:3,follow:{id:"navy_clear",chance:.55}},
+  {id:"navy_clear",n:"왕실 해군이 항로 확보",tag:"정정",cities:["port"],chainOnly:true,txt:"해적들이 도망갔습니다. 묶였던 화물이 한꺼번에 들어옵니다.",p:{spice:.65,gem:.78,sword:.9},d:{spice:.75,gem:.82},days:2},
+  {id:"spice_ship",n:"향신료 대형 선단 입항",tag:"무역",cities:["port"],txt:"항구가 향신료 냄새로 가득합니다. 가격은 냄새만큼 강하지 않습니다.",p:{spice:.5,gem:.9,beer:.95},d:{spice:.65},days:3},
+  {id:"dock_fire",n:"부두 창고 화재",tag:"재난",cities:["port"],txt:"수입 창고 일부가 불탔습니다. 보석은 멀쩡한 척하지만 향신료는 연기 냄새가 납니다.",p:{spice:1.38,gem:1.3,bread:1.08},d:{spice:1.5,gem:1.4},days:2},
+  {id:"sea_monster",n:"바다괴물 출몰",tag:"괴물",cities:["port"],txt:"선원들이 출항을 거부합니다. 검과 성수를 싣고 가겠다는 배만 움직입니다.",p:{sword:1.25,holy:1.45,spice:1.35},d:{sword:1.5,holy:1.7,spice:1.4},days:2},
+  {id:"merchant_fleet",n:"대상선단 귀환",tag:"무역",cities:["port"],txt:"반년 만에 대상선단이 돌아왔습니다. 보석과 향신료가 넘쳐납니다.",p:{gem:.62,spice:.58,mana:.88},d:{gem:.7,spice:.68},days:3},
+  {id:"dragon_customs",n:"드래곤이 세관을 점거했습니다",tag:"막장",cities:["port"],txt:"통행료로 금화 대신 양고기를 요구 중입니다. 항구 물동량이 꼬였습니다.",p:{spice:1.35,gem:1.28,bread:1.12},d:{spice:1.45,gem:1.35,bread:1.2},days:2},
+
+  {id:"magic_exam",n:"마법대학 시험기간",tag:"학사",cities:["arcane"],txt:"학생들이 밤샘 중입니다. 마법석, 포션, 맥주가 동시에 팔립니다.",p:{mana:1.5,potion:1.45,beer:1.28},d:{mana:1.8,potion:1.7,beer:1.5},days:3,follow:{id:"magic_vacation",chance:.65}},
+  {id:"magic_vacation",n:"마법대학 방학",tag:"학사",cities:["arcane"],chainOnly:true,txt:"학생들이 전부 떠났습니다. 마법석 상인들이 서로 눈만 마주칩니다.",p:{mana:.62,potion:.72,beer:.82,spice:1.1},d:{mana:.5,potion:.65,beer:.8},days:3},
+  {id:"lab_boom",n:"마법대학 실험실 폭발",tag:"사고",cities:["arcane"],txt:"이번에도 실험실이 터졌습니다. 교수는 '데이터는 얻었다'고 주장합니다.",p:{mana:1.6,potion:1.5,herb:1.32},d:{mana:1.9,potion:1.8,herb:1.5},days:2},
+  {id:"mana_discovery",n:"마법석 결정층 발견",tag:"발견",cities:["arcane"],txt:"도시 지하에서 마법석이 쏟아집니다. 마법사들은 행복하고 상인들은 복잡합니다.",p:{mana:.48,potion:.88},d:{mana:.58,potion:.9},days:4},
+  {id:"teleport_bug",n:"텔레포트 관문 오작동",tag:"마법",cities:["arcane"],txt:"화물이 엉뚱한 창고로 날아갑니다. 물류가 꼬여 거의 모든 생활재가 비싸졌습니다.",p:{bread:1.22,wheat:1.18,iron:1.18,spice:1.2,beer:1.18},d:{bread:1.3,wheat:1.25,spice:1.3},days:2},
+  {id:"familiar_craze",n:"마법사들 사이 사역마 열풍",tag:"유행",cities:["arcane"],txt:"학생들이 사역마 먹이를 산다고 식비를 털고 있습니다. 왜인지 약초와 빵이 잘 팔립니다.",p:{herb:1.35,bread:1.25},d:{herb:1.55,bread:1.4},days:2},
+  {id:"archmage_lecture",n:"대마법사 공개 강연",tag:"행사",cities:["arcane"],txt:"전국에서 마법사들이 몰려왔습니다. 마법석과 맥주가 동시에 동납니다.",p:{mana:1.38,beer:1.36,gem:1.12},d:{mana:1.65,beer:1.55},days:2},
+  {id:"potion_allergy",n:"포션 알레르기 소동",tag:"사고",cities:["arcane"],txt:"학생 몇 명이 파랗게 변했습니다. 포션 수요는 추락하고 약초가 대신 팔립니다.",p:{potion:.52,herb:1.5},d:{potion:.35,herb:1.7},days:2},
+
+  {id:"potion_heresy",n:"성직자들이 포션을 이단으로 규정",tag:"종교",txt:"회복 포션 불매운동이 시작됐습니다. 성수 판매상들은 매우 신앙심이 깊어졌습니다.",p:{potion:.52,holy:1.7},d:{potion:.3,holy:2},days:3,follow:{id:"church_invest",chance:.42}},
+  {id:"church_invest",n:"성직자들이 포션 회사에 투자",tag:"막장",chainOnly:true,txt:"교단이 갑자기 새 교리를 발표했습니다. 투자설은 부인했습니다.",p:{potion:1.65,holy:.86},d:{potion:1.9,holy:.75},days:2},
+  {id:"hero_ad",n:"유명 용사가 검 광고",tag:"유행",txt:"“마왕도 한 방!” 광고가 대박 났습니다. 실제 마왕은 인터뷰를 거부했습니다.",p:{sword:1.48},d:{sword:1.85},days:2,follow:{id:"hero_axe",chance:.72}},
+  {id:"hero_axe",n:"유명 용사는 사실 도끼 유저",tag:"정정",chainOnly:true,txt:"광고 촬영용으로만 검을 들었다는 사실이 밝혀졌습니다.",p:{sword:.7},d:{sword:.55},days:2},
+  {id:"hero_fast",n:"용사가 마왕을 너무 빨리 잡았습니다",tag:"세계",txt:"전쟁 특수가 조기 종료됐습니다. 대신 전국에서 축하 연회가 열립니다.",p:{sword:.66,armor:.7,spice:1.42,beer:1.5},d:{sword:.5,armor:.55,spice:1.7,beer:1.8},days:3,follow:{id:"demon_return",chance:.38}},
+  {id:"demon_return",n:"마왕 부활",tag:"전쟁",chainOnly:true,txt:"사흘 전에 잡힌 마왕이 “2페이즈였다”고 주장하며 돌아왔습니다.",p:{sword:1.72,armor:1.75,potion:1.4,holy:1.55},d:{sword:2,armor:2,potion:1.7,holy:1.8},days:3},
+  {id:"plague_rumor",n:"전염병 소문",tag:"소문",txt:"아직 확진자는 없지만 사람들은 이미 포션과 약초를 사재기하고 있습니다.",p:{herb:1.42,potion:1.5,holy:1.25},d:{herb:1.7,potion:1.8,holy:1.4},days:2,follow:{id:"plague_false",chance:.5}},
+  {id:"plague_false",n:"전염병은 그냥 숙취였습니다",tag:"정정",chainOnly:true,txt:"왕실 의원이 대규모 숙취였다고 발표했습니다. 약초상들이 발표를 싫어합니다.",p:{herb:.7,potion:.72,beer:1.12},d:{herb:.6,potion:.62,beer:1.2},days:2},
+  {id:"alchemist_water",n:"왕실 연금술사가 포션을 물에 탔습니다",tag:"사기",txt:"포션 신뢰도가 추락했습니다. 약초상만 신났습니다.",p:{potion:.48,herb:1.42},d:{potion:.3,herb:1.6},days:2,follow:{id:"potion_recall",chance:.55}},
+  {id:"potion_recall",n:"불량 포션 전량 회수",tag:"정정",chainOnly:true,txt:"문제 포션이 회수됐습니다. 정상 포션은 오히려 귀해졌습니다.",p:{potion:1.45,herb:1.18},d:{potion:1.65,herb:1.25},days:2},
+  {id:"gold_clone",n:"마법사가 금을 복제했습니다",tag:"마법",txt:"보석상들이 울고 있습니다. 문제는 복제 금이 3일 뒤 치즈로 변한다는 소문입니다.",p:{gem:.58,spice:1.05},d:{gem:.45},days:2,follow:{id:"gold_cheese",chance:.8}},
+  {id:"gold_cheese",n:"복제 금이 치즈로 변했습니다",tag:"정정",chainOnly:true,txt:"금값은 돌아왔고 왕도는 치즈 냄새로 뒤덮였습니다.",p:{gem:1.6,bread:1.12,beer:1.15},d:{gem:1.75},days:2},
+  {id:"fake_gems",n:"가짜 보석 대량 유통",tag:"사기",txt:"유리구슬에 마법을 걸어 보석으로 팔던 일당이 적발됐습니다. 진짜 보석까지 의심받습니다.",p:{gem:.55,mana:1.12},d:{gem:.42,mana:1.2},days:2,follow:{id:"gem_cert",chance:.5}},
+  {id:"gem_cert",n:"왕실 보석 감정제 도입",tag:"행정",chainOnly:true,txt:"공인 감정서가 생겼습니다. 진짜 보석 신뢰가 돌아옵니다.",p:{gem:1.38},d:{gem:1.55},days:2},
+  {id:"holy_pilgrimage",n:"대규모 성지순례",tag:"종교",txt:"순례객이 전국을 이동합니다. 성수와 빵, 맥주가 예상보다 많이 팔립니다.",p:{holy:1.45,bread:1.18,beer:1.16},d:{holy:1.7,bread:1.3,beer:1.25},days:3},
+  {id:"beer_purity",n:"맥주 순수령 선포",tag:"행정",txt:"왕실이 맥주에 물을 타지 말라고 명령했습니다. 양조장들은 '원래 안 탔다'고 주장합니다.",p:{beer:1.42,wheat:1.16},d:{beer:1.65,wheat:1.25},days:2},
+  {id:"knight_tournament",n:"왕국 기사 토너먼트",tag:"행사",txt:"기사들이 검과 갑옷을 새로 맞춥니다. 관중은 맥주를 새로 맞춥니다.",p:{sword:1.38,armor:1.42,beer:1.28},d:{sword:1.6,armor:1.65,beer:1.45},days:3},
+  {id:"meteor",n:"마법석 운석 낙하",tag:"발견",txt:"밤하늘에서 마법석이 떨어졌습니다. 학자와 사기꾼이 같은 속도로 현장에 도착했습니다.",p:{mana:.62,gem:1.12,potion:1.08},d:{mana:.72,gem:1.18},days:2},
+  {id:"adventurer_boom",n:"모험가 길드 신규 가입 폭증",tag:"경기",txt:"젊은이들이 전부 모험가가 되겠답니다. 검, 갑옷, 포션이 잘 팔립니다.",p:{sword:1.28,armor:1.3,potion:1.32},d:{sword:1.5,armor:1.5,potion:1.55},days:3},
+  {id:"adventurer_quit",n:"모험가 절반이 첫 슬라임 보고 은퇴",tag:"정정",txt:"신규 모험가들이 현실을 깨달았습니다. 중고 장비가 시장에 쏟아집니다.",p:{sword:.68,armor:.7,potion:.88},d:{sword:.58,armor:.6,potion:.85},days:2},
+  {id:"royal_lottery",n:"왕실 복권 대박 당첨자 등장",tag:"유행",txt:"평민 한 명이 갑자기 부자가 됐습니다. 따라 사려는 사람들 때문에 보석과 향신료가 뜁니다.",p:{gem:1.22,spice:1.18},d:{gem:1.38,spice:1.32},days:2}
 ];
 
 const BASE_DEMAND = {food:1.05,metal:.82,weapon:.72,alchemy:.84,luxury:.62,magic:.7};
 const RANK_KEY = "fantasyMerchantRanksV2";
+const EVENT_BY_ID = Object.fromEntries(EVENTS.map(e => [e.id,e]));
 let S;
 
 function isWarActive(){
@@ -135,17 +190,20 @@ function upgradeCost(){
 function used(){
   return Object.keys(ITEMS).reduce((a,k) => a + S.inv[k] * ITEMS[k].w, 0);
 }
-function effectMult(item,key){
+function effectMult(city,item,key){
   let m = 1;
-  for(const e of S.active) m *= ((e[key] || {})[item] || 1);
+  for(const e of S.active){
+    if(e.cities && !e.cities.includes(city)) continue;
+    m *= ((e[key] || {})[item] || 1);
+  }
   return m;
 }
 function cityPrice(city,item){
   const noise = .93 + Math.random() * .14;
-  return Math.max(2, Math.round(ITEMS[item].base * CITIES[city].mods[item] * effectMult(item,"p") * noise));
+  return Math.max(2, Math.round(ITEMS[item].base * CITIES[city].mods[item] * effectMult(city,item,"p") * noise));
 }
-function demand(item){
-  return (BASE_DEMAND[ITEMS[item].cat] || 1) * effectMult(item,"d");
+function demand(item,city=S.city){
+  return (BASE_DEMAND[ITEMS[item].cat] || 1) * effectMult(city,item,"d");
 }
 function seedWorld(){
   for(const c of Object.keys(CITIES)){
@@ -203,10 +261,25 @@ function marketRumor(){
   return pick(x.high ? high : low);
 }
 function newIntel(){
-  const e = Object.assign({}, pick(EVENTS));
+  let source = null;
+  if(S.pendingFollow && Math.random() < S.pendingFollow.chance){
+    source = EVENT_BY_ID[S.pendingFollow.id] || null;
+  }
+
+  if(!source){
+    const pool = EVENTS.filter(e => {
+      if(e.chainOnly) return false;
+      if(e.noCapital && S.city === "capital" && !isWarActive()) return false;
+      return true;
+    });
+    source = pick(pool);
+  }
+
+  const e = Object.assign({},source);
   e.remaining = e.days;
   S.today = e;
   S.active.push(e);
+  S.pendingFollow = e.follow || null;
   S.rumor = marketRumor();
   S.extra = null;
 }
@@ -217,7 +290,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null
+    contractOffer:null,contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -282,7 +355,7 @@ function processOrders(){
     const currentMarket = S.world[o.city][o.item] || S.prices[o.item];
     const premium = o.ask / Math.max(1,currentMarket);
     const age = S.day - o.listed;
-    let chance = .15 * demand(o.item) * (1 + age * .15) / Math.max(.72,premium);
+    let chance = .15 * demand(o.item,o.city) * (1 + age * .15) / Math.max(.72,premium);
     chance = Math.max(.02,Math.min(.93,chance));
     let sold = 0;
     for(let i=0;i<o.qty;i++) if(Math.random() < chance) sold++;
@@ -582,7 +655,8 @@ function render(){
     ? "왕도 평시: 도적·쥐 피해 없음 · 대신 판매 수수료 " + Math.round(CITIES.capital.fee * 100) + "%"
     : ([S.insurance && "보험",S.guard && "호위대"].filter(Boolean).join(" · ") || (isWarActive() && S.city === "capital" ? "전시 중: 왕도 안전 효과 해제" : "오늘은 무방비입니다."));
 
-  $("#newsBox").innerHTML = "<b>[" + S.today.tag + "] " + S.today.n + "</b><p>" + S.today.txt + "</p>";
+  const eventArea = S.today.cities ? " · " + S.today.cities.map(c => CITIES[c].name).join(", ") : "";
+  $("#newsBox").innerHTML = "<b>[" + S.today.tag + eventArea + "] " + S.today.n + "</b><p>" + S.today.txt + "</p>";
   $("#rumorBox").innerHTML = "<p>" + S.rumor + "</p>";
   $("#extraBox").textContent = S.extra || "아직 돈을 주지 않았습니다.";
   $("#informantBtn").disabled = S.informant || S.gameOver || S.travelOpen;
@@ -611,7 +685,7 @@ function renderMarket(){
 
   for(const [k,it] of Object.entries(ITEMS)){
     const p = S.prices[k];
-    const d = demand(k);
+    const d = demand(k,S.city);
     const delta = (p - S.prev[k]) / Math.max(1,S.prev[k]) * 100;
     avgDemand += d;
 
