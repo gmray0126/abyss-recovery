@@ -39,6 +39,16 @@
     </div>
   </section>
 
+  <section id="endingPanel" class="ending-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="endingTitle">
+    <div class="ending-modal panel">
+      <span class="choice-kicker">왕실 최종심사 통과</span>
+      <h2 id="endingTitle">왕실 공인 대상인이 되었습니다.</h2>
+      <p id="endingText"></p>
+      <div class="ending-stats" id="endingStats"></div>
+      <button id="endingRestart" class="primary wide">새 상단 시작</button>
+    </div>
+  </section>
+
   <section id="gameOver" class="panel game-over hidden">
     <h2>파산했습니다.</h2>
     <p id="gameOverText"></p>
@@ -151,6 +161,11 @@
         <button id="upgradeBtn" class="wide">운송 한도 +5</button>
         <p id="upgradeHint" class="mini muted"></p>
         <p id="lateGameText" class="mini muted"></p>
+      </section>
+
+      <section class="panel goal-panel">
+        <h2>왕실 공인 대상단 목표</h2>
+        <div id="endingGoalBox"></div>
       </section>
 
       <section class="panel">
