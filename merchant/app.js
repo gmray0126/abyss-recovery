@@ -429,6 +429,67 @@ function deliverContract(){
   toast("의뢰 완료! 보상 " + fmt(c.reward) + "을 받았습니다.");
   render();
 }
+function sellBlackMarket(item,qty){
+  if(checkBlocked()) return;
+  if(S.city === "capital"){
+    toast("왕도에는 암시장이 없습니다.");
+    return;
+  }
+  if(qty === 999) qty = S.inv[item];
+  qty = Math.max(0,Math.min(qty,S.inv[item]));
+  if(qty < 1){
+    toast("암시장에 넘길 재고가 없습니다.");
+    return;
+  }
+
+  const each = Math.max(1,Math.round(S.prices[item] * .8));
+  const gross = each * qty;
+  S.inv[item] -= qty;
+  S.cash += gross;
+
+  if(Math.random() < .05){
+    const fine = Math.max(60,Math.round(gross * .35));
+    S.cash -= fine;
+    toast("암시장 단속! " + ITEMS[item].name + " " + qty + "개를 " + fmt(gross) + "에 넘겼지만 벌금 " + fmt(fine) + "을 냈습니다.");
+    if(S.cash <= 0){
+      bankrupt("암시장 단속 벌금을 감당하지 못함");
+      return;
+    }
+  }else{
+    toast("암시장 즉시 매각: " + ITEMS[item].name + " " + qty + "개 · " + fmt(gross) + " 입금.");
+  }
+  render();
+}
+function renderBlackMarket(){
+  const panel = $("#blackMarketPanel");
+  const box = $("#blackMarketBox");
+
+  if(S.city === "capital"){
+    panel.classList.add("black-market-capital");
+    box.innerHTML = '<div class="black-market-locked"><b>왕도에는 암시장이 없습니다.</b><p>경비대가 골목까지 너무 열심히 순찰합니다. 전쟁 중이어도 암시장 거래는 불가능합니다.</p></div>';
+    return;
+  }
+
+  panel.classList.remove("black-market-capital");
+  const held = Object.keys(ITEMS).filter(k => S.inv[k] > 0);
+  if(!held.length){
+    box.innerHTML = '<div class="black-market-locked"><b>팔 물건이 없습니다.</b><p>재고를 들고 오면 시세의 80%로 바로 현금화할 수 있습니다.</p></div>';
+    return;
+  }
+
+  box.innerHTML = '<div class="black-market-risk">⚠ 거래 1회마다 5% 확률로 단속 · 벌금은 거래액의 35%, 최소 60G</div><div class="black-market-list"></div>';
+  const list = box.querySelector(".black-market-list");
+
+  for(const k of held){
+    const each = Math.max(1,Math.round(S.prices[k] * .8));
+    const row = document.createElement("article");
+    row.className = "black-market-item";
+    row.innerHTML =
+      '<div class="bm-head"><div><h3>' + ITEMS[k].name + '</h3><div class="black-market-meta">보유 ' + S.inv[k] + '개 · 정상 시세 ' + fmt(S.prices[k]) + '</div></div><div class="black-market-price">' + fmt(each) + '/개</div></div>' +
+      '<div class="black-market-actions"><button data-black="' + k + '" data-q="1">1개 즉시 매각</button><button data-black="' + k + '" data-q="999">전부 매각</button></div>';
+    list.appendChild(row);
+  }
+}
 function useSpecialDeal(){
   if(checkBlocked() || !S.specialDeal) return;
   const d = S.specialDeal;
@@ -529,6 +590,7 @@ function render(){
 
   renderExtras();
   renderMarket();
+  renderBlackMarket();
   renderOrders();
   renderTravel();
 
@@ -644,6 +706,10 @@ $("#marketCards").addEventListener("click",(e) => {
   if(!b) return;
   if(b.dataset.buy) buy(b.dataset.buy,Number(b.dataset.q));
   if(b.dataset.sell) listForSale(b.dataset.sell,Number(b.dataset.q));
+});
+$("#blackMarketBox").addEventListener("click",(e) => {
+  const b = e.target.closest("[data-black]");
+  if(b) sellBlackMarket(b.dataset.black,Number(b.dataset.q));
 });
 $("#orders").addEventListener("click",(e) => {
   const b = e.target.closest("[data-cancel]");
