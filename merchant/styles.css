@@ -287,3 +287,9 @@ body.modal-open{overflow:hidden}
   .choice-options{grid-template-columns:1fr}
   .choice-modal{max-height:86vh;overflow:auto}
 }
+
+.contract-penalty{color:#a52828;font-weight:900}
+.travel-blocked{background:#f2e4da!important;border-color:#c98c7d!important}
+.travel-blocked b{color:#8b2f25}
+.travel-ban{display:block;color:#a52828;font-weight:900;margin-top:7px}
+.travel-blocked button{background:#d8c2b5!important;color:#725b4d!important}
