@@ -117,6 +117,7 @@ const EVENTS = [
 
 const BASE_DEMAND = {food:1.05,metal:.82,weapon:.72,alchemy:.84,luxury:.62,magic:.7};
 const RANK_KEY = "fantasyMerchantRanksV2";
+const ENDING_GOALS = {day:100,wealth:50000,contracts:10,trialDays:7};
 const EVENT_BY_ID = Object.fromEntries(EVENTS.map(e => [e.id,e]));
 const CHOICE_EVENTS = [
   {id:"customs_bribe",title:"세관원이 서류를 유심히 봅니다",text:"세관원이 '서류에 아주 작은 문제가 있군요'라며 손가락 두 개를 비빕니다.",options:[
@@ -271,6 +272,65 @@ function checkContractDeadline(){
   return true;
 }
 
+function endingRequirementsMet(){
+  return S.day >= ENDING_GOALS.day &&
+    net() >= ENDING_GOALS.wealth &&
+    S.completedContracts >= ENDING_GOALS.contracts;
+}
+function checkFinalChapter(){
+  if(S.gameOver || S.ending) return;
+
+  if(!S.finalTrial && endingRequirementsMet()){
+    S.finalTrial = {
+      startDay:S.day,
+      endDay:S.day + ENDING_GOALS.trialDays
+    };
+    toast("왕실 대상단 최종심사가 시작됐습니다. " + ENDING_GOALS.trialDays + "일을 버티세요.");
+  }
+
+  if(S.finalTrial && S.day >= S.finalTrial.endDay){
+    S.ending = true;
+    S.travelOpen = false;
+    S.choiceEvent = null;
+    $("#endingPanel").classList.remove("hidden");
+    $("#endingText").textContent =
+      "100일 넘게 왕국의 시세와 사고를 버티고, 왕실의 마지막 심사까지 통과했습니다. 이제 당신의 상단은 왕실 공인 대상단입니다.";
+    $("#endingStats").innerHTML =
+      "<b>" + S.day + "일 생존</b><span>최종 자산 " + fmt(net()) + "</span><span>완료 의뢰 " + S.completedContracts + "회</span><span>최고 자산 " + fmt(S.peak) + "</span>";
+    toast("엔딩 달성: 왕실 공인 대상인");
+  }
+}
+function renderEndingGoal(){
+  const box = $("#endingGoalBox");
+  if(S.ending){
+    box.innerHTML = '<p class="success-note">왕실 공인 대상단 자격 획득 완료</p>';
+    return;
+  }
+
+  if(S.finalTrial){
+    const passed = Math.max(0,S.day - S.finalTrial.startDay);
+    const remain = Math.max(0,S.finalTrial.endDay - S.day);
+    box.innerHTML =
+      '<p><b>왕실 최종심사 진행 중</b></p>' +
+      '<div class="ending-progress"><i style="width:' + Math.min(100,(passed/ENDING_GOALS.trialDays)*100) + '%"></i></div>' +
+      '<p class="mini muted">' + passed + ' / ' + ENDING_GOALS.trialDays + '일 통과 · 앞으로 ' + remain + '일</p>' +
+      '<p class="mini">심사 중에도 유지비·결산·도적·시장 제한은 그대로 적용됩니다.</p>';
+    return;
+  }
+
+  const dayPct = Math.min(100,S.day / ENDING_GOALS.day * 100);
+  const wealth = net();
+  const wealthPct = Math.min(100,wealth / ENDING_GOALS.wealth * 100);
+  const contractPct = Math.min(100,S.completedContracts / ENDING_GOALS.contracts * 100);
+  box.innerHTML =
+    '<div class="goal-row"><span>생존</span><b>' + Math.min(S.day,ENDING_GOALS.day) + ' / ' + ENDING_GOALS.day + '일</b></div>' +
+    '<div class="ending-progress"><i style="width:' + dayPct + '%"></i></div>' +
+    '<div class="goal-row"><span>총자산</span><b>' + fmt(wealth) + ' / ' + fmt(ENDING_GOALS.wealth) + '</b></div>' +
+    '<div class="ending-progress"><i style="width:' + wealthPct + '%"></i></div>' +
+    '<div class="goal-row"><span>의뢰 성공</span><b>' + S.completedContracts + ' / ' + ENDING_GOALS.contracts + '회</b></div>' +
+    '<div class="ending-progress"><i style="width:' + contractPct + '%"></i></div>' +
+    '<p class="mini muted">세 조건을 모두 달성하면 7일간 왕실 최종심사가 시작됩니다.</p>';
+}
 function merchantTier(){
   const wealth = net();
   if(wealth >= 20000) return {name:"대형 상단",overhead:110,level:3};
@@ -341,6 +401,7 @@ function toast(t){
   $("#toast").textContent = t;
 }
 function checkBlocked(){
+  if(S.ending){ toast("이미 왕실 공인 대상인이 되었습니다."); return true; }
   if(S.gameOver){ toast("이미 파산했습니다."); return true; }
   if(S.choiceEvent){ toast("돌발 선택지부터 결정해주세요."); return true; }
   if(S.travelOpen){ toast("내일 이동지를 먼저 골라주세요."); return true; }
@@ -401,7 +462,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -415,6 +476,7 @@ function init(){
   generateSpecialDeal();
   maybeGenerateChoiceEvent();
   $("#gameOver").classList.add("hidden");
+  $("#endingPanel").classList.add("hidden");
   $("#travelPanel").classList.add("hidden");
   render();
   renderRanks();
@@ -564,7 +626,7 @@ function openTravel(){
   render();
 }
 function advanceDay(dest){
-  if(!S.travelOpen || S.gameOver) return;
+  if(!S.travelOpen || S.gameOver || S.ending) return;
   const blocked = travelBlockEvent(dest);
   if(blocked){
     toast(blocked.n + " 때문에 " + CITIES[dest].name + " 이동이 불가능합니다.");
@@ -606,6 +668,7 @@ function advanceDay(dest){
   generateSpecialDeal();
   maybeGenerateChoiceEvent();
   S.peak = Math.max(S.peak,net());
+  checkFinalChapter();
   render();
 }
 function useInformant(){
@@ -914,6 +977,7 @@ function renderExtras(){
 function render(){
   if(S.cash <= 0 && !S.gameOver){ bankrupt("현금이 바닥남"); return; }
   S.peak = Math.max(S.peak,net());
+  checkFinalChapter();
 
   $("#dayChip").textContent = S.day + "일차";
   $("#cityChip").textContent = CITIES[S.city].name;
@@ -953,6 +1017,7 @@ function render(){
   $("#informantBtn").disabled = S.informant || S.gameOver || S.travelOpen;
   $("#endDayBtn").disabled = S.gameOver || S.travelOpen;
 
+  renderEndingGoal();
   renderExtras();
   renderMarket();
   renderBlackMarket();
@@ -960,9 +1025,9 @@ function render(){
   renderTravel();
   renderChoiceEvent();
 
-  if(S.gameOver){
+  if(S.gameOver || S.ending){
     document.querySelectorAll("button").forEach(b => {
-      if(!["restart","saveRank","clearRank"].includes(b.id)) b.disabled = true;
+      if(!["restart","endingRestart","saveRank","clearRank"].includes(b.id)) b.disabled = true;
     });
   }else{
     $("#upgradeBtn").disabled = S.travelOpen;
@@ -1114,6 +1179,7 @@ $("#upgradeBtn").addEventListener("click",upgrade);
 $("#insuranceBtn").addEventListener("click",() => oneDayService("insurance",40,"창고 보험"));
 $("#guardBtn").addEventListener("click",() => oneDayService("guard",50,"호위대"));
 $("#restart").addEventListener("click",init);
+$("#endingRestart").addEventListener("click",init);
 $("#saveRank").addEventListener("click",saveRank);
 $("#clearRank").addEventListener("click",() => {
   localStorage.removeItem(RANK_KEY);
