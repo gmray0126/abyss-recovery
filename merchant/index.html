@@ -86,14 +86,17 @@
         <div id="orders" class="orders"></div>
       </section>
 
-      <section id="travelPanel" class="panel hidden">
-        <div class="panel-head">
-          <div>
-            <h2>내일 어디로 갈까요?</h2>
-            <p>이동 또는 체류를 선택하면 하루가 지나갑니다.</p>
+      <section id="travelPanel" class="travel-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="travelTitle">
+        <div class="travel-modal panel">
+          <div class="panel-head compact">
+            <div>
+              <h2 id="travelTitle">내일 어디로 갈까요?</h2>
+              <p>이동 또는 체류를 선택하면 하루가 지나갑니다.</p>
+            </div>
+            <button id="travelCancel" class="ghost" type="button">계속 거래하기</button>
           </div>
+          <div id="travelChoices" class="travel-grid"></div>
         </div>
-        <div id="travelChoices" class="travel-grid"></div>
       </section>
     </div>
 
