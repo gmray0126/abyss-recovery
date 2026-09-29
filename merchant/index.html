@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#2b2119">
+  <title>전쟁 났다, 검 사라!</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div id="app" class="app">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">FANTASY MERCHANT TYCOON</div>
+      <h1>전쟁 났다, 검 사라!</h1>
+      <p>싸게 사고, 소문을 믿고, 억까를 견디는 판타지 상인 게임.</p>
+    </div>
+    <div class="top-stats">
+      <span id="dayChip">1일차</span>
+      <span id="cityChip">왕도</span>
+      <strong id="cashChip">1,000G</strong>
+    </div>
+  </header>
+
+  <section class="stats">
+    <article><small>현금</small><b id="cashStat">1,000G</b></article>
+    <article><small>총 자산</small><b id="netStat">1,000G</b></article>
+    <article><small>일일 유지비</small><b id="feeStat">10G</b></article>
+    <article><small>운송량</small><b id="capStat">0 / 20</b></article>
+  </section>
+
+  <section id="gameOver" class="panel game-over hidden">
+    <h2>파산했습니다.</h2>
+    <p id="gameOverText"></p>
+    <div class="row">
+      <input id="rankName" maxlength="16" placeholder="상단 이름">
+      <button id="saveRank">기록 저장</button>
+      <button id="restart">새 상단</button>
+    </div>
+  </section>
+
+  <main class="layout">
+    <div class="main-col">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>오늘의 정보</h2>
+            <p>뉴스 1개 + 실제 지역 시세를 반영한 상인 소문 1개</p>
+          </div>
+          <button id="informantBtn" class="soft">정보상 35G</button>
+        </div>
+        <div class="intel-grid">
+          <article>
+            <span class="label">왕국 뉴스</span>
+            <div id="newsBox"></div>
+          </article>
+          <article>
+            <span class="label">상인 소문</span>
+            <div id="rumorBox"></div>
+          </article>
+          <article>
+            <span class="label">정보상</span>
+            <div id="extraBox" class="muted">아직 돈을 주지 않았습니다.</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2 id="marketTitle">왕도 시장</h2>
+            <p>비싸다고 바로 팔리는 건 아닙니다. 수요가 있어야 체결됩니다.</p>
+          </div>
+          <span id="marketMood" class="badge">시장 평온</span>
+        </div>
+        <div id="marketCards" class="market-grid"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>판매 등록</h2>
+            <p>등록한 가격 그대로 매일 체결 여부를 판정합니다.</p>
+          </div>
+        </div>
+        <div id="orders" class="orders"></div>
+      </section>
+
+      <section id="travelPanel" class="panel hidden">
+        <div class="panel-head">
+          <div>
+            <h2>내일 어디로 갈까요?</h2>
+            <p>이동 또는 체류를 선택하면 하루가 지나갑니다.</p>
+          </div>
+        </div>
+        <div id="travelChoices" class="travel-grid"></div>
+      </section>
+    </div>
+
+    <aside class="side-col">
+      <section class="panel">
+        <h2>내 상단</h2>
+        <div class="bar"><i id="capBar"></i></div>
+        <p id="inventoryText" class="muted">재고 없음</p>
+        <button id="upgradeBtn" class="wide">운송 한도 +5</button>
+        <p id="upgradeHint" class="mini muted"></p>
+      </section>
+
+      <section class="panel">
+        <h2>오늘만 유효한 서비스</h2>
+        <button id="insuranceBtn" class="wide soft">창고 보험 40G</button>
+        <button id="guardBtn" class="wide soft">호위대 50G</button>
+        <p id="serviceText" class="mini muted">오늘은 무방비입니다.</p>
+      </section>
+
+      <section class="panel sticky-action">
+        <h2>오늘 장사 끝내기</h2>
+        <button id="endDayBtn" class="wide primary">하루 마감 / 이동 선택</button>
+        <p class="mini muted">현금이 0G 이하가 되는 순간 즉시 파산합니다.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head compact">
+          <h2>내 기기 랭킹</h2>
+          <button id="clearRank" class="ghost">초기화</button>
+        </div>
+        <ol id="rankList" class="rank-list"></ol>
+        <p class="mini muted">현재는 이 기기 기록입니다. 공용 온라인 랭킹은 DB 연결 시 전환할 수 있습니다.</p>
+      </section>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast" aria-live="polite">뉴스를 읽고, 욕심을 조절하고, 억까를 견디십시오.</div>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
