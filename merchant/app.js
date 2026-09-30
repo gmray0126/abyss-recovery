@@ -25,6 +25,16 @@ const CITIES = {
   arcane:{name:"마도도시 아르카나",desc:"마법석·포션이 생활필수품인 도시",travel:26,fee:.05,mods:{bread:1.2,wheat:1.16,iron:1.12,sword:1.04,armor:1.08,herb:.88,potion:.72,gem:1.15,spice:1.12,mana:.54,beer:1.12,holy:1.18}}
 };
 
+const CRAFT_LIMIT = 3;
+const CRAFT_RECIPES = [
+  {id:"farm_bread",city:"farm",shop:"풍요 제분소",name:"밀가루 빵 굽기",inputs:{wheat:2},output:{bread:1},fee:3},
+  {id:"farm_beer",city:"farm",shop:"평원 양조장",name:"농가 맥주 양조",inputs:{wheat:2},output:{beer:1},fee:4},
+  {id:"mine_sword",city:"mine",shop:"철산 대장간",name:"철검 제작",inputs:{iron:2},output:{sword:1},fee:10},
+  {id:"mine_armor",city:"mine",shop:"철산 대장간",name:"갑옷 제작",inputs:{iron:3},output:{armor:1},fee:14},
+  {id:"arcane_potion",city:"arcane",shop:"연금술 공방",name:"회복 포션 조제",inputs:{herb:2},output:{potion:1},fee:7},
+  {id:"arcane_holy",city:"arcane",shop:"성수 조제실",name:"성수 정제",inputs:{herb:1,potion:1},output:{holy:1},fee:8}
+];
+
 const EVENTS = [
   {id:"bandits",n:"도적떼 출몰",tag:"위험",noCapital:true,txt:"북부 교역로에 도적떼가 나타났습니다. 식량과 호위장비가 귀해집니다.",p:{bread:1.42,wheat:1.3,sword:1.25,armor:1.2},d:{bread:1.6,wheat:1.35,sword:1.45,armor:1.35},days:3},
   {id:"rat_swarm",n:"쥐떼 창궐",tag:"재난",noCapital:true,txt:"곡물창고마다 쥐가 바글거립니다. 고양이 값은 데이터에 없어서 다행입니다.",p:{wheat:1.35,bread:1.28,beer:1.12},d:{wheat:1.45,bread:1.35},days:2},
@@ -384,8 +394,7 @@ function seedWorld(){
 function refreshCurrentMarket(){
   for(const k of Object.keys(ITEMS)){
     S.prev[k] = S.prices[k];
-    S.prices[k] = cityPrice(S.city,k);
-    S.world[S.city][k] = S.prices[k];
+    S.prices[k] = S.world[S.city]?.[k] ?? cityPrice(S.city,k);
   }
 }
 function stockValue(){
@@ -452,7 +461,6 @@ function newIntel(){
   S.today = e;
   S.active.push(e);
   S.pendingFollow = e.follow || null;
-  S.rumor = marketRumor();
   S.extra = null;
 }
 function init(){
@@ -462,16 +470,17 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
     S.prices[k] = ITEMS[k].base;
     S.prev[k] = ITEMS[k].base;
   }
-  seedWorld();
   newIntel();
+  seedWorld();
   refreshCurrentMarket();
+  S.rumor = marketRumor();
   generateContractOffer();
   generateSpecialDeal();
   maybeGenerateChoiceEvent();
@@ -521,6 +530,11 @@ function cancelOrder(i){
   if(checkBlocked()) return;
   const o = S.orders[i];
   if(!o) return;
+  const needed = o.qty * ITEMS[o.item].w;
+  if(used() + needed > S.capacity){
+    toast("판매품을 회수할 운송 공간이 부족합니다. 마차를 비우거나 확장해주세요.");
+    return;
+  }
   S.inv[o.item] += o.qty;
   S.orders.splice(i,1);
   toast("판매 등록을 회수했습니다.");
@@ -650,16 +664,14 @@ function advanceDay(dest){
   S.insurance = false;
   S.guard = false;
   S.informant = false;
+  S.craftUsed = 0;
   S.travelOpen = false;
 
-  for(const c of Object.keys(CITIES)){
-    for(const k of Object.keys(ITEMS)) S.world[c][k] = cityPrice(c,k);
-  }
-
   newIntel();
+  seedWorld();
+  S.rumor = marketRumor();
   processOrders();
   trouble();
-  checkCourierContract();
   if(checkContractDeadline() === false) return;
   if(!applyWeeklySettlement()) return;
 
@@ -758,12 +770,6 @@ function updateSaleContract(item,city,qty){
   c.progress = Math.min(c.qty,(c.progress || 0) + qty);
   if(c.progress >= c.qty) completeContract("길드 판매 목표 달성!");
 }
-function checkCourierContract(){
-  const c = S.contractActive;
-  if(c && c.type === "courier" && S.city === c.target){
-    completeContract("길드 서류 전달 완료!");
-  }
-}
 function maybeGenerateChoiceEvent(){
   if(S.gameOver || S.choiceEvent || S.choiceResolvedDay === S.day) return;
   if(Math.random() < .34) S.choiceEvent = Object.assign({},pick(CHOICE_EVENTS));
@@ -843,6 +849,67 @@ function renderChoiceEvent(){
   $("#choiceOptions").innerHTML = S.choiceEvent.options.map((o,i) =>
     '<button data-choice="' + i + '">' + o.label + '</button>'
   ).join("");
+}
+
+
+function craftRecipe(id,qty=1){
+  if(checkBlocked()) return;
+  const r = CRAFT_RECIPES.find(x => x.id === id);
+  if(!r || r.city !== S.city){ toast("이 도시에서는 해당 물품을 제작할 수 없습니다."); return; }
+
+  const left = Math.max(0,CRAFT_LIMIT - S.craftUsed);
+  const inputMax = Object.entries(r.inputs).reduce((m,[k,n]) => Math.min(m,Math.floor(S.inv[k]/n)),Infinity);
+  const cashMax = r.fee > 0 ? Math.floor((S.cash - 1)/r.fee) : 999;
+  const inputWeight = Object.entries(r.inputs).reduce((a,[k,n]) => a + ITEMS[k].w*n,0);
+  const outputWeight = Object.entries(r.output).reduce((a,[k,n]) => a + ITEMS[k].w*n,0);
+  const deltaWeight = outputWeight - inputWeight;
+  const capMax = deltaWeight > 0 ? Math.floor((S.capacity-used())/deltaWeight) : 999;
+  let max = Math.max(0,Math.min(left,inputMax,cashMax,capMax));
+  if(qty === 999) qty = max;
+  qty = Math.max(0,Math.min(qty,max));
+
+  if(qty < 1){
+    toast(left <= 0 ? "오늘 제작 가능 횟수를 모두 사용했습니다." : "재료·현금 또는 운송 공간이 부족합니다.");
+    return;
+  }
+
+  for(const [k,n] of Object.entries(r.inputs)) S.inv[k] -= n*qty;
+  for(const [k,n] of Object.entries(r.output)) S.inv[k] += n*qty;
+  S.cash -= r.fee*qty;
+  S.craftUsed += qty;
+
+  const made = Object.entries(r.output).map(([k,n]) => ITEMS[k].name + " " + (n*qty) + "개").join(", ");
+  toast(r.shop + " 제작 완료: " + made + " · 공임 " + fmt(r.fee*qty));
+  render();
+}
+function renderCrafting(){
+  const box = $("#craftBox");
+  const badge = $("#craftUsesBadge");
+  badge.textContent = "제작 " + S.craftUsed + " / " + CRAFT_LIMIT;
+
+  const recipes = CRAFT_RECIPES.filter(r => r.city === S.city);
+  if(!recipes.length){
+    box.innerHTML = '<div class="craft-empty"><b>' + CITIES[S.city].name + '에는 이용 가능한 생산 공방이 없습니다.</b><p>풍요 평원·철산 광산도시·마도도시에서 각각 다른 제작을 할 수 있습니다.</p></div>';
+    return;
+  }
+
+  const left = Math.max(0,CRAFT_LIMIT - S.craftUsed);
+  box.innerHTML = '<div class="craft-grid">' + recipes.map(r => {
+    const inputText = Object.entries(r.inputs).map(([k,n]) => ITEMS[k].name + " " + n + "개").join(" + ");
+    const outputText = Object.entries(r.output).map(([k,n]) => ITEMS[k].name + " " + n + "개").join(" + ");
+    const materialMarket = Object.entries(r.inputs).reduce((a,[k,n]) => a + S.prices[k]*n,0);
+    const outputMarket = Object.entries(r.output).reduce((a,[k,n]) => a + S.prices[k]*n,0);
+    const canMaterial = Object.entries(r.inputs).every(([k,n]) => S.inv[k] >= n);
+    const can = left > 0 && canMaterial && S.cash > r.fee;
+    return '<article class="craft-card">' +
+      '<span class="craft-shop">' + r.shop + '</span>' +
+      '<h3>' + r.name + '</h3>' +
+      '<p><b>' + inputText + '</b> → <b>' + outputText + '</b></p>' +
+      '<div class="craft-meta"><span>공임 ' + fmt(r.fee) + '</span><span>재료 시세 ' + fmt(materialMarket) + '</span><span>완제품 시세 ' + fmt(outputMarket) + '</span></div>' +
+      '<div class="craft-actions"><button data-craft="' + r.id + '" data-q="1"' + (can ? "" : " disabled") + '>1회 제작</button>' +
+      '<button data-craft="' + r.id + '" data-q="999"' + (can ? "" : " disabled") + '>가능한 만큼</button></div>' +
+      '</article>';
+  }).join("") + '</div>';
 }
 
 function sellBlackMarket(item,qty){
@@ -936,7 +1003,9 @@ function renderExtras(){
     if(c.type === "sale"){
       action = '<div class="contract-progress"><i style="width:' + pct + '%"></i></div><p>판매 진행 ' + (c.progress || 0) + ' / ' + c.qty + '</p><button disabled>정규 시장 체결로 진행</button>';
     }else if(c.type === "courier"){
-      action = '<button id="deliverContractBtn"' + (S.city === c.target ? "" : " disabled") + '>서류 전달</button>';
+      action = S.city === c.target
+        ? '<p class="contract-arrived">목적지에 도착했습니다. 길드 지부에 직접 전달하세요.</p><button id="deliverContractBtn">서류 전달</button>'
+        : '<button id="deliverContractBtn" disabled>' + CITIES[c.target].name + '에서 전달 가능</button>';
     }else{
       const canDeliver = S.city === c.target && S.inv[c.item] >= c.qty;
       action = '<button id="deliverContractBtn"' + (canDeliver ? "" : " disabled") + '>의뢰 납품</button>';
@@ -1024,6 +1093,7 @@ function render(){
   renderEndingGoal();
   renderExtras();
   renderMarket();
+  renderCrafting();
   renderBlackMarket();
   renderOrders();
   renderTravel();
@@ -1200,6 +1270,10 @@ $("#marketCards").addEventListener("click",(e) => {
   if(!b) return;
   if(b.dataset.buy) buy(b.dataset.buy,Number(b.dataset.q));
   if(b.dataset.sell) listForSale(b.dataset.sell,Number(b.dataset.q));
+});
+$("#craftBox").addEventListener("click",(e) => {
+  const b = e.target.closest("[data-craft]");
+  if(b) craftRecipe(b.dataset.craft,Number(b.dataset.q));
 });
 $("#blackMarketBox").addEventListener("click",(e) => {
   const b = e.target.closest("[data-black]");
