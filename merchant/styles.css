@@ -319,3 +319,16 @@ body.modal-open{overflow:hidden}
   .ending-rank-form{grid-template-columns:1fr}
   .ending-rank-form button{width:100%}
 }
+
+.craft-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+.craft-card{border:1px solid #d8c9b1;border-radius:13px;background:#fffdf8;padding:12px}
+.craft-card h3{margin:3px 0 6px;font-size:16px;color:#1d1712}
+.craft-shop{font-size:11px;font-weight:900;color:#315f49}
+.craft-meta{display:flex;gap:7px;flex-wrap:wrap;font-size:12px;color:#65594d;margin-top:7px}
+.craft-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.craft-actions button{background:#edf3e8;border-color:#a9b99f;color:#294529}
+.craft-empty{border:1px dashed #baa587;border-radius:12px;background:#f7eddf;padding:13px;color:#4f4337}
+.contract-arrived{color:#1f6b3d!important;font-weight:900}
+@media(max-width:680px){
+  .craft-grid{grid-template-columns:1fr}
+}
