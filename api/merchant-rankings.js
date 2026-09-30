@@ -43,8 +43,8 @@ async function writeRanks(cache,list){
 function payload(list){
   return {
     ok:true,
-    rankings:list.slice(0,30).map(({name,wealth,day,contracts,createdAt}) => ({
-      name,wealth,day,contracts,createdAt
+    rankings:list.slice(0,30).map(({name,wealth,day,contracts,createdAt,ending}) => ({
+      name,wealth,day,contracts,createdAt,ending:ending || ""
     }))
   };
 }
@@ -67,6 +67,7 @@ export async function POST(request){
   const peak = num(body.peak,1,1_000_000_000_000);
   const day = num(body.day,1,10000);
   const contracts = num(body.contracts,0,10000);
+  const ending = cleanName(body.ending || "전설의 대상인");
 
   if(!name) return Response.json({ok:false,message:'상단 이름을 입력해주세요.'},{status:400});
   if(!Number.isFinite(wealth) || !Number.isFinite(peak) || !Number.isFinite(day) || !Number.isFinite(contracts)){
@@ -79,7 +80,7 @@ export async function POST(request){
   const cache = getCache();
   const list = await readRanks(cache);
   const now = Date.now();
-  const entry = {name,wealth,peak,day,contracts,createdAt:now};
+  const entry = {name,wealth,peak,day,contracts,ending,createdAt:now};
 
   const same = list.findIndex(x => String(x.name).toLowerCase() === name.toLowerCase());
   if(same >= 0){
