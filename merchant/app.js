@@ -141,6 +141,8 @@ const EVENTS = [
 
 const BASE_DEMAND = {food:1.05,metal:.82,weapon:.72,alchemy:.84,luxury:.62,magic:.7};
 const RANK_KEY = "fantasyMerchantRanksV2";
+const SAVE_KEY = "fantasyMerchantSaveV1";
+const SAVE_VERSION = 1;
 const ENDING_GOALS = {day:100,wealth:100000,contracts:10,trialDays:7};
 const EVENT_BY_ID = Object.fromEntries(EVENTS.map(e => [e.id,e]));
 const CHOICE_EVENTS = [
@@ -559,6 +561,121 @@ function newIntel(){
   S.active.push(e);
   S.pendingFollow = e.follow || null;
   S.extra = null;
+}
+function saveGame(){
+  if(!S) return;
+  try{
+    const payload = {
+      version:SAVE_VERSION,
+      savedAt:Date.now(),
+      state:S
+    };
+    localStorage.setItem(SAVE_KEY,JSON.stringify(payload));
+    const el = $("#saveStatus");
+    if(el) el.textContent = "자동 저장됨 · " + S.day + "일차";
+  }catch{
+    const el = $("#saveStatus");
+    if(el) el.textContent = "자동 저장 실패";
+  }
+}
+function clearSavedGame(){
+  try{ localStorage.removeItem(SAVE_KEY); }catch{}
+}
+function normalizeSavedState(state){
+  if(!state || typeof state !== "object") return null;
+
+  state.inv ||= {};
+  state.prices ||= {};
+  state.prev ||= {};
+  state.world ||= {};
+  state.orders = Array.isArray(state.orders) ? state.orders : [];
+  state.active = Array.isArray(state.active) ? state.active : [];
+  state.contractOffers = Array.isArray(state.contractOffers) ? state.contractOffers : [];
+  state.marketIndex ||= {};
+  state.marketMomentum ||= {};
+  state.marketChange ||= {};
+  state.tradePressure ||= {};
+
+  state.craftUsed ??= 0;
+  state.completedContracts ??= 0;
+  state.contractDoneDay ??= 0;
+  state.choiceResolvedDay ??= 0;
+  state.rankSaved ??= false;
+  state.ending ??= false;
+  state.gameOver ??= false;
+  state.travelOpen ??= false;
+  state.insurance ??= false;
+  state.guard ??= false;
+  state.informant ??= false;
+
+  for(const k of Object.keys(ITEMS)){
+    state.inv[k] ??= 0;
+    state.prices[k] ??= ITEMS[k].base;
+    state.prev[k] ??= ITEMS[k].base;
+    state.marketIndex[k] ??= 1;
+    state.marketMomentum[k] ??= 0;
+    state.marketChange[k] ??= 0;
+  }
+  for(const c of Object.keys(CITIES)){
+    state.world[c] ||= {};
+    state.tradePressure[c] ||= {};
+    for(const k of Object.keys(ITEMS)){
+      state.world[c][k] ??= cityPriceFallbackForSave(c,k,state);
+      state.tradePressure[c][k] ??= 0;
+    }
+  }
+  return state;
+}
+function cityPriceFallbackForSave(city,item,state){
+  const mod = CITIES[city].mods[item] ?? 1;
+  const idx = state.marketIndex?.[item] || 1;
+  return Math.max(2,Math.round(ITEMS[item].base * mod * idx));
+}
+function restoreSavedGame(){
+  let raw;
+  try{ raw = localStorage.getItem(SAVE_KEY); }catch{ return false; }
+  if(!raw) return false;
+
+  try{
+    const payload = JSON.parse(raw);
+    const restored = normalizeSavedState(payload.state);
+    if(!restored) return false;
+    S = restored;
+
+    $("#gameOver").classList.toggle("hidden",!S.gameOver);
+    $("#endingPanel").classList.toggle("hidden",!S.ending);
+    $("#travelPanel").classList.toggle("hidden",!S.travelOpen);
+
+    if(S.gameOver){
+      $("#gameOverText").textContent = S.day + "일차 · " + (S.cause || "파산") + " · 최고 자산 " + fmt(S.peak || 0);
+    }
+    if(S.ending){
+      $("#endingText").textContent =
+        "100일 넘게 왕국의 시세와 사고를 버티고, 왕실의 마지막 심사까지 통과했습니다. 이제 당신의 상단은 왕실 공인 대상단입니다.";
+      $("#endingStats").innerHTML =
+        "<b>" + S.day + "일 생존</b><span>최종 자산 " + fmt(net()) + "</span><span>완료 의뢰 " + S.completedContracts + "회</span><span>최고 자산 " + fmt(S.peak) + "</span>";
+      $("#saveSharedRank").textContent = S.rankSaved ? "저장 완료" : "공용 랭킹에 저장";
+      $("#endingRankStatus").textContent = S.rankSaved
+        ? "이 클리어 기록은 이미 공용 랭킹에 저장되었습니다."
+        : "클리어 기록은 모든 플레이어가 보는 공용 랭킹에 등록할 수 있습니다.";
+    }
+
+    render();
+    loadSharedRanks();
+
+    const savedAt = Number(payload.savedAt || 0);
+    const elapsed = savedAt ? Math.max(0,Math.round((Date.now()-savedAt)/60000)) : 0;
+    toast("저장된 게임을 이어합니다. " + S.day + "일차" + (elapsed >= 1 ? " · 약 " + elapsed + "분 전 저장" : "") + ".");
+    return true;
+  }catch{
+    clearSavedGame();
+    return false;
+  }
+}
+function startNewGame(confirmFirst=false){
+  if(confirmFirst && !window.confirm("현재 진행 상황을 삭제하고 새 게임을 시작할까요?")) return;
+  clearSavedGame();
+  init();
 }
 function init(){
   S = {
@@ -1209,7 +1326,7 @@ function render(){
 
   if(S.gameOver || S.ending){
     document.querySelectorAll("button").forEach(b => {
-      if(!["restart","endingRestart","saveSharedRank","rankRefresh"].includes(b.id)) b.disabled = true;
+      if(!["restart","endingRestart","saveSharedRank","rankRefresh","newGameBtn"].includes(b.id)) b.disabled = true;
     });
     if(S.ending){
       $("#saveSharedRank").disabled = !!S.rankSaved;
@@ -1221,6 +1338,7 @@ function render(){
     $("#insuranceBtn").disabled = S.insurance || S.travelOpen || capitalIsSafe();
     $("#guardBtn").disabled = S.guard || S.travelOpen || capitalIsSafe();
   }
+  saveGame();
 }
 function renderMarket(){
   const box = $("#marketCards");
@@ -1434,9 +1552,15 @@ $("#informantBtn").addEventListener("click",useInformant);
 $("#upgradeBtn").addEventListener("click",upgrade);
 $("#insuranceBtn").addEventListener("click",() => oneDayService("insurance",40,"창고 보험"));
 $("#guardBtn").addEventListener("click",() => oneDayService("guard",50,"호위대"));
-$("#restart").addEventListener("click",init);
-$("#endingRestart").addEventListener("click",init);
+$("#restart").addEventListener("click",() => startNewGame(false));
+$("#endingRestart").addEventListener("click",() => startNewGame(false));
+$("#newGameBtn").addEventListener("click",() => startNewGame(true));
 $("#saveSharedRank").addEventListener("click",saveSharedRank);
 $("#rankRefresh").addEventListener("click",loadSharedRanks);
 
-init();
+window.addEventListener("beforeunload",saveGame);
+document.addEventListener("visibilitychange",() => {
+  if(document.visibilityState === "hidden") saveGame();
+});
+
+if(!restoreSavedGame()) init();
