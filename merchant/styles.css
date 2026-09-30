@@ -336,3 +336,6 @@ body.modal-open{overflow:hidden}
 .craft-titleline{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .craft-stage{font-size:11px;font-weight:900;border:1px solid #c7b38f;background:#f4ead9;color:#704927;border-radius:999px;padding:3px 7px}
 .market-meta .price-up,.market-meta .price-down{font-weight:900}
+
+.save-row{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid #e3d7c5;margin-top:10px;padding-top:9px}
+.save-row .ghost{padding:6px 9px;font-size:12px}
