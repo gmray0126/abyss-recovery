@@ -144,6 +144,14 @@ const RANK_KEY = "fantasyMerchantRanksV2";
 const SAVE_KEY = "fantasyMerchantSaveV1";
 const SAVE_VERSION = 1;
 const ENDING_GOALS = {day:100,wealth:100000,contracts:10,trialDays:7};
+const ROUTE_THRESHOLD = 10;
+const ROUTE_LEAD = 2;
+const ROUTES = {
+  royal:{name:"왕실",ending:"왕실 공인 대상상",desc:"왕실·길드와의 신뢰를 쌓아 제도권 상단의 정점에 섭니다."},
+  antihero:{name:"반용사",ending:"시세를 지킨 경제수호자",desc:"용사의 말 한마디에 무너지는 시장에 맞서 상인들의 목소리를 대표합니다."},
+  underworld:{name:"암시장",ending:"뒷골목의 상왕",desc:"합법과 불법의 경계를 넘나들며 왕국의 그림자 유통망을 장악합니다."},
+  artisan:{name:"장인",ending:"왕국 제일의 공방상단",desc:"단순 시세차익을 넘어 직접 생산과 가공으로 상단의 이름을 남깁니다."}
+};
 const EVENT_BY_ID = Object.fromEntries(EVENTS.map(e => [e.id,e]));
 const CHOICE_EVENTS = [
   {id:"customs_bribe",title:"세관원이 서류를 유심히 봅니다",text:"세관원이 '서류에 아주 작은 문제가 있군요'라며 손가락 두 개를 비빕니다.",options:[
@@ -177,6 +185,31 @@ const CHOICE_EVENTS = [
   {id:"gamble_crate",title:"내용물 미확인 화물",text:"창고 관리인이 주인 없는 상자를 75G에 처분합니다. 안에는 무엇이 들었는지 아무도 모릅니다.",options:[
     {label:"75G에 상자를 산다",effect:"buy_crate"},
     {label:"남의 불행은 사지 않는다",effect:"skip_crate"}
+  ]},
+  {id:"royal_economy_meeting",title:"왕실 경제회의 초청장",text:"왕실이 상인들의 의견을 듣겠다며 당신을 불렀습니다. 회의장 밖에는 반용사 단체와 장인조합도 모여 있습니다.",options:[
+    {label:"왕실 정책 자문에 협조한다",effect:"route_royal_meeting"},
+    {label:"반용사 단체의 성명서를 대신 읽는다",effect:"route_antihero_meeting"},
+    {label:"장인조합의 유통권을 요구한다",effect:"route_artisan_meeting"}
+  ]},
+  {id:"underground_auction",title:"초대받지 않은 지하 경매",text:"검은 봉투 안에 오늘 밤 열리는 비밀 경매의 좌표가 적혀 있습니다. 왕실 압수품도 나온다는 소문입니다.",options:[
+    {label:"경매에 참가한다 · 90G",effect:"route_underworld_auction"},
+    {label:"경비대에 좌표를 넘긴다",effect:"route_royal_report"},
+    {label:"봉투를 태운다",effect:"route_neutral_ignore"}
+  ]},
+  {id:"craft_guild_crisis",title:"장인조합 폐업 위기",text:"값싼 외지 물건 때문에 지역 공방들이 문을 닫을 위기입니다. 조합장이 상인들에게 도움을 요청합니다.",options:[
+    {label:"100G를 투자해 공방을 살린다",effect:"route_artisan_invest"},
+    {label:"남은 재고를 암시장에 연결한다",effect:"route_underworld_factory"},
+    {label:"왕실 보조금을 신청해준다",effect:"route_royal_subsidy"}
+  ]},
+  {id:"hero_market_speech",title:"용사의 공개 연설",text:"용사가 또 특정 물건을 칭찬하려 합니다. 반용사 단체는 연설을 막아달라 하고, 왕실은 질서 유지를 요청합니다.",options:[
+    {label:"반용사 단체와 연설을 저지한다",effect:"route_antihero_block"},
+    {label:"왕실 요청대로 질서를 유지한다",effect:"route_royal_order"},
+    {label:"사람 몰린 틈에 굿즈를 제작해 판다",effect:"route_artisan_merch"}
+  ]},
+  {id:"black_ledger",title:"정체불명의 검은 장부",text:"밀수조직의 거래 장부가 우연히 손에 들어왔습니다. 어느 쪽에 넘기느냐에 따라 적과 친구가 달라집니다.",options:[
+    {label:"밀수조직에 돌려주고 빚을 만든다",effect:"route_underworld_ledger"},
+    {label:"왕실 수사관에게 넘긴다",effect:"route_royal_ledger"},
+    {label:"반용사 단체에 흘려 상인 피해를 폭로한다",effect:"route_antihero_ledger"}
   ]}
 ];
 let S;
@@ -298,6 +331,57 @@ function checkContractDeadline(){
   return true;
 }
 
+function addRoute(route,amount){
+  if(!S.routeScores || !ROUTES[route]) return;
+  S.routeScores[route] = Math.max(0,(S.routeScores[route] || 0) + amount);
+}
+function routeScoreText(v){
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+function determineEndingRoute(){
+  const entries = Object.keys(ROUTES)
+    .map(k => [k,S.routeScores?.[k] || 0])
+    .sort((a,b) => b[1]-a[1]);
+  const top = entries[0], second = entries[1];
+  if(top[1] >= ROUTE_THRESHOLD && top[1] - second[1] >= ROUTE_LEAD) return top[0];
+  return "normal";
+}
+function endingData(route){
+  if(route === "royal") return {
+    title:"왕실 공인 대상상이 되었습니다.",
+    text:"왕실과 상인 길드가 당신의 상단을 왕국 공식 대상단으로 인정했습니다. 이제 귀족들도 가격 흥정 전에 당신의 눈치를 봅니다."
+  };
+  if(route === "antihero") return {
+    title:"시세를 지킨 경제수호자가 되었습니다.",
+    text:"용사는 마왕을 쓰러뜨렸고, 당신은 용사가 뒤흔든 시세와 싸웠습니다. 반용사 경제피해대책위원회는 당신의 초상화를 회의실 한가운데 걸었습니다."
+  };
+  if(route === "underworld") return {
+    title:"뒷골목의 상왕이 되었습니다.",
+    text:"왕실 장부에는 당신의 거래 절반이 존재하지 않습니다. 하지만 항구의 밀수업자부터 광산의 브로커까지 모두 당신의 이름을 압니다."
+  };
+  if(route === "artisan") return {
+    title:"왕국 제일의 공방상단이 되었습니다.",
+    text:"당신은 싸게 사서 비싸게 파는 데서 멈추지 않았습니다. 제분소·제련소·연금술 공방이 당신의 유통망을 따라 움직입니다."
+  };
+  return {
+    title:"전설의 대상인이 되었습니다.",
+    text:"어느 세력에도 완전히 기대지 않고 100일 넘게 살아남아 10만G의 상단을 일궜습니다. 왕국의 상인들은 당신을 그저 '대상인'이라 부릅니다."
+  };
+}
+function renderRoutes(){
+  const box = $("#routeBox");
+  if(!box) return;
+  const entries = Object.entries(ROUTES);
+  box.innerHTML =
+    '<div class="route-head"><b>상단 성향</b><span class="mini muted">특수 엔딩: 10점 이상 + 2점 차이</span></div>' +
+    '<div class="route-grid">' + entries.map(([k,r]) => {
+      const v = S.routeScores?.[k] || 0;
+      const pct = Math.min(100,v/ROUTE_THRESHOLD*100);
+      return '<article class="route-card"><div><b>' + r.name + '</b><span>' + routeScoreText(v) + '점</span></div>' +
+        '<div class="route-meter"><i style="width:' + pct + '%"></i></div><p>' + r.desc + '</p></article>';
+    }).join("") + '</div>' +
+    '<p class="mini muted route-note">한두 번의 선택으로는 특수 엔딩이 열리지 않습니다. 조건이 애매하거나 성향이 비슷하면 노멀 엔딩으로 진행됩니다.</p>';
+}
 function endingRequirementsMet(){
   return S.day >= ENDING_GOALS.day &&
     net() >= ENDING_GOALS.wealth &&
@@ -311,19 +395,21 @@ function checkFinalChapter(){
       startDay:S.day,
       endDay:S.day + ENDING_GOALS.trialDays
     };
-    toast("왕실 대상단 최종심사가 시작됐습니다. " + ENDING_GOALS.trialDays + "일을 버티세요.");
+    toast("상단의 운명을 정할 마지막 7일이 시작됐습니다.");
   }
 
   if(S.finalTrial && S.day >= S.finalTrial.endDay){
     S.ending = true;
+    S.endingRoute = determineEndingRoute();
+    const data = endingData(S.endingRoute);
     S.travelOpen = false;
     S.choiceEvent = null;
     $("#endingPanel").classList.remove("hidden");
-    $("#endingText").textContent =
-      "100일 넘게 왕국의 시세와 사고를 버티고, 왕실의 마지막 심사까지 통과했습니다. 이제 당신의 상단은 왕실 공인 대상단입니다.";
+    $("#endingTitle").textContent = data.title;
+    $("#endingText").textContent = data.text;
     $("#endingStats").innerHTML =
       "<b>" + S.day + "일 생존</b><span>최종 자산 " + fmt(net()) + "</span><span>완료 의뢰 " + S.completedContracts + "회</span><span>최고 자산 " + fmt(S.peak) + "</span>";
-    toast("엔딩 달성: 왕실 공인 대상인");
+    toast("엔딩 달성: " + (S.endingRoute === "normal" ? "전설의 대상인" : ROUTES[S.endingRoute].ending));
   }
 }
 function renderEndingGoal(){
@@ -337,10 +423,10 @@ function renderEndingGoal(){
     const passed = Math.max(0,S.day - S.finalTrial.startDay);
     const remain = Math.max(0,S.finalTrial.endDay - S.day);
     box.innerHTML =
-      '<p><b>왕실 최종심사 진행 중</b></p>' +
+      '<p><b>상단의 마지막 7일 진행 중</b></p>' +
       '<div class="ending-progress"><i style="width:' + Math.min(100,(passed/ENDING_GOALS.trialDays)*100) + '%"></i></div>' +
       '<p class="mini muted">' + passed + ' / ' + ENDING_GOALS.trialDays + '일 통과 · 앞으로 ' + remain + '일</p>' +
-      '<p class="mini">심사 중에도 유지비·결산·도적·시장 제한은 그대로 적용됩니다.</p>';
+      '<p class="mini">이 7일 동안의 선택도 최종 성향에 반영됩니다. 유지비·결산·도적·시장 제한은 그대로 적용됩니다.</p>';
     return;
   }
 
@@ -355,7 +441,7 @@ function renderEndingGoal(){
     '<div class="ending-progress"><i style="width:' + wealthPct + '%"></i></div>' +
     '<div class="goal-row"><span>의뢰 성공</span><b>' + S.completedContracts + ' / ' + ENDING_GOALS.contracts + '회</b></div>' +
     '<div class="ending-progress"><i style="width:' + contractPct + '%"></i></div>' +
-    '<p class="mini muted">세 조건을 모두 달성하면 7일간 왕실 최종심사가 시작됩니다.</p>';
+    '<p class="mini muted">세 조건을 모두 달성하면 상단의 운명을 정할 마지막 7일이 시작됩니다.</p>';
 }
 function merchantTier(){
   const wealth = net();
@@ -602,6 +688,9 @@ function normalizeSavedState(state){
   state.choiceResolvedDay ??= 0;
   state.rankSaved ??= false;
   state.ending ??= false;
+  state.endingRoute ??= "normal";
+  state.routeScores ||= {royal:0,antihero:0,underworld:0,artisan:0};
+  for(const key of Object.keys(ROUTES)) state.routeScores[key] ??= 0;
   state.gameOver ??= false;
   state.travelOpen ??= false;
   state.insurance ??= false;
@@ -650,8 +739,9 @@ function restoreSavedGame(){
       $("#gameOverText").textContent = S.day + "일차 · " + (S.cause || "파산") + " · 최고 자산 " + fmt(S.peak || 0);
     }
     if(S.ending){
-      $("#endingText").textContent =
-        "100일 넘게 왕국의 시세와 사고를 버티고, 왕실의 마지막 심사까지 통과했습니다. 이제 당신의 상단은 왕실 공인 대상단입니다.";
+      const data = endingData(S.endingRoute || "normal");
+      $("#endingTitle").textContent = data.title;
+      $("#endingText").textContent = data.text;
       $("#endingStats").innerHTML =
         "<b>" + S.day + "일 생존</b><span>최종 자산 " + fmt(net()) + "</span><span>완료 의뢰 " + S.completedContracts + "회</span><span>최고 자산 " + fmt(S.peak) + "</span>";
       $("#saveSharedRank").textContent = S.rankSaved ? "저장 완료" : "공용 랭킹에 저장";
@@ -684,7 +774,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{}
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal"
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -963,6 +1053,7 @@ function completeContract(message="의뢰 완료!"){
   const reward = S.contractActive.reward;
   S.cash += reward;
   S.completedContracts += 1;
+  addRoute("royal",.4);
   S.contractDoneDay = S.day;
   S.contractActive = null;
   S.contractOffers = [];
@@ -1010,12 +1101,12 @@ function resolveChoice(effect){
 
   if(effect === "bribe"){
     if(S.cash <= 60){ toast("60G가 없습니다."); return; }
-    S.cash -= 60; finish("세관원은 갑자기 서류가 완벽하다고 말했습니다."); return;
+    S.cash -= 60; addRoute("underworld",.8); finish("세관원은 갑자기 서류가 완벽하다고 말했습니다."); return;
   }
   if(effect === "inspection"){
     if(Math.random() < .25){
       const fine = 80; S.cash -= fine; finish("세관원이 트집을 잡아 " + fmt(fine) + " 벌금을 매겼습니다.");
-    }else finish("검사가 끝났습니다. 아무 일도 없었습니다. 괜히 긴장했습니다.");
+    }else { addRoute("royal",.5); finish("검사가 끝났습니다. 아무 일도 없었습니다. 괜히 긴장했습니다."); }
     return;
   }
   if(effect === "help_adventurer"){
@@ -1033,16 +1124,17 @@ function resolveChoice(effect){
   }
   if(effect === "skip_mystery"){ finish("멀리서 폭발음이 들렸습니다. 좋은 판단이었던 것 같습니다."); return; }
   if(effect === "hide_smuggler"){
+    addRoute("underworld",2);
     if(Math.random() < .65){ const pay=150; S.cash += pay; finish("밀수업자가 약속대로 " + fmt(pay) + "을 두고 사라졌습니다."); }
     else { const fine=130; S.cash -= fine; finish("경비대가 상자를 발견했습니다. 벌금 " + fmt(fine) + ". 상자 속 야옹이는 도망갔습니다."); }
     return;
   }
-  if(effect === "report_smuggler"){ S.cash += 70; finish("경비대가 신고 포상금 70G를 줬습니다."); return; }
+  if(effect === "report_smuggler"){ S.cash += 70; addRoute("royal",1.5); finish("경비대가 신고 포상금 70G를 줬습니다."); return; }
   if(effect === "support_antihero"){
     if(S.cash <= 50){ toast("50G가 없습니다."); return; }
-    S.cash -= 50; S.pendingFollow = {id:"antihero_rally",chance:.92}; finish("반용사 단체가 후원자를 '경제수호자'라고 부르기 시작했습니다."); return;
+    S.cash -= 50; addRoute("antihero",2); S.pendingFollow = {id:"antihero_rally",chance:.92}; finish("반용사 단체가 후원자를 '경제수호자'라고 부르기 시작했습니다."); return;
   }
-  if(effect === "support_hero"){ S.pendingFollow = {id:"hero_fan_counter",chance:.8}; finish("용사 팬클럽이 무료 배지를 줬습니다. 팔 수는 없습니다."); return; }
+  if(effect === "support_hero"){ addRoute("royal",.5); S.pendingFollow = {id:"hero_fan_counter",chance:.8}; finish("용사 팬클럽이 무료 배지를 줬습니다. 팔 수는 없습니다."); return; }
   if(effect === "buy_tip"){
     if(S.cash <= 30){ toast("30G가 없습니다."); return; }
     S.cash -= 30; S.rumor = "[취객 제보] " + marketRumor(); finish("대상인이 비밀이라며 주변 모두에게 같은 말을 했습니다."); return;
@@ -1050,7 +1142,7 @@ function resolveChoice(effect){
   if(effect === "skip_tip"){ finish("대상인은 3분 뒤 탁자 밑에서 잠들었습니다."); return; }
   if(effect === "repair_wagon"){
     if(S.cash <= 80){ toast("80G가 없습니다."); return; }
-    S.cash -= 80; S.cash += 150; finish("길드가 수리비와 사례를 합쳐 150G를 지급했습니다."); return;
+    S.cash -= 80; S.cash += 150; addRoute("royal",.5); finish("길드가 수리비와 사례를 합쳐 150G를 지급했습니다."); return;
   }
   if(effect === "skip_wagon"){ finish("뒤에서 길드 직원이 이름을 적는 것 같았지만 신경 쓰지 않았습니다."); return; }
   if(effect === "buy_crate"){
@@ -1059,6 +1151,29 @@ function resolveChoice(effect){
     const item = pick(tradableKeys()); const q = 1 + Math.floor(Math.random()*4);
     S.inv[item] += q; finish("상자 안에는 " + ITEMS[item].name + " " + q + "개가 들어 있었습니다."); return;
   }
+  if(effect === "route_royal_meeting"){ addRoute("royal",2); finish("왕실은 당신을 '협조적인 상인' 명단에 올렸습니다."); return; }
+  if(effect === "route_antihero_meeting"){ addRoute("antihero",2); S.pendingFollow={id:"antihero_rally",chance:.9}; finish("회의장 밖 상인들이 당신의 성명서에 박수를 보냈습니다."); return; }
+  if(effect === "route_artisan_meeting"){ addRoute("artisan",2); finish("장인조합이 당신에게 공방상단 명예패를 건넸습니다."); return; }
+  if(effect === "route_underworld_auction"){
+    if(S.cash <= 90){ toast("90G가 없습니다."); return; }
+    S.cash -= 90; addRoute("underworld",2.2); const item=pick(tradableKeys()); S.inv[item]+=1;
+    finish("지하 경매에서 " + ITEMS[item].name + " 1개를 챙겼습니다. 출처는 기록하지 않았습니다."); return;
+  }
+  if(effect === "route_royal_report"){ addRoute("royal",1.8); S.cash += 40; finish("경비대가 경매장을 덮쳤고 신고 포상금 40G를 받았습니다."); return; }
+  if(effect === "route_neutral_ignore"){ finish("검은 봉투는 재가 됐습니다. 아무 편에도 서지 않았습니다."); return; }
+  if(effect === "route_artisan_invest"){
+    if(S.cash <= 100){ toast("100G가 없습니다."); return; }
+    S.cash -= 100; addRoute("artisan",2.3); finish("장인조합이 당신을 '공방을 살린 상인'으로 기억합니다."); return;
+  }
+  if(effect === "route_underworld_factory"){ addRoute("underworld",1.8); S.cash += 70; finish("폐업 재고가 뒷골목 유통망으로 흘러가며 사례금 70G를 받았습니다."); return; }
+  if(effect === "route_royal_subsidy"){ addRoute("royal",1.4); finish("왕실 보조금이 승인됐고 길드가 당신의 이름을 추천서에 적었습니다."); return; }
+  if(effect === "route_antihero_block"){ addRoute("antihero",2.2); S.pendingFollow={id:"antihero_rally",chance:.95}; finish("용사의 시세 발언은 취소됐고 반용사 단체가 당신을 전면에 세웠습니다."); return; }
+  if(effect === "route_royal_order"){ addRoute("royal",1.7); finish("큰 충돌 없이 행사가 끝났고 왕실 경비대장이 당신에게 감사를 표했습니다."); return; }
+  if(effect === "route_artisan_merch"){ addRoute("artisan",1.5); S.cash += 100; finish("용사 얼굴이 찍힌 조악한 굿즈가 이상하게 잘 팔려 100G를 벌었습니다."); return; }
+  if(effect === "route_underworld_ledger"){ addRoute("underworld",2.4); S.cash += 80; finish("밀수조직은 장부를 되찾고 80G와 함께 '빚 하나'를 남겼습니다."); return; }
+  if(effect === "route_royal_ledger"){ addRoute("royal",2); S.cash += 60; finish("왕실 수사관이 장부를 압수하고 포상금 60G를 지급했습니다."); return; }
+  if(effect === "route_antihero_ledger"){ addRoute("antihero",2.1); S.pendingFollow={id:"antihero_lawsuit",chance:.9}; finish("장부 내용이 공개되자 반용사 단체가 대규모 폭로전을 시작했습니다."); return; }
+
   finish("아무 일도 일어나지 않았습니다.");
 }
 function renderChoiceEvent(){
@@ -1101,6 +1216,7 @@ function craftRecipe(id,qty=1){
   for(const [k,n] of Object.entries(r.output)) S.inv[k] += n*qty;
   S.cash -= r.fee*qty;
   S.craftUsed += qty;
+  addRoute("artisan",r.stage === 2 ? 1 : .2);
 
   const made = Object.entries(r.output).map(([k,n]) => ITEMS[k].name + " " + (n*qty) + "개").join(", ");
   toast(r.shop + " 제작 완료: " + made + " · 공임 " + fmt(r.fee*qty));
@@ -1153,6 +1269,7 @@ function sellBlackMarket(item,qty){
   const gross = each * qty;
   S.inv[item] -= qty;
   S.cash += gross;
+  addRoute("underworld",.6);
 
   if(Math.random() < .05){
     const fine = Math.max(60,Math.round(gross * .35));
@@ -1316,6 +1433,7 @@ function render(){
   $("#endDayBtn").disabled = S.gameOver || S.travelOpen;
 
   renderEndingGoal();
+  renderRoutes();
   renderExtras();
   renderMarket();
   renderCrafting();
@@ -1475,7 +1593,8 @@ async function saveSharedRank(){
         wealth:Math.round(net()),
         peak:Math.round(S.peak),
         day:S.day,
-        contracts:S.completedContracts
+        contracts:S.completedContracts,
+        ending:S.endingRoute === "normal" ? "전설의 대상인" : ROUTES[S.endingRoute]?.ending || "전설의 대상인"
       })
     });
     const data = await res.json().catch(()=>({}));
@@ -1496,7 +1615,7 @@ function renderRanks(){
   list.innerHTML = sharedRanks.length
     ? sharedRanks.slice(0,10).map((x,i) =>
       "<li><b>" + (i+1) + "위 · " + escapeHtml(x.name) + "</b> · " +
-      fmt(x.wealth) + ' <span class="muted">' + x.day + "일 · 의뢰 " + x.contracts + "회</span></li>"
+      fmt(x.wealth) + ' <span class="muted">' + x.day + "일 · 의뢰 " + x.contracts + "회" + (x.ending ? " · " + escapeHtml(x.ending) : "") + "</span></li>"
     ).join("")
     : '<li class="muted">아직 등록된 클리어 기록이 없습니다.</li>';
 }
