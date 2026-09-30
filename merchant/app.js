@@ -14,9 +14,18 @@ const ITEMS = {
   spice:{name:"향신료",base:110,w:1,cat:"luxury"},
   mana:{name:"마법석",base:130,w:2,cat:"magic"},
   beer:{name:"맥주",base:26,w:1,cat:"food"},
-  holy:{name:"성수",base:92,w:1,cat:"alchemy"}
+  holy:{name:"성수",base:92,w:1,cat:"alchemy"},
+  flour:{name:"밀가루",base:22,w:1,cat:"food",craftOnly:true},
+  steel:{name:"강철재",base:88,w:2,cat:"metal",craftOnly:true},
+  extract:{name:"약초 농축액",base:52,w:1,cat:"alchemy",craftOnly:true}
 };
 
+const CRAFT_LINKS = {
+  flour:["wheat","bread"],
+  steel:["iron","sword"],
+  extract:["herb","potion"]
+};
+const tradableKeys = () => Object.keys(ITEMS).filter(k => !ITEMS[k].craftOnly);
 const CITIES = {
   capital:{name:"왕도",desc:"평시 치안이 가장 좋지만 거래 수수료가 매우 비싼 대도시",travel:0,fee:.12,mods:{bread:1.15,wheat:1.2,iron:1.08,sword:1.08,armor:1.12,herb:1.1,potion:1.15,gem:1.32,spice:1.25,mana:1.2,beer:1.15,holy:1.2}},
   farm:{name:"풍요 평원",desc:"곡물과 술이 넘치는 농업지대",travel:14,fee:.03,mods:{bread:.72,wheat:.58,iron:1.28,sword:1.22,armor:1.3,herb:.83,potion:1.03,gem:1.2,spice:1.16,mana:1.14,beer:.65,holy:1.05}},
@@ -27,12 +36,17 @@ const CITIES = {
 
 const CRAFT_LIMIT = 3;
 const CRAFT_RECIPES = [
-  {id:"farm_bread",city:"farm",shop:"풍요 제분소",name:"밀가루 빵 굽기",inputs:{wheat:2},output:{bread:1},fee:3},
-  {id:"farm_beer",city:"farm",shop:"평원 양조장",name:"농가 맥주 양조",inputs:{wheat:2},output:{beer:1},fee:4},
-  {id:"mine_sword",city:"mine",shop:"철산 대장간",name:"철검 제작",inputs:{iron:2},output:{sword:1},fee:10},
-  {id:"mine_armor",city:"mine",shop:"철산 대장간",name:"갑옷 제작",inputs:{iron:3},output:{armor:1},fee:14},
-  {id:"arcane_potion",city:"arcane",shop:"연금술 공방",name:"회복 포션 조제",inputs:{herb:2},output:{potion:1},fee:7},
-  {id:"arcane_holy",city:"arcane",shop:"성수 조제실",name:"성수 정제",inputs:{herb:1,potion:1},output:{holy:1},fee:8}
+  {id:"farm_flour",city:"farm",stage:1,shop:"풍요 제분소",name:"밀 제분",inputs:{wheat:2},output:{flour:1},fee:2},
+  {id:"farm_bread",city:"farm",stage:2,shop:"풍요 제빵소",name:"빵 굽기",inputs:{flour:1},output:{bread:2},fee:3},
+  {id:"farm_beer",city:"farm",stage:1,shop:"평원 양조장",name:"농가 맥주 양조",inputs:{wheat:2},output:{beer:1},fee:4},
+
+  {id:"mine_steel",city:"mine",stage:1,shop:"철산 제련소",name:"강철 제련",inputs:{iron:2},output:{steel:1},fee:5},
+  {id:"mine_sword",city:"mine",stage:2,shop:"철산 대장간",name:"강철검 제작",inputs:{steel:1},output:{sword:1},fee:7},
+  {id:"mine_armor",city:"mine",stage:2,shop:"철산 대장간",name:"강철 갑옷 제작",inputs:{steel:1,iron:1},output:{armor:1},fee:10},
+
+  {id:"arcane_extract",city:"arcane",stage:1,shop:"연금술 공방",name:"약초 농축",inputs:{herb:2},output:{extract:1},fee:4},
+  {id:"arcane_potion",city:"arcane",stage:2,shop:"연금술 공방",name:"회복 포션 조제",inputs:{extract:1},output:{potion:1},fee:6},
+  {id:"arcane_holy",city:"arcane",stage:2,shop:"성수 조제실",name:"성수 정제",inputs:{extract:1},output:{holy:1},fee:12}
 ];
 
 const EVENTS = [
@@ -189,7 +203,7 @@ function contractFlavor(item){
 }
 function makeContractOffer(){
   const cities = Object.keys(CITIES);
-  const item = pick(Object.keys(ITEMS));
+  const item = pick(tradableKeys());
   const types = ["delivery","delivery","rush","courier","sale"];
   const type = pick(types);
   let target = pick(cities.filter(c => c !== S.city));
@@ -236,11 +250,11 @@ function generateContractOffer(){
 function generateSpecialDeal(){
   S.specialDeal = null;
   if(Math.random() > .52) return;
-  const held = Object.keys(ITEMS).filter(k => S.inv[k] > 0);
+  const held = tradableKeys().filter(k => S.inv[k] > 0);
   const type = Math.random() < .5 ? "buy" : "sell";
   let item;
   if(type === "sell" && held.length && Math.random() < .75) item = pick(held);
-  else item = pick(Object.keys(ITEMS));
+  else item = pick(tradableKeys());
   const qty = 2 + Math.floor(Math.random() * 4);
   const market = S.prices[item] || ITEMS[item].base;
   if(type === "buy"){
@@ -358,10 +372,20 @@ function nextSettlementDay(){
 function projectedSettlement(){
   return Math.max(80,Math.round(net() * settlementRate()));
 }
+function carriedMarketValue(){
+  return Object.keys(ITEMS).reduce((a,k) => a + S.inv[k] * (S.prices[k] || ITEMS[k].base),0);
+}
+function listedMarketValue(){
+  return S.orders.reduce((a,o) => a + o.qty * (S.world[o.city]?.[o.item] || o.ask || ITEMS[o.item].base),0);
+}
+function holdingCost(){
+  // 손에 든 재고 0.30%, 판매 등록 재고 0.60%/일. 무한 대기 전략에 실제 비용을 만듭니다.
+  return Math.round(carriedMarketValue() * .003 + listedMarketValue() * .006);
+}
 function fee(){
   const t = (S.capacity - 20) / 5;
   const caravan = Math.round(10 + t * 8 + t * t * 2);
-  return caravan + merchantTier().overhead;
+  return caravan + merchantTier().overhead + holdingCost();
 }
 function upgradeCost(){
   const t = (S.capacity - 20) / 5;
@@ -374,16 +398,89 @@ function effectMult(city,item,key){
   let m = 1;
   for(const e of S.active){
     if(e.cities && !e.cities.includes(city)) continue;
-    m *= ((e[key] || {})[item] || 1);
+    const direct = (e[key] || {})[item];
+    if(direct != null){
+      m *= direct;
+      continue;
+    }
+    const links = CRAFT_LINKS[item];
+    if(links){
+      const vals = links.map(k => ((e[key] || {})[k] || 1));
+      m *= Math.sqrt(vals[0] * vals[1]);
+    }
   }
   return m;
 }
+function marketIndexFor(item){
+  if(!ITEMS[item].craftOnly) return S.marketIndex[item] || 1;
+  const links = CRAFT_LINKS[item] || [];
+  if(!links.length) return 1;
+  return links.reduce((a,k) => a + (S.marketIndex[k] || 1),0) / links.length;
+}
 function cityPrice(city,item){
-  const noise = .93 + Math.random() * .14;
-  return Math.max(2, Math.round(ITEMS[item].base * CITIES[city].mods[item] * effectMult(city,item,"p") * noise));
+  const noise = .975 + Math.random() * .05;
+  const mod = CITIES[city].mods[item] ?? 1;
+  const pressure = (S.tradePressure?.[city]?.[item] || 0);
+  return Math.max(2,Math.round(
+    ITEMS[item].base *
+    mod *
+    marketIndexFor(item) *
+    (1 + pressure) *
+    effectMult(city,item,"p") *
+    noise
+  ));
 }
 function demand(item,city=S.city){
   return (BASE_DEMAND[ITEMS[item].cat] || 1) * effectMult(city,item,"d");
+}
+function updateTradePressure(){
+  if(!S.world || !Object.keys(S.world).length) return;
+  for(const k of tradableKeys()){
+    const vals = Object.keys(CITIES).map(c => S.world[c]?.[k]).filter(Number.isFinite);
+    if(!vals.length) continue;
+    const avg = vals.reduce((a,v)=>a+v,0)/vals.length;
+    for(const c of Object.keys(CITIES)){
+      const current = S.world[c]?.[k];
+      if(!Number.isFinite(current)) continue;
+      const rel = current / Math.max(1,avg);
+      let correction = 0;
+      if(rel > 1.16) correction = -Math.min(.10,(rel-1) * .28);
+      else if(rel < .84) correction = Math.min(.10,(1-rel) * .28);
+      const old = S.tradePressure[c][k] || 0;
+      S.tradePressure[c][k] = Math.max(-.12,Math.min(.12,old * .52 + correction));
+    }
+  }
+}
+function updateGlobalMarket(){
+  const keys = tradableKeys();
+  const shockCount = S.day >= 50 ? 3 : 2;
+  const shockSet = new Set();
+  while(shockSet.size < Math.min(shockCount,keys.length)) shockSet.add(pick(keys));
+
+  for(const k of keys){
+    const old = S.marketIndex[k] || 1;
+    let momentum = (S.marketMomentum[k] || 0) * .72;
+
+    // 과열/폭락한 가격은 언젠가 되돌아오지만, 단기 추세는 며칠 더 이어질 수 있습니다.
+    momentum += (1 - old) * .025;
+
+    if(shockSet.has(k)){
+      let sign = Math.random() < .5 ? -1 : 1;
+      if(old > 1.38 && Math.random() < .68) sign = -1;
+      if(old < .68 && Math.random() < .68) sign = 1;
+      momentum += sign * (.045 + Math.random() * .075);
+    }
+
+    // 플레이어가 한 품목을 시장에 과하게 풀면 상인들이 따라붙어 왕국 전체 가격도 조금 눌립니다.
+    const listed = S.orders.filter(o => o.item === k).reduce((a,o)=>a+o.qty,0);
+    if(listed >= 8) momentum -= Math.min(.045,listed * .0025);
+
+    momentum = Math.max(-.14,Math.min(.14,momentum));
+    const next = Math.max(.52,Math.min(1.85,old * (1 + momentum)));
+    S.marketIndex[k] = next;
+    S.marketMomentum[k] = momentum;
+    S.marketChange[k] = (next / old - 1) * 100;
+  }
 }
 function seedWorld(){
   for(const c of Object.keys(CITIES)){
@@ -419,7 +516,7 @@ function checkBlocked(){
 function marketRumor(){
   const choices = [];
   for(const c of Object.keys(CITIES)){
-    for(const k of Object.keys(ITEMS)){
+    for(const k of tradableKeys()){
       const ratio = S.world[c][k] / ITEMS[k].base;
       if(ratio > 1.30) choices.push({c,k,high:true,ratio});
       if(ratio < .74) choices.push({c,k,high:false,ratio});
@@ -470,12 +567,19 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{}
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
     S.prices[k] = ITEMS[k].base;
     S.prev[k] = ITEMS[k].base;
+    S.marketIndex[k] = 1;
+    S.marketMomentum[k] = 0;
+    S.marketChange[k] = 0;
+  }
+  for(const c of Object.keys(CITIES)){
+    S.tradePressure[c] = {};
+    for(const k of Object.keys(ITEMS)) S.tradePressure[c][k] = 0;
   }
   newIntel();
   seedWorld();
@@ -555,8 +659,9 @@ function processOrders(){
     const currentMarket = S.world[o.city][o.item] || S.prices[o.item];
     const premium = o.ask / Math.max(1,currentMarket);
     const age = S.day - o.listed;
-    let chance = .15 * demand(o.item,o.city) * (1 + age * .15) / Math.max(.72,premium);
-    chance = Math.max(.02,Math.min(.93,chance));
+    const freshness = Math.max(.52,1 - Math.max(0,age - 1) * .09);
+    let chance = .19 * demand(o.item,o.city) * freshness / Math.max(.62,premium * premium);
+    chance = Math.max(.015,Math.min(.90,chance));
 
     let sold = 0;
     const possible = Math.min(o.qty,capacityLeft[key]);
@@ -667,6 +772,8 @@ function advanceDay(dest){
   S.craftUsed = 0;
   S.travelOpen = false;
 
+  updateTradePressure();
+  updateGlobalMarket();
   newIntel();
   seedWorld();
   S.rumor = marketRumor();
@@ -697,7 +804,7 @@ function useInformant(){
     S.extra = "[그럴듯함] " + marketRumor();
   }else{
     const c = pick(Object.keys(CITIES));
-    const k = pick(Object.keys(ITEMS));
+    const k = pick(tradableKeys());
     S.extra = "[출처: 정보상의 처남] " + CITIES[c].name + "에서 " + ITEMS[k].name + " 값이 곧 세 배가 된답니다. 책임은 안 집니다.";
   }
   render();
@@ -832,7 +939,7 @@ function resolveChoice(effect){
   if(effect === "buy_crate"){
     if(S.cash <= 75){ toast("75G가 없습니다."); return; }
     S.cash -= 75;
-    const item = pick(Object.keys(ITEMS)); const q = 1 + Math.floor(Math.random()*4);
+    const item = pick(tradableKeys()); const q = 1 + Math.floor(Math.random()*4);
     S.inv[item] += q; finish("상자 안에는 " + ITEMS[item].name + " " + q + "개가 들어 있었습니다."); return;
   }
   finish("아무 일도 일어나지 않았습니다.");
@@ -902,7 +1009,7 @@ function renderCrafting(){
     const canMaterial = Object.entries(r.inputs).every(([k,n]) => S.inv[k] >= n);
     const can = left > 0 && canMaterial && S.cash > r.fee;
     return '<article class="craft-card">' +
-      '<span class="craft-shop">' + r.shop + '</span>' +
+      '<div class="craft-titleline"><span class="craft-shop">' + r.shop + '</span><span class="craft-stage">' + r.stage + '단계</span></div>' +
       '<h3>' + r.name + '</h3>' +
       '<p><b>' + inputText + '</b> → <b>' + outputText + '</b></p>' +
       '<div class="craft-meta"><span>공임 ' + fmt(r.fee) + '</span><span>재료 시세 ' + fmt(materialMarket) + '</span><span>완제품 시세 ' + fmt(outputMarket) + '</span></div>' +
@@ -954,7 +1061,7 @@ function renderBlackMarket(){
   }
 
   panel.classList.remove("black-market-capital");
-  const held = Object.keys(ITEMS).filter(k => S.inv[k] > 0);
+  const held = tradableKeys().filter(k => S.inv[k] > 0);
   if(!held.length){
     box.innerHTML = '<div class="black-market-locked"><b>팔 물건이 없습니다.</b><p>재고를 들고 오면 시세의 80%로 바로 현금화할 수 있습니다.</p></div>';
     return;
@@ -1075,6 +1182,7 @@ function render(){
   $("#lateGameText").textContent =
     "상단 규모: " + tier.name +
     (tier.overhead ? " · 추가 운영비 " + fmt(tier.overhead) + "/일" : "") +
+    " · 재고 보관비 " + fmt(holdingCost()) + "/일" +
     " · 다음 길드 결산 " + nextSettlementDay() + "일차 (현재 예상 " + fmt(projectedSettlement()) + ")";
 
   $("#insuranceBtn").textContent = S.insurance ? "창고 보험 활성" : "창고 보험 40G";
@@ -1118,12 +1226,17 @@ function renderMarket(){
   const box = $("#marketCards");
   box.innerHTML = "";
   let avgDemand = 0;
+  let avgGlobal = 0;
+  const keys = tradableKeys();
 
-  for(const [k,it] of Object.entries(ITEMS)){
+  for(const k of keys){
+    const it = ITEMS[k];
     const p = S.prices[k];
     const d = demand(k,S.city);
     const delta = (p - S.prev[k]) / Math.max(1,S.prev[k]) * 100;
+    const globalDelta = S.marketChange[k] || 0;
     avgDemand += d;
+    avgGlobal += globalDelta;
 
     const card = document.createElement("article");
     card.className = "market-card";
@@ -1131,12 +1244,16 @@ function renderMarket(){
     const demandClass = d > 1.4 ? "demand-high" : d < .7 ? "demand-low" : "";
     const demandText = d > 1.6 ? "수요 폭발" : d > 1.25 ? "수요 높음" : d > .8 ? "수요 보통" : "수요 낮음";
     const listed = S.orders.filter(o => o.item === k).reduce((a,o) => a + o.qty,0);
+    const trendClass = globalDelta > 2 ? "price-up" : globalDelta < -2 ? "price-down" : "";
+    const trendText = Math.abs(globalDelta) < 1
+      ? "왕국 추세 → 보합"
+      : "왕국 추세 " + (globalDelta > 0 ? "▲ +" : "▼ ") + globalDelta.toFixed(1) + "%";
 
     card.innerHTML =
       '<div class="title-row"><div><h3>' + it.name + '</h3><span class="' + priceClass + '">' +
       fmt(p) + ' ' + (delta >= 0 ? '▲ ' : '▼ ') + Math.abs(delta).toFixed(0) +
       '%</span></div><b class="' + demandClass + '">' + demandText + '</b></div>' +
-      '<div class="market-meta"><span>재고 ' + S.inv[k] + '</span><span>판매중 ' + listed + '</span><span>무게 ' + it.w + '</span></div>' +
+      '<div class="market-meta"><span>재고 ' + S.inv[k] + '</span><span>판매중 ' + listed + '</span><span>무게 ' + it.w + '</span><span class="' + trendClass + '">' + trendText + '</span></div>' +
       '<div class="market-actions"><div class="qty">' +
       '<button data-buy="' + k + '" data-q="1">1개 매입</button>' +
       '<button data-buy="' + k + '" data-q="5">5개</button>' +
@@ -1146,7 +1263,12 @@ function renderMarket(){
 
     box.appendChild(card);
   }
-  $("#marketMood").textContent = avgDemand / Object.keys(ITEMS).length > 1.15 ? "시장 과열" : "시장 평온";
+
+  const marketAvg = avgGlobal / Math.max(1,keys.length);
+  $("#marketMood").textContent =
+    marketAvg > 2.5 ? "왕국 전체 강세" :
+    marketAvg < -2.5 ? "왕국 전체 약세" :
+    avgDemand / Math.max(1,keys.length) > 1.15 ? "수요 과열" : "왕국 시장 혼조";
 }
 function renderOrders(){
   const box = $("#orders");
