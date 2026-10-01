@@ -1162,52 +1162,93 @@ function applyEventMarketShock(event){
     S.marketChange[item] = (next / old - 1) * 100;
   }
 }
+function dailyNewsCount(){
+  if(S.day >= 50) return 3;
+  if(S.day >= 20) return 2;
+  return 1;
+}
 function newIntel(){
-  let source = null;
   const phase = currentWorldPhase();
+  const targetCount = dailyNewsCount();
+  const sources = [];
+  const usedIds = new Set();
   const previousFollow = S.pendingFollow;
 
+  const addSource = (src) => {
+    if(!src || usedIds.has(src.id) || sources.length >= targetCount) return false;
+    sources.push(src);
+    usedIds.add(src.id);
+    return true;
+  };
+
   if(S.lastPhaseId !== phase.id){
-    source = {
+    addSource({
       id:"phase_intro_" + phase.id,
       n:phase.news,
       tag:"시대",
       txt:phase.newsText,
       days:2,
       phaseIntro:true
-    };
+    });
     S.lastPhaseId = phase.id;
   }else if(S.pendingFollow && Math.random() < S.pendingFollow.chance){
-    source = EVENT_BY_ID[S.pendingFollow.id] || null;
+    addSource(EVENT_BY_ID[S.pendingFollow.id] || null);
   }
 
-  if(!source && !S.active.some(e => e.princess)){
+  // 하루에 공주 발언은 최대 1개만. 뉴스 수가 늘어도 공주가 세 번 말하는 참사는 막습니다.
+  if(sources.length < targetCount && !sources.some(e => e.princess) && !S.active.some(e => e.princess)){
     const princessChance = phase.id === "merchant_age" ? .20 : S.day >= 50 ? .16 : .12;
     if(Math.random() < princessChance){
-      const princessPool = EVENTS.filter(e => e.princess && !e.chainOnly && (!e.phases || e.phases.includes(phase.id)));
-      if(princessPool.length) source = pick(princessPool);
+      const princessPool = EVENTS.filter(e =>
+        e.princess &&
+        !e.chainOnly &&
+        !usedIds.has(e.id) &&
+        (!e.phases || e.phases.includes(phase.id))
+      );
+      if(princessPool.length) addSource(pick(princessPool));
     }
   }
 
-  if(!source){
+  let safety = 0;
+  while(sources.length < targetCount && safety++ < 30){
     const pool = EVENTS.filter(e => {
       if(e.chainOnly) return false;
+      if(usedIds.has(e.id)) return false;
       if(e.phases && !e.phases.includes(phase.id)) return false;
       if(e.noCapital && S.city === "capital" && !isWarActive()) return false;
+      // 같은 사건이 아직 진행 중이면 새 뉴스 슬롯에서 또 뽑지 않습니다.
+      if(S.active.some(a => a.id === e.id)) return false;
+      // 공주 발언은 하루 최대 1건.
+      if(e.princess && sources.some(x => x.princess)) return false;
       return true;
     });
-    source = pick(pool);
+    if(!pool.length) break;
+    addSource(pick(pool));
   }
 
-  const e = Object.assign({},source);
-  e.remaining = e.days;
-  S.today = e;
-  S.active.push(e);
-  if(e.princess){
-    S.princessStatements = (S.princessStatements || 0) + 1;
-    applyEventMarketShock(e);
+  const todayNews = [];
+  let nextFollow = null;
+
+  for(const source of sources){
+    const e = Object.assign({},source);
+    e.remaining = e.days;
+    S.active.push(e);
+    todayNews.push(e);
+
+    if(e.princess){
+      S.princessStatements = (S.princessStatements || 0) + 1;
+      applyEventMarketShock(e);
+    }
+
+    if(!nextFollow && e.follow) nextFollow = e.follow;
   }
-  S.pendingFollow = e.phaseIntro ? previousFollow : (e.follow || null);
+
+  S.todayNews = todayNews;
+  S.today = todayNews[0] || null;
+
+  // 시대 전환 뉴스만 나온 날에는 기존 후속 사건 예약을 보존합니다.
+  const onlyPhaseIntros = todayNews.length && todayNews.every(e => e.phaseIntro);
+  S.pendingFollow = nextFollow || (onlyPhaseIntros ? previousFollow : null);
   S.extra = null;
 }
 
@@ -1249,6 +1290,9 @@ function normalizeSavedState(state){
   state.completedContracts ??= 0;
   state.contractDoneDay ??= 0;
   state.choiceResolvedDay ??= 0;
+  state.todayNews = Array.isArray(state.todayNews)
+    ? state.todayNews
+    : (state.today ? [state.today] : []);
   state.rankSaved ??= false;
   state.ending ??= false;
   state.endingRoute ??= "normal";
@@ -2386,9 +2430,21 @@ function render(){
     ? "왕도 평시: 도적·쥐 피해 없음 · 대신 판매 수수료 " + Math.round(CITIES.capital.fee * 100) + "%"
     : ([S.insurance && "보험",S.guard && "호위대"].filter(Boolean).join(" · ") || (isWarActive() && S.city === "capital" ? "전시 중: 왕도 안전 효과 해제" : "오늘은 무방비입니다."));
 
-  const today = S.today || {tag:"시대",n:worldPhase.news,txt:worldPhase.newsText};
-  const eventArea = today.cities ? " · " + today.cities.map(c => CITIES[c].name).join(", ") : "";
-  $("#newsBox").innerHTML = "<b>[" + today.tag + eventArea + "] " + today.n + "</b><p>" + today.txt + "</p>";
+  const newsList = (Array.isArray(S.todayNews) && S.todayNews.length)
+    ? S.todayNews
+    : [S.today || {tag:"시대",n:worldPhase.news,txt:worldPhase.newsText}];
+  $("#newsBox").innerHTML =
+    '<div class="news-count">' + newsList.length + '건의 왕국 뉴스</div>' +
+    '<div class="news-stack">' +
+      newsList.map((today,i) => {
+        const eventArea = today.cities ? " · " + today.cities.map(c => CITIES[c].name).join(", ") : "";
+        return '<article class="news-item' + (today.princess ? ' princess-news' : '') + '">' +
+          '<span class="news-index">NEWS ' + (i+1) + '</span>' +
+          '<b>[' + today.tag + eventArea + '] ' + today.n + '</b>' +
+          '<p>' + today.txt + '</p>' +
+        '</article>';
+      }).join("") +
+    '</div>';
   $("#rumorBox").innerHTML = "<p>" + S.rumor + "</p>";
   $("#extraBox").textContent = S.extra || "아직 돈을 주지 않았습니다.";
   $("#informantBtn").disabled = S.informant || S.gameOver || S.travelOpen;
