@@ -242,6 +242,35 @@
     </aside>
   </main>
 
+  <section id="daySummaryPanel" class="day-summary-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="daySummaryTitle">
+    <div class="day-summary-modal panel">
+      <div class="day-summary-head">
+        <div>
+          <span class="choice-kicker">하루 장사 결산</span>
+          <h2 id="daySummaryTitle">오늘의 장사 결과</h2>
+          <p id="daySummarySub" class="muted"></p>
+        </div>
+        <div id="daySummaryNet" class="day-summary-net"></div>
+      </div>
+      <div id="daySummaryMoney" class="day-summary-money"></div>
+      <div class="day-summary-grid">
+        <article>
+          <h3>팔린 물품</h3>
+          <div id="daySummarySales"></div>
+        </article>
+        <article>
+          <h3>비용 · 손실</h3>
+          <div id="daySummaryLosses"></div>
+        </article>
+      </div>
+      <article class="day-summary-stock">
+        <h3>하루 끝 재고</h3>
+        <div id="daySummaryStock"></div>
+      </article>
+      <button id="daySummaryClose" class="wide primary">확인하고 다음 날 장사 시작</button>
+    </div>
+  </section>
+
   <div id="toast" class="toast" aria-live="polite">뉴스를 읽고, 욕심을 조절하고, 억까를 견디십시오.</div>
 </div>
 <script type="module" src="./app.js"></script>
