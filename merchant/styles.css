@@ -401,3 +401,15 @@ body.modal-open{overflow:hidden}
 @media(max-width:680px){
   .merc-grid,.gear-grid{grid-template-columns:1fr}
 }
+
+.ending-actions{display:grid;grid-template-columns:1.35fr 1fr;gap:8px;margin-top:10px}
+.final-delivery{margin-top:10px;border:1px solid #cdb88f;background:#fff7e8;border-radius:11px;padding:10px}
+.final-delivery.delivered{border-color:#9fb99d;background:#eff7ed}
+.final-delivery-main{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:7px 0}
+.final-delivery-main b{font-size:15px;color:#3b2b1d}
+.final-delivery-main span{font-size:11px;color:#6d5c4b}
+.final-delivered{margin:5px 0 0;color:#27623b;font-size:11px;font-weight:900}
+.final-warning{color:#9a3028!important;font-weight:800;margin-top:8px}
+@media(max-width:680px){
+  .ending-actions{grid-template-columns:1fr}
+}
