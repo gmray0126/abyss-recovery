@@ -573,3 +573,8 @@ body.modal-open{overflow:hidden}
 .defense-status{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid #ddd0bd;background:#fffaf2;border-radius:9px;padding:7px 8px}
 .defense-status b{font-size:11px}
 .defense-status span{font-size:9px;color:#5e6f83;text-align:right}
+
+.promotion-panel .panel-head{margin-bottom:7px}
+.promotion-panel .panel-head h2{margin-bottom:2px}
+.promotion-panel .panel-head p{font-size:10px;color:#6b5c4f;margin:0;line-height:1.4}
+.promotion-panel #promotionBtn:not(:disabled){border-color:#c9a96d;background:#fff3d8}
