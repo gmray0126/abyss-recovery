@@ -583,3 +583,85 @@ body.modal-open{overflow:hidden}
 .merc-promotion-now b{color:#7a5a1f}
 .merc-upkeep-line{display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#77685a;margin-top:6px;padding-top:5px;border-top:1px dashed #e5d8c6}
 .merc-upkeep-line b{color:#8a4f2d}
+
+.mobile-nav{display:none}
+@media(max-width:680px){
+  body{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+  .app{padding:8px 8px calc(104px + env(safe-area-inset-bottom))}
+  .hero{padding:4px 2px 0;margin-bottom:7px;gap:6px}
+  .hero .eyebrow,.hero>div:first-child>p{display:none}
+  .hero h1{font-size:21px;margin:0}
+  .top-stats{gap:5px}
+  .top-stats span,.top-stats strong{font-size:11px;padding:5px 7px}
+  .stats{position:sticky;top:0;z-index:28;background:rgba(239,226,204,.94);backdrop-filter:blur(8px);padding:5px 0;margin:0 0 8px}
+  .stats article{padding:7px 8px;border-radius:11px;box-shadow:none}
+  .stats small{font-size:9px;margin-bottom:1px}
+  .stats b{font-size:14px}
+  [data-mobile-tab]{display:none!important}
+  body[data-mobile-tab="market"] [data-mobile-tab="market"],
+  body[data-mobile-tab="info"] [data-mobile-tab="info"],
+  body[data-mobile-tab="craft"] [data-mobile-tab="craft"],
+  body[data-mobile-tab="merc"] [data-mobile-tab="merc"],
+  body[data-mobile-tab="caravan"] [data-mobile-tab="caravan"]{display:block!important}
+  [data-mobile-persistent]{display:block!important}
+  .mobile-nav{
+    position:fixed;
+    left:8px;
+    right:8px;
+    bottom:max(7px,env(safe-area-inset-bottom));
+    z-index:90;
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:4px;
+    padding:5px;
+    border:1px solid #c7b69d;
+    border-radius:16px;
+    background:rgba(255,250,240,.97);
+    box-shadow:0 12px 34px rgba(56,39,24,.23);
+    backdrop-filter:blur(12px)
+  }
+  .mobile-nav button{
+    min-height:51px;
+    border:0;
+    border-radius:11px;
+    padding:4px 2px;
+    background:transparent;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:1px;
+    color:#6a5a4a
+  }
+  .mobile-nav button span{font-size:18px;line-height:1}
+  .mobile-nav button b{font-size:10px}
+  .mobile-nav button.active{background:#efe1ca;color:#6f3e22;box-shadow:inset 0 0 0 1px #d4bea0}
+  .sticky-action{
+    position:fixed!important;
+    left:12px;
+    right:12px;
+    bottom:calc(70px + env(safe-area-inset-bottom));
+    z-index:82!important;
+    padding:5px!important;
+    border-radius:14px!important;
+    background:rgba(255,250,240,.97)!important;
+    box-shadow:0 8px 22px rgba(56,39,24,.20)
+  }
+  .sticky-action .primary{min-height:42px}
+  .toast{
+    position:fixed;
+    left:12px;
+    right:12px;
+    bottom:calc(126px + env(safe-area-inset-bottom));
+    z-index:85;
+    margin:0;
+    pointer-events:none;
+    opacity:.96
+  }
+  .main-col,.side-col{display:contents}
+  .layout{display:block}
+  .layout>[class]{margin:0}
+  .panel{margin-bottom:8px}
+  #mercenaryPanel .merc-roster-grid{grid-template-columns:1fr}
+  #mercenaryPanel .merc-card{padding:10px}
+}
