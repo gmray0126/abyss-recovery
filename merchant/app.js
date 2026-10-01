@@ -62,12 +62,12 @@ const MERC_MAX_ROSTER = 6;
 const MERC_RECRUIT_COST = 300;
 const MERC_NAMES = ["리아","브람","세라","카엘","미라","토르빈","유나","베른","엘리","로웬","니아","가론"];
 const MERC_GRADES = [
-  {id:"E",name:"E급",promoteXp:6,promoteCost:180,trainCost:70,loot:1.00,rare:0.00,dayCut:0},
-  {id:"D",name:"D급",promoteXp:14,promoteCost:320,trainCost:110,loot:1.18,rare:0.04,dayCut:0},
-  {id:"C",name:"C급",promoteXp:26,promoteCost:560,trainCost:170,loot:1.42,rare:0.09,dayCut:0},
-  {id:"B",name:"B급",promoteXp:42,promoteCost:900,trainCost:260,loot:1.72,rare:0.15,dayCut:1},
-  {id:"A",name:"A급",promoteXp:65,promoteCost:1450,trainCost:400,loot:2.05,rare:0.22,dayCut:1},
-  {id:"S",name:"S급",promoteXp:null,promoteCost:null,trainCost:620,loot:2.55,rare:0.30,dayCut:2}
+  {id:"E",name:"E급",promoteXp:6,promoteCost:180,trainCost:70,loot:1.00,rare:0.00,dayCut:0,upkeep:5},
+  {id:"D",name:"D급",promoteXp:14,promoteCost:320,trainCost:110,loot:1.18,rare:0.04,dayCut:0,upkeep:8},
+  {id:"C",name:"C급",promoteXp:26,promoteCost:560,trainCost:170,loot:1.42,rare:0.09,dayCut:0,upkeep:14},
+  {id:"B",name:"B급",promoteXp:42,promoteCost:900,trainCost:260,loot:1.72,rare:0.15,dayCut:1,upkeep:22},
+  {id:"A",name:"A급",promoteXp:65,promoteCost:1450,trainCost:400,loot:2.05,rare:0.22,dayCut:1,upkeep:35},
+  {id:"S",name:"S급",promoteXp:null,promoteCost:null,trainCost:620,loot:2.55,rare:0.30,dayCut:2,upkeep:55}
 ];
 const MERC_EXPEDITIONS = [
   {
@@ -1112,7 +1112,7 @@ function holdingCost(){
 function fee(){
   const t = Math.max(0,(S.capacity - 20) / 10);
   const caravan = Math.round(10 + t * 8 + t * t * 2);
-  return caravan + merchantTier().overhead + holdingCost();
+  return caravan + merchantTier().overhead + holdingCost() + mercenaryUpkeep();
 }
 function upgradeCost(){
   const t = Math.max(0,(S.capacity - 20) / 10);
@@ -1696,7 +1696,7 @@ function normalizeSavedState(state){
     m.missions = Math.max(0,Number(m.missions || 0));
     m.busyUntil = Math.max(0,Number(m.busyUntil || 0));
     m.expeditionId ??= null;
-    m.assignment = ["warehouse","escort"].includes(m.assignment) ? m.assignment : null;
+    m.assignment = ["warehouse","escort","promotion"].includes(m.assignment) ? m.assignment : null;
     m.hiredDay ??= 1;
   }
   state.mercRoster = state.mercRoster.slice(0,MERC_MAX_ROSTER);
@@ -1715,8 +1715,6 @@ function normalizeSavedState(state){
   state.princessStatements ??= 0;
   state.lastPrincessDay ??= state.active.some(e => e.princess) ? (state.day || 1) : -999;
   state.plannedBlockade ??= null;
-  state.promotion ??= false;
-  state.promotionCostToday ??= 0;
   state.dayStartCash ??= state.cash;
   state.dayIncomeLog = Array.isArray(state.dayIncomeLog) ? state.dayIncomeLog : [];
   state.daySalesLog = Array.isArray(state.daySalesLog) ? state.daySalesLog : [];
@@ -1810,7 +1808,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},factionRep:{merchant:0,kingdom:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,promotion:false,promotionCostToday:0,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},factionRep:{merchant:0,kingdom:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -1899,6 +1897,9 @@ function processOrders(){
   const keep = [];
   const soldText = [];
   const capacityLeft = {};
+  const promoter = assignedMerc("promotion");
+  const promo = mercPromotionEffect(promoter);
+  let promotedSold = 0;
 
   for(const o of S.orders){
     const ban = saleBanEvent(o.item,o.city);
@@ -1910,7 +1911,7 @@ function processOrders(){
     if(capacityLeft[key] == null){
       const d0 = demand(o.item,o.city);
       const baseCapacity = 1 + d0 * 2.4 + Math.random() * 2.5;
-      capacityLeft[key] = Math.max(1,Math.round(baseCapacity * (S.promotion ? 1.35 : 1)));
+      capacityLeft[key] = Math.max(1,Math.round(baseCapacity * promo.capacity));
     }
 
     const currentMarket = S.world[o.city][o.item] || S.prices[o.item];
@@ -1918,7 +1919,7 @@ function processOrders(){
     const age = S.day - o.listed;
     const freshness = Math.max(.52,1 - Math.max(0,age - 1) * .09);
     let chance = .19 * demand(o.item,o.city) * freshness / Math.max(.62,premium * premium);
-    if(S.promotion) chance *= 1.5;
+    chance *= promo.chance;
     chance = Math.max(.015,Math.min(.94,chance));
 
     let sold = 0;
@@ -1940,12 +1941,17 @@ function processOrders(){
       changeFactionRep("merchant",Math.min(1.5,.25 * sold));
       updateSaleContract(o.item,o.city,sold);
       soldText.push(ITEMS[o.item].name + " " + sold + "개 " + fmt(payout) + (commission ? " (수수료 -" + fmt(commission) + ")" : ""));
+      promotedSold += sold;
     }
 
     if(sold < o.qty) keep.push(Object.assign({},o,{qty:o.qty-sold}));
   }
 
   S.orders = keep;
+  if(promoter && promotedSold > 0){
+    promoter.xp += 1;
+    addMercLog(promoter.name + " 홍보 성과 · 판매 " + promotedSold + "개 지원 · 경험 +1");
+  }
   if(soldText.length) toast("판매 체결: " + soldText.join(", "));
 }
 function changeMercFriendship(amount){
@@ -1967,7 +1973,7 @@ function mercIsBusy(merc){
   return !!(merc?.expeditionId && merc.busyUntil > S.day);
 }
 function mercIsAssigned(merc){
-  return ["warehouse","escort"].includes(merc?.assignment);
+  return ["warehouse","escort","promotion"].includes(merc?.assignment);
 }
 function mercIsAvailable(merc){
   return !!merc && !mercIsBusy(merc) && !mercIsAssigned(merc);
@@ -1982,10 +1988,23 @@ function mercProtectionChance(merc,role){
   const table = role === "warehouse" ? warehouse : escort;
   return table[Math.max(0,Math.min(table.length-1,merc.gradeIndex || 0))] || 0;
 }
+function mercPromotionEffect(merc){
+  if(!merc) return {chance:1,capacity:1};
+  const chance = [1.15,1.22,1.30,1.40,1.50,1.65];
+  const capacity = [1.10,1.15,1.20,1.28,1.35,1.45];
+  const i = Math.max(0,Math.min(5,merc.gradeIndex || 0));
+  return {chance:chance[i],capacity:capacity[i]};
+}
+function mercenaryUpkeep(){
+  return (S.mercRoster || []).reduce((sum,m) => sum + (mercGrade(m).upkeep || 0),0);
+}
+function mercAssignmentName(role){
+  return role === "warehouse" ? "창고 경비" : role === "escort" ? "상단 호위" : role === "promotion" ? "홍보 활동" : "대기";
+}
 function assignMercenary(id,role){
   if(checkBlocked()) return;
   const merc = mercById(id);
-  if(!merc || !["warehouse","escort"].includes(role)) return;
+  if(!merc || !["warehouse","escort","promotion"].includes(role)) return;
   if(mercIsBusy(merc)){ toast("원정 중인 용병은 배치할 수 없습니다."); return; }
 
   const current = assignedMerc(role);
@@ -1993,8 +2012,8 @@ function assignMercenary(id,role){
     current.assignment = null;
   }
   merc.assignment = role;
-  addMercLog(merc.name + " 배치 · " + (role === "warehouse" ? "창고 경비" : "상단 호위"));
-  toast(merc.name + "을 " + (role === "warehouse" ? "창고 경비" : "상단 호위") + "에 배치했습니다.");
+  addMercLog(merc.name + " 배치 · " + mercAssignmentName(role));
+  toast(merc.name + "을 " + mercAssignmentName(role) + "에 배치했습니다.");
   render();
 }
 function unassignMercenary(id){
@@ -2004,7 +2023,7 @@ function unassignMercenary(id){
   const old = merc.assignment;
   merc.assignment = null;
   addMercLog(merc.name + " 배치 해제");
-  toast(merc.name + "의 " + (old === "warehouse" ? "창고 경비" : "상단 호위") + " 배치를 해제했습니다.");
+  toast(merc.name + "의 " + mercAssignmentName(old) + " 배치를 해제했습니다.");
   render();
 }
 function mercRecruitCost(){
@@ -2283,7 +2302,7 @@ function renderMercenaries(){
     : '<span>도적단 소탕 효과 없음</span>';
   status.innerHTML =
     '<div class="merc-materials">' + materials.map(k => '<span><b>' + ITEMS[k].name + '</b> ' + (S.inv[k] || 0) + '</span>').join("") + '</div>' +
-    '<div class="merc-affinity"><span>누적 원정 ' + S.mercCompleted + '회</span><span>고용한 용병 ' + S.mercTotalHires + '명</span>' + suppression + '</div>';
+    '<div class="merc-affinity"><span>누적 원정 ' + S.mercCompleted + '회</span><span>고용한 용병 ' + S.mercTotalHires + '명</span><span>용병 유지비 ' + fmt(mercenaryUpkeep()) + '/일</span>' + suppression + '</div>';
 
   const recruitCost = mercRecruitCost();
   const recruitDisabled = roster.length >= MERC_MAX_ROSTER || S.cash <= recruitCost;
@@ -2311,15 +2330,18 @@ function renderMercenaries(){
         return '<article class="merc-unit-card grade-' + grade.id + '">' +
           '<div class="merc-unit-head"><div><span class="merc-grade">' + grade.name + '</span><h3>' + merc.name + '</h3></div>' +
             '<span class="' + (busy ? 'merc-busy' : assigned ? 'merc-assigned' : 'merc-idle') + '">' +
-              (busy ? '원정 중' : assigned ? (merc.assignment === 'warehouse' ? '창고 경비' : '상단 호위') : '대기') +
+              (busy ? '원정 중' : assigned ? mercAssignmentName(merc.assignment) : '대기') +
             '</span></div>' +
           '<div class="merc-xp-row"><span>경험 ' + merc.xp + (nextXp ? ' / ' + nextXp : '') + '</span><span>완료 원정 ' + merc.missions + '회</span></div>' +
           '<div class="merc-xp-bar"><i style="width:' + xpPct + '%"></i></div>' +
           (busy
             ? '<div class="merc-mission-now"><b>' + (def?.name || '원정') + '</b><span>' + Math.max(0,merc.busyUntil-S.day) + '일 남음 · ' + merc.busyUntil + '일차 귀환</span></div>'
             : assigned
-              ? '<div class="merc-defense-now"><b>' + (merc.assignment === 'warehouse' ? '창고 경비 배치' : '상단 호위 배치') + '</b><span>방어 성공률 ' + Math.round(mercProtectionChance(merc,merc.assignment)*100) + '%</span></div>'
+              ? (merc.assignment === 'promotion'
+                  ? '<div class="merc-defense-now merc-promotion-now"><b>홍보 활동 배치</b><span>판매확률 ×' + mercPromotionEffect(merc).chance.toFixed(2) + ' · 판매물량 ×' + mercPromotionEffect(merc).capacity.toFixed(2) + '</span></div>'
+                  : '<div class="merc-defense-now"><b>' + mercAssignmentName(merc.assignment) + ' 배치</b><span>방어 성공률 ' + Math.round(mercProtectionChance(merc,merc.assignment)*100) + '%</span></div>')
               : '<p class="merc-grade-bonus">소재 획득 ×' + grade.loot.toFixed(2) + (grade.rare ? ' · 희귀확률 +' + Math.round(grade.rare*100) + '%' : '') + (grade.dayCut ? ' · 원정 -' + grade.dayCut + '일' : '') + '</p>') +
+          '<div class="merc-upkeep-line">일일 유지비 <b>' + fmt(grade.upkeep) + '</b></div>' +
           '<div class="merc-unit-actions">' +
             '<button data-merc-invest="' + merc.id + '"' + (busy || assigned || S.cash <= trainCost ? ' disabled' : '') + '>훈련 투자 ' + fmt(trainCost) + '</button>' +
             '<button data-merc-promote="' + merc.id + '"' + (busy || assigned || !promoteReady || nextXp == null || S.cash <= (grade.promoteCost || 0) ? ' disabled' : '') + '>' + promoteText + '</button>' +
@@ -2327,8 +2349,9 @@ function renderMercenaries(){
           '<div class="merc-defense-actions">' +
             (assigned
               ? '<button data-merc-unassign="' + merc.id + '">경비 배치 해제</button>'
-              : '<button data-merc-assign="' + merc.id + '" data-role="warehouse"' + (busy ? ' disabled' : '') + '>창고 경비 ' + Math.round(mercProtectionChance(merc,"warehouse")*100) + '%</button>' +
-                '<button data-merc-assign="' + merc.id + '" data-role="escort"' + (busy ? ' disabled' : '') + '>상단 호위 ' + Math.round(mercProtectionChance(merc,"escort")*100) + '%</button>') +
+              : '<button data-merc-assign="' + merc.id + '" data-role="warehouse"' + (busy ? ' disabled' : '') + '>창고 ' + Math.round(mercProtectionChance(merc,"warehouse")*100) + '%</button>' +
+                '<button data-merc-assign="' + merc.id + '" data-role="escort"' + (busy ? ' disabled' : '') + '>호위 ' + Math.round(mercProtectionChance(merc,"escort")*100) + '%</button>' +
+                '<button data-merc-assign="' + merc.id + '" data-role="promotion"' + (busy ? ' disabled' : '') + '>홍보 ×' + mercPromotionEffect(merc).chance.toFixed(2) + '</button>') +
           '</div>' +
         '</article>';
       }).join("") + '</div>'
@@ -2469,18 +2492,6 @@ function applyWeeklySettlement(){
   }
   return true;
 }
-function activatePromotion(){
-  if(checkBlocked()) return;
-  if(S.promotion){ toast("오늘은 이미 홍보활동을 진행 중입니다."); return; }
-  const cost = 60;
-  if(S.cash <= cost){ toast("홍보비 " + fmt(cost) + "가 부족합니다."); return; }
-  S.cash -= cost;
-  S.promotion = true;
-  S.promotionCostToday = cost;
-  changeFactionRep("merchant",1);
-  toast("홍보활동 시작! 오늘 등록 상품의 체결 확률 ×1.5 · 판매 가능 물량 +35%.");
-  render();
-}
 function openTravel(){
   if(checkBlocked()) return;
   S.travelOpen = true;
@@ -2509,7 +2520,10 @@ function advanceDay(dest){
 
   const knownCosts = [];
   if(moveCost > 0) knownCosts.push({label:"이동비",amount:moveCost});
-  if(upkeep > 0) knownCosts.push({label:"유지비·운영비·보관비",amount:upkeep});
+  const mercUpkeep = mercenaryUpkeep();
+  const otherUpkeep = Math.max(0,upkeep - mercUpkeep);
+  if(otherUpkeep > 0) knownCosts.push({label:"상단 운영비·보관비",amount:otherUpkeep});
+  if(mercUpkeep > 0) knownCosts.push({label:"용병 급료·유지비",amount:mercUpkeep});
 
   S.cash -= total;
   S.day += 1;
@@ -2527,12 +2541,7 @@ function advanceDay(dest){
   seedWorld();
   S.rumor = marketRumor();
   processOrders();
-  const usedPromotionCost = S.promotionCostToday || 0;
-  S.promotion = false;
-  S.promotionCostToday = 0;
   processMercenaryExpeditions();
-
-  if(usedPromotionCost) knownCosts.push({label:"홍보활동 비용",amount:usedPromotionCost});
 
   const troubleCashBefore = S.cash;
   const troubleInvBefore = Object.fromEntries(Object.keys(ITEMS).map(k => [k,S.inv[k] || 0]));
@@ -3120,25 +3129,23 @@ function render(){
     "상단 규모: " + tier.name +
     (tier.overhead ? " · 추가 운영비 " + fmt(tier.overhead) + "/일" : "") +
     " · 재고 보관비 " + fmt(holdingCost()) + "/일" +
+    (mercenaryUpkeep() ? " · 용병 유지비 " + fmt(mercenaryUpkeep()) + "/일" : "") +
     " · 다음 길드 결산 " + nextSettlementDay() + "일차 (현재 예상 " + fmt(projectedSettlement()) + ")";
 
   const warehouseGuard = assignedMerc("warehouse");
   const escortGuard = assignedMerc("escort");
+  const promotionMerc = assignedMerc("promotion");
   $("#warehouseGuardStatus").innerHTML = warehouseGuard
     ? '<b>창고 경비</b><span>' + warehouseGuard.name + ' · ' + mercGrade(warehouseGuard).name + ' · 방어 ' + Math.round(mercProtectionChance(warehouseGuard,"warehouse")*100) + '%</span>'
     : '<b>창고 경비</b><span>미배치</span>';
   $("#escortGuardStatus").innerHTML = escortGuard
     ? '<b>상단 호위</b><span>' + escortGuard.name + ' · ' + mercGrade(escortGuard).name + ' · 방어 ' + Math.round(mercProtectionChance(escortGuard,"escort")*100) + '%</span>'
     : '<b>상단 호위</b><span>미배치</span>';
-  $("#serviceText").textContent = capitalIsSafe()
-    ? "왕도 평시에는 기본적으로 안전하지만, 배치한 용병은 그대로 경비 임무를 유지합니다."
-    : (!warehouseGuard && !escortGuard
-      ? "현재 무방비입니다. 용병대에서 대기 용병을 경비에 배치하세요."
-      : "경비 배치는 유지되며 원정·훈련·승급 전에는 배치를 해제해야 합니다.");
-  $("#promotionBtn").textContent = S.promotion ? "홍보 진행 중 · 판매확률 ×1.5" : "홍보활동 60G";
-  $("#promotionText").textContent = S.promotion
-    ? "오늘 하루 마감 시 정규시장 체결 확률 ×1.5 · 판매 가능 물량 +35%가 적용됩니다."
-    : "정규시장 체결 확률 ×1.5 · 하루 판매 가능 물량 +35%";
+  $("#promotionMercStatus").innerHTML = promotionMerc
+    ? '<b>홍보 활동</b><span>' + promotionMerc.name + ' · ' + mercGrade(promotionMerc).name + ' · 판매확률 ×' + mercPromotionEffect(promotionMerc).chance.toFixed(2) + '</span>'
+    : '<b>홍보 활동</b><span>미배치</span>';
+  $("#serviceText").textContent =
+    "용병 유지비 " + fmt(mercenaryUpkeep()) + "/일 · 배치 임무 자체에는 추가 비용이 없습니다. 원정·훈련·승급 전에는 배치를 해제해야 합니다.";
 
   const newsList = (Array.isArray(S.todayNews) && S.todayNews.length)
     ? S.todayNews
@@ -3184,7 +3191,6 @@ function render(){
     }
   }else{
     $("#upgradeBtn").disabled = S.travelOpen;
-    $("#promotionBtn").disabled = S.promotion || S.travelOpen || S.cash <= 60;
 
   }
   saveGame();
@@ -3438,7 +3444,6 @@ $("#travelCancel").addEventListener("click",() => {
   }
 });
 $("#informantBtn").addEventListener("click",useInformant);
-$("#promotionBtn").addEventListener("click",activatePromotion);
 $("#upgradeBtn").addEventListener("click",upgrade);
 $("#restart").addEventListener("click",() => startNewGame(false));
 $("#endingContinue").addEventListener("click",continueEndlessMode);
