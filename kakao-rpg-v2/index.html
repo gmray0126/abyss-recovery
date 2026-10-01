@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>카카오 RPG v2 테스트</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0d1117;color:#e9eef5;font-family:system-ui,"Noto Sans KR",sans-serif}.wrap{max-width:780px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.card{background:#161c25;border:1px solid #2a3544;border-radius:16px;padding:16px;margin-top:14px}.msg{white-space:pre-wrap;line-height:1.55;background:#202936;border-radius:14px;padding:16px;min-height:220px}.quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.quick button,.send{border:1px solid #3a485c;background:#101720;color:#eef2f7;border-radius:999px;padding:10px 13px;cursor:pointer}.quick button:hover{background:#243044}.input{display:flex;gap:8px}.input input{flex:1;background:#0d131b;border:1px solid #354153;color:#fff;border-radius:10px;padding:12px}.send{border-radius:10px;background:#fee500;color:#191919;border:0;font-weight:800}.muted{color:#96a3b5}.id{font-family:monospace;font-size:12px}.links a{color:#9fd1ff;text-decoration:none;margin-left:10px}@media(max-width:600px){.top{display:block}.links{margin-top:8px}.input{display:block}.send{width:100%;margin-top:8px}}
+</style></head>
+<body><main class="wrap">
+<div class="top"><div><div class="muted">KAKAO RESPONSE SIMULATOR</div><h1>오픈톡 RPG v2</h1><div class="id" id="uid"></div></div><div class="links"><a href="../kakao-rpg-v1/dungeon.html">구 던전 데모</a></div></div>
+<section class="card"><div id="msg" class="msg">불러오는 중...</div><div id="quick" class="quick"></div></section>
+<section class="card"><div class="input"><input id="cmd" placeholder="/상태, /상점, /구매 1, /강화 무기, /스킬 ..."><button class="send" id="send">보내기</button></div><p class="muted">이 화면은 카카오 스킬 응답의 simpleText + quickReplies를 그대로 표시합니다. 새 브라우저 계정으로 초기화하려면 localStorage의 kakao-rpg-v2-test-user 값을 지우면 됩니다.</p></section>
+</main>
+<script>
+const key='kakao-rpg-v2-test-user';
+let user=localStorage.getItem(key);
+if(!user){user='web-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);localStorage.setItem(key,user);}
+document.getElementById('uid').textContent='TEST ACCOUNT: '+user;
+const msg=document.getElementById('msg'),quick=document.getElementById('quick'),input=document.getElementById('cmd');
+async function run(command){
+  msg.textContent='처리 중...';quick.innerHTML='';
+  const url='/api/kakao-rpg-v2-test?keyType=app&user='+encodeURIComponent(user)+'&cmd='+encodeURIComponent(command||'메뉴');
+  try{
+    const r=await fetch(url,{cache:'no-store'}),j=await r.json();
+    const t=j?.template?.outputs?.[0]?.simpleText?.text||JSON.stringify(j,null,2);msg.textContent=t;
+    const qs=j?.template?.quickReplies||[];
+    for(const q of qs){const b=document.createElement('button');b.textContent=q.label;b.onclick=()=>run(q.messageText||q.label);quick.appendChild(b);}
+  }catch(e){msg.textContent='오류: '+e.message;}
+}
+document.getElementById('send').onclick=()=>{const v=input.value.trim();if(v){run(v);input.value='';}};
+input.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('send').click();});
+run('메뉴');
+</script></body></html>
