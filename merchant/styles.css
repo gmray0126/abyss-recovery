@@ -456,3 +456,8 @@ body.modal-open{overflow:hidden}
 .news-index{display:block;font-size:9px;font-weight:900;color:#8b7357;margin-bottom:3px}
 .princess-news{border-color:#d7a4bc!important;background:#fff2f7!important}
 .princess-news .news-index{color:#9a3863}
+
+.sale-ban-badge{color:#9b2b24!important;border-color:#d5a09a!important;background:#fff0ec!important;font-weight:900}
+.sale-ban-inline{color:#a12f27;font-weight:900}
+.black-ban-warning{font-size:10px;color:#9c2d25;background:#fff0ec;border:1px solid #d6a19b;border-radius:8px;padding:6px 8px;margin:6px 0;font-weight:900}
+.regulation-alert{color:#9a3028!important;border-color:#d5a09a!important;background:#fff0ec!important;font-weight:900}
