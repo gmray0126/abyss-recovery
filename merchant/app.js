@@ -1125,7 +1125,11 @@ function normalizeSavedState(state){
   }
   state.lastPhaseId ??= null;
   if(state.finalTrial){
-    state.finalTrial.delivered ??= 0;
+    // 이전 버전에서 이미 진행한 최종심사 일수는 납품 완료로 인정해 저장 호환성을 유지합니다.
+    if(state.finalTrial.delivered == null){
+      const elapsed = Math.max(0,(state.day || 1) - (state.finalTrial.startDay || state.day || 1));
+      state.finalTrial.delivered = Math.min(ENDING_GOALS.trialDays,elapsed);
+    }
     state.finalTrial.requirement ??= null;
     state.finalTrial.finished ??= false;
   }
