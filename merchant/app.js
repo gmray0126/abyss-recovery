@@ -136,7 +136,20 @@ const EVENTS = [
   {id:"royal_curfew",n:"왕실 야간 통행금지령",tag:"통제",blockedCities:["capital"],txt:"왕도가 이틀간 통행금지에 들어갔습니다. 왕도 출입이 막혀 길드 의뢰 일정이 꼬이기 시작했습니다.",p:{bread:1.12,beer:.9,holy:1.08},d:{bread:1.2,beer:.8,holy:1.15},days:2},
   {id:"great_bridge_collapse",n:"철산 대교 붕괴",tag:"교통",blockedCities:["mine"],txt:"광산도시로 이어지는 대교가 무너졌습니다. 복구 전까지 철산 광산도시 출입이 금지됩니다.",p:{iron:1.25,sword:1.12,armor:1.12},d:{iron:1.35},days:2},
   {id:"port_quarantine",n:"청해 항구 검역 봉쇄",tag:"통제",blockedCities:["port"],txt:"정체불명의 열병 신고로 항구가 봉쇄됐습니다. 배도 마차도 들어오고 나갈 수 없습니다.",p:{spice:1.32,gem:1.2,potion:1.25},d:{spice:1.4,potion:1.4},days:2},
-  {id:"arcane_lockdown",n:"마도도시 마력폭주 봉쇄",tag:"마법",blockedCities:["arcane"],txt:"도시 외곽 마법진이 폭주해 아르카나 출입이 전면 통제됐습니다. 교수들은 '예정된 실험'이라고 주장합니다.",p:{mana:1.35,potion:1.2},d:{mana:1.5,potion:1.3},days:2}
+  {id:"arcane_lockdown",n:"마도도시 마력폭주 봉쇄",tag:"마법",blockedCities:["arcane"],txt:"도시 외곽 마법진이 폭주해 아르카나 출입이 전면 통제됐습니다. 교수들은 '예정된 실험'이라고 주장합니다.",p:{mana:1.35,potion:1.2},d:{mana:1.5,potion:1.3},days:2},
+  {id:"prosperity_trade_fair",phases:["prosperity"],n:"왕국 대교역 박람회 개막",tag:"호황",txt:"전국 상인이 왕도로 몰려들었습니다. 보석과 향신료는 진열하자마자 팔립니다.",p:{gem:1.12,spice:1.14},d:{gem:1.45,spice:1.5},days:2},
+  {id:"prosperity_tourism",phases:["prosperity"],n:"용사 성지순례 관광상품 대박",tag:"유행",txt:"아직 마왕도 안 나타났는데 용사 생가 관광상품이 먼저 대박 났습니다.",p:{beer:1.14,bread:1.08,gem:1.08},d:{beer:1.4,bread:1.25,gem:1.2},days:2},
+  {id:"tension_tariff",phases:["tension"],n:"국경 통행세 임시 인상",tag:"국경",txt:"왕실이 국경 수비 비용을 이유로 통행세를 올렸습니다. 상인들은 '임시'라는 말을 믿지 않습니다.",p:{spice:1.12,gem:1.1,iron:1.08},d:{iron:1.18},days:2},
+  {id:"tension_stockpile",phases:["tension"],n:"주민들의 전쟁 대비 사재기",tag:"긴장",txt:"아직 전쟁은 아니라는데 빵과 포션 진열대가 먼저 비었습니다.",p:{bread:1.16,potion:1.18,holy:1.1},d:{bread:1.45,potion:1.5,holy:1.25},days:2},
+  {id:"tension_refugees",phases:["tension"],n:"국경 마을 주민 대피 시작",tag:"국경",txt:"국경 주민들이 내륙으로 이동하며 식량과 숙박 수요가 급증했습니다.",p:{bread:1.12,beer:1.08},d:{bread:1.35,beer:1.25},days:2},
+  {id:"war_requisition",phases:["war"],n:"왕실 군수품 긴급 징발",tag:"전쟁",war:true,txt:"왕실이 검·갑옷·포션을 우선 매입합니다. 상인들은 애국심과 가격표를 동시에 확인합니다.",p:{sword:1.2,armor:1.2,potion:1.18},d:{sword:1.7,armor:1.65,potion:1.7},days:2},
+  {id:"war_field_hospitals",phases:["war"],n:"야전병원 포화",tag:"전쟁",war:true,txt:"부상병이 늘면서 포션과 성수 수요가 폭발했습니다.",p:{potion:1.25,holy:1.28,herb:1.15},d:{potion:1.85,holy:1.8,herb:1.45},days:2},
+  {id:"war_supply_cut",phases:["war"],n:"주요 보급로 차단",tag:"전쟁",war:true,txt:"마왕군이 보급로를 끊었습니다. 식량과 철이 동시에 귀해졌습니다.",p:{bread:1.18,wheat:1.16,iron:1.2},d:{bread:1.55,wheat:1.45,iron:1.5},days:2},
+  {id:"recovery_building",phases:["recovery"],n:"전국 재건 공사 발주",tag:"복구",txt:"무너진 다리와 성벽을 고치기 위해 철과 식량이 대량 발주됐습니다.",p:{iron:1.18,bread:1.08},d:{iron:1.65,bread:1.3},days:3},
+  {id:"recovery_surplus",phases:["recovery"],n:"전쟁 잉여 군수품 대방출",tag:"복구",txt:"왕실 창고에서 남은 검과 갑옷이 쏟아져 나옵니다. 대장장이들이 표정을 잃었습니다.",p:{sword:.72,armor:.75},d:{sword:.62,armor:.65},days:3},
+  {id:"recovery_veterans",phases:["recovery"],n:"귀향병들의 선술집 창업 붐",tag:"복구",txt:"전역한 병사들이 하나같이 선술집을 열면서 맥주 수요가 이상하게 늘었습니다.",p:{beer:1.16},d:{beer:1.55},days:2},
+  {id:"merchant_consolidation",phases:["merchant_age"],n:"대형 상단 합병전 시작",tag:"상단",txt:"전후 시장을 장악하기 위해 대형 상단들이 경쟁사를 사들이기 시작했습니다.",p:{gem:1.12,spice:1.1,mana:1.08},d:{gem:1.3,spice:1.3,mana:1.25},days:2},
+  {id:"merchant_price_war",phases:["merchant_age"],n:"상단 간 가격전쟁",tag:"상단",txt:"대형 상단들이 서로 손해를 감수하며 가격을 내리고 있습니다. 소비자만 신났습니다.",p:{bread:.88,beer:.88,sword:.9,potion:.9},d:{bread:1.25,beer:1.25,sword:1.2,potion:1.2},days:2}
 ];
 
 const BASE_DEMAND = {food:1.05,metal:.82,weapon:.72,alchemy:.84,luxury:.62,magic:.7};
@@ -144,7 +157,7 @@ const RANK_KEY = "fantasyMerchantRanksV2";
 const SAVE_KEY = "fantasyMerchantSaveV1";
 const SAVE_VERSION = 1;
 const ENDING_GOALS = {day:100,wealth:100000,contracts:10,trialDays:7};
-const ROUTE_THRESHOLD = 10;
+const ROUTE_THRESHOLD = 12;
 const ROUTE_LEAD = 2;
 const ROUTES = {
   royal:{name:"왕실",ending:"왕실 공인 대상상",desc:"왕실·길드와의 신뢰를 쌓아 제도권 상단의 정점에 섭니다."},
@@ -153,6 +166,51 @@ const ROUTES = {
   artisan:{name:"장인",ending:"왕국 제일의 공방상단",desc:"단순 시세차익을 넘어 직접 생산과 가공으로 상단의 이름을 남깁니다."}
 };
 const EVENT_BY_ID = Object.fromEntries(EVENTS.map(e => [e.id,e]));
+const WORLD_PHASES = [
+  {
+    id:"prosperity",start:1,end:24,name:"왕국 호황기",short:"호황",
+    desc:"마왕 소식도 국경 분쟁도 잠잠합니다. 사치품과 축제가 잘 팔리고 도로 사정도 안정적입니다.",
+    news:"왕국 전역에 긴 평화와 호황이 이어집니다.",
+    newsText:"상인 길드는 올해를 '돈 벌기 좋은 해'라고 선언했습니다. 이 말이 불길하다는 사람도 있습니다.",
+    travel:0,risk:0,volatility:.82,war:false,
+    p:{gem:1.06,spice:1.08,beer:1.05},d:{gem:1.12,spice:1.12,beer:1.12}
+  },
+  {
+    id:"tension",start:25,end:49,name:"국경 긴장기",short:"긴장",
+    desc:"국경에서 소규모 충돌이 이어집니다. 군수품과 비축품 수요가 오르고 검문 때문에 이동비가 늘어납니다.",
+    news:"국경 수비대가 비상경계에 돌입했습니다.",
+    newsText:"왕실은 아직 전쟁이 아니라고 강조했지만, 상인들은 이미 갑옷과 포션을 쓸어 담고 있습니다.",
+    travel:3,risk:.03,volatility:1.0,war:false,
+    p:{sword:1.12,armor:1.12,potion:1.07,holy:1.08,bread:1.04},d:{sword:1.25,armor:1.25,potion:1.18,holy:1.15}
+  },
+  {
+    id:"war",start:50,end:74,name:"마왕군 전쟁기",short:"전쟁",
+    desc:"마왕군의 공세로 왕국이 전시체제로 전환됐습니다. 군수품은 폭등하고 길은 위험하며 왕도의 평시 안전도 사라집니다.",
+    news:"마왕군이 국경 요새를 공격했습니다.",
+    newsText:"왕실이 총동원령을 선포했습니다. 검과 포션 가격표를 보던 상인들이 동시에 웃었다가 곧 표정을 숨겼습니다.",
+    travel:8,risk:.13,volatility:1.38,war:true,
+    p:{sword:1.28,armor:1.26,potion:1.24,holy:1.30,bread:1.14,beer:1.08,gem:.86,spice:.91},
+    d:{sword:1.65,armor:1.6,potion:1.7,holy:1.65,bread:1.3,gem:.68,spice:.76}
+  },
+  {
+    id:"recovery",start:75,end:99,name:"전후 복구기",short:"복구",
+    desc:"큰 전투가 끝나고 왕국은 폐허를 복구하고 있습니다. 철과 식량 수요가 크고 전쟁 중 쌓인 무기 재고는 처분되기 시작합니다.",
+    news:"왕실이 전후 복구 100일 계획을 발표했습니다.",
+    newsText:"병사들은 집으로 돌아가고 대장간은 무기 대신 삽과 못을 만들기 시작했습니다. 전쟁특수는 끝났지만 복구특수가 왔습니다.",
+    travel:2,risk:.02,volatility:.94,war:false,
+    p:{iron:1.16,bread:1.08,wheat:1.08,beer:1.12,sword:.84,armor:.88},
+    d:{iron:1.42,bread:1.22,wheat:1.2,beer:1.28,sword:.68,armor:.72}
+  },
+  {
+    id:"merchant_age",start:100,end:99999,name:"상단 재편기",short:"재편",
+    desc:"전쟁 이후 왕국 경제의 주도권을 두고 왕실·상인연합·암시장·장인조합이 경쟁합니다. 모든 선택이 최종 엔딩에 직접 연결됩니다.",
+    news:"왕국 경제 재편 회의가 시작됐습니다.",
+    newsText:"누가 다음 시대의 유통망을 지배할 것인지 결정될 시간입니다. 이상하게도 용사보다 상인들이 더 긴장하고 있습니다.",
+    travel:4,risk:.05,volatility:1.22,war:false,
+    p:{gem:1.08,spice:1.08,mana:1.08,iron:1.05},d:{gem:1.15,spice:1.15,mana:1.18,iron:1.12}
+  }
+];
+
 const CHOICE_EVENTS = [
   {id:"customs_bribe",title:"세관원이 서류를 유심히 봅니다",text:"세관원이 '서류에 아주 작은 문제가 있군요'라며 손가락 두 개를 비빕니다.",options:[
     {label:"60G를 조용히 건넨다",effect:"bribe"},
@@ -212,11 +270,105 @@ const CHOICE_EVENTS = [
     {label:"반용사 단체에 흘려 상인 피해를 폭로한다",effect:"route_antihero_ledger"}
   ]}
 ];
+const ROUTE_STORIES = {
+  royal:[
+    {stage:1,minScore:3,minDay:10,title:"왕실 조달국의 시험",text:"왕실 조달국이 당신에게 낮은 마진의 시범 납품을 제안합니다. 돈보다는 신뢰를 보는 계약입니다.",options:[
+      {label:"손해를 감수하고 왕실 규격에 맞춘다 · 70G",effect:"route_story",route:"royal",amount:2,cost:70,message:"왕실 조달관이 당신의 이름 옆에 '신뢰 가능'이라고 적었습니다."},
+      {label:"장인조합과 공동 납품을 제안한다",effect:"route_story",route:"artisan",amount:1.4,bonusRoute:"royal",bonusAmount:.5,message:"왕실은 조건부로 공동 납품을 허가했습니다. 장인조합도 당신을 기억합니다."},
+      {label:"마진이 없으면 장사도 없다",effect:"route_story",route:"royal",amount:-.8,message:"조달관은 고개를 끄덕였지만 추천서에는 아무것도 적지 않았습니다."}
+    ]},
+    {stage:2,minScore:6,minDay:30,title:"왕실 세관 개혁안",text:"왕실이 세관 장부 공개와 밀수 단속 강화에 상인 대표의 지지를 요구합니다.",options:[
+      {label:"장부 공개와 단속 강화에 서명한다",effect:"route_story",route:"royal",amount:2.2,message:"왕실 재무관이 당신을 개혁 지지 상단으로 발표했습니다."},
+      {label:"상인 부담 완화를 조건으로 협상한다",effect:"route_story",route:"antihero",amount:1.2,bonusRoute:"royal",bonusAmount:.7,message:"왕실과 상인 양쪽에서 불평이 나왔습니다. 협상은 잘했다는 뜻일지도 모릅니다."},
+      {label:"암시장 연락책에게 개혁안 사본을 넘긴다",effect:"route_story",route:"underworld",amount:2,message:"그날 밤부터 세관 단속을 피하는 마차가 이상하게 늘었습니다."}
+    ]},
+    {stage:3,minScore:9,minDay:50,title:"전시 군수위원회",text:"마왕군과의 전쟁이 시작되자 왕실은 대형 상단에 군수품 공급을 요청합니다.",options:[
+      {label:"정가로 군수품을 공급한다",effect:"route_story",route:"royal",amount:2.4,reward:120,message:"왕실은 120G의 수송 보조금과 함께 당신을 핵심 공급상으로 지정했습니다."},
+      {label:"장인조합의 생산권 보장을 요구한다",effect:"route_story",route:"artisan",amount:1.7,bonusRoute:"royal",bonusAmount:.6,message:"군수위원회는 장인조합의 독립 생산권을 인정했습니다."},
+      {label:"전쟁특수를 최대한 챙긴다",effect:"route_story",route:"underworld",amount:1.8,reward:180,message:"당장 180G를 벌었지만 왕실 기록에는 '가격 협조 거부'가 남았습니다."}
+    ]},
+    {stage:4,minScore:11,minDay:80,title:"왕실 전속상단 서약",text:"전후 복구를 앞두고 왕실이 당신에게 전속상단 지위를 제안합니다. 받아들이면 사실상 왕실 경제권의 일부가 됩니다.",options:[
+      {label:"왕실 전속상단에 충성을 맹세한다 · 200G",effect:"route_story",route:"royal",amount:3,cost:200,message:"국왕의 인장이 찍힌 전속상단 증서가 당신의 손에 들어왔습니다."},
+      {label:"왕실과 협력하되 독립권을 보장받는다",effect:"route_story",route:"royal",amount:1.8,bonusRoute:"antihero",bonusAmount:.7,message:"왕실은 못마땅해했지만 독립 상단 지위를 인정했습니다."},
+      {label:"전속 제안을 공개적으로 거부한다",effect:"route_story",route:"antihero",amount:2,message:"상인연합이 환호했고 왕실 재무관은 조용히 당신의 이름에 밑줄을 그었습니다."}
+    ]}
+  ],
+  antihero:[
+    {stage:1,minScore:3,minDay:10,title:"피해상인 연명부",text:"용사의 광고 한마디로 손해를 본 상인들이 보상을 요구하는 연명부를 돌리고 있습니다.",options:[
+      {label:"상인들을 모아 직접 서명운동을 이끈다",effect:"route_story",route:"antihero",amount:2,message:"연명부 맨 위에 당신의 상단명이 적혔습니다."},
+      {label:"왕실에 중재안을 제출한다",effect:"route_story",route:"royal",amount:1.2,bonusRoute:"antihero",bonusAmount:.6,message:"왕실은 검토하겠다고 답했고 피해상인들은 일단 기다려보기로 했습니다."},
+      {label:"시장 문제는 시장이 해결하게 둔다",effect:"route_story",route:"antihero",amount:-.8,message:"피해상인들은 당신을 현실적인 사람이라 부르며 다시는 찾아오지 않았습니다."}
+    ]},
+    {stage:2,minScore:6,minDay:30,title:"용사 광고 감시대",text:"반용사 단체가 용사의 상업 광고와 시세 발언을 감시할 상설 조직을 만들려 합니다.",options:[
+      {label:"감시대 운영비 100G를 후원한다",effect:"route_story",route:"antihero",amount:2.4,cost:100,pendingFollow:{id:"antihero_rally",chance:.95},message:"감시대가 출범했고 용사의 인터뷰마다 상인 둘이 따라붙기 시작했습니다."},
+      {label:"광고는 허용하되 피해보상 규칙을 만든다",effect:"route_story",route:"antihero",amount:1.5,bonusRoute:"royal",bonusAmount:.5,message:"용사 팬클럽도 마지못해 피해보상 규칙에 동의했습니다."},
+      {label:"용사 굿즈 사업에 투자한다",effect:"route_story",route:"artisan",amount:1.5,reward:100,message:"감시대는 화를 냈지만 굿즈는 100G어치 팔렸습니다."}
+    ]},
+    {stage:3,minScore:9,minDay:50,title:"전시 가격통제 청문회",text:"왕실은 전쟁을 이유로 일부 품목의 가격을 강제로 제한하려 합니다. 상인연합은 시장 붕괴를 우려합니다.",options:[
+      {label:"상인 대표로 가격통제에 반대한다",effect:"route_story",route:"antihero",amount:2.5,message:"청문회 기록에 당신의 연설이 그대로 남았습니다. 상인들은 거리에서 이름을 외쳤습니다."},
+      {label:"전시에는 왕실 통제가 필요하다고 지지한다",effect:"route_story",route:"royal",amount:2,message:"왕실은 환영했지만 반용사 단체 본부 창문에서 당신 포스터가 내려갔습니다."},
+      {label:"통제 품목을 암시장으로 돌릴 길을 찾는다",effect:"route_story",route:"underworld",amount:2.1,message:"공식 시장은 조용했지만 골목 가격표는 세 배로 늘었습니다."}
+    ]},
+    {stage:4,minScore:11,minDay:80,title:"독립 상인연맹 창설",text:"전후 경제를 누가 이끌지 결정할 시점입니다. 반용사 단체는 왕실과 용사 양쪽에서 독립한 상인연맹을 만들자고 합니다.",options:[
+      {label:"초대 의장직을 맡는다 · 150G",effect:"route_story",route:"antihero",amount:3,cost:150,message:"독립 상인연맹이 창설됐고 당신이 초대 의장으로 선출됐습니다."},
+      {label:"왕실과 공동 운영 체제로 타협한다",effect:"route_story",route:"royal",amount:1.4,bonusRoute:"antihero",bonusAmount:1,message:"완전한 독립은 아니지만 상인들의 발언권은 크게 늘었습니다."},
+      {label:"조직보다는 각자 장사하는 게 낫다",effect:"route_story",route:"antihero",amount:-1,message:"연맹은 다른 의장을 뽑았고 당신은 다시 장부로 돌아갔습니다."}
+    ]}
+  ],
+  underworld:[
+    {stage:1,minScore:3,minDay:10,title:"검은 동전",text:"암시장 거래를 마친 뒤 누군가 검은 동전 하나를 마차에 던져두었습니다. 뒷면에는 항구 창고 번호가 적혀 있습니다.",options:[
+      {label:"표시된 창고를 찾아간다",effect:"route_story",route:"underworld",amount:2,reward:60,message:"창고 안의 연락책이 60G와 함께 '다음부터는 문을 세 번 두드리라'고 말했습니다."},
+      {label:"동전을 왕실 경비대에 넘긴다",effect:"route_story",route:"royal",amount:1.5,message:"경비대는 동전을 압수했고 항구의 몇몇 사람들이 당신을 노려보기 시작했습니다."},
+      {label:"동전을 녹여버린다",effect:"route_story",route:"underworld",amount:-.7,message:"검은 동전은 사라졌고 초대도 함께 사라졌습니다."}
+    ]},
+    {stage:2,minScore:6,minDay:30,title:"비밀 창고의 열쇠",text:"뒷세계 중개상이 세관 기록에 존재하지 않는 창고의 공동 사용권을 제안합니다.",options:[
+      {label:"사용권을 산다 · 120G",effect:"route_story",route:"underworld",amount:2.4,cost:120,message:"당신은 지도에 없는 창고의 열쇠를 얻었습니다."},
+      {label:"장인조합 물건만 숨겨주겠다고 협상한다",effect:"route_story",route:"artisan",amount:1.2,bonusRoute:"underworld",bonusAmount:.8,message:"장인조합과 암시장 양쪽에서 당신을 애매하게 믿기 시작했습니다."},
+      {label:"왕실에 창고 위치를 신고한다",effect:"route_story",route:"royal",amount:1.8,reward:70,message:"경비대가 창고를 압수했고 신고 포상금 70G를 받았습니다."}
+    ]},
+    {stage:3,minScore:9,minDay:50,title:"전시 밀수로",text:"전쟁으로 공식 보급로가 끊기자 뒷세계가 국경을 넘는 비밀 통로를 열었습니다.",options:[
+      {label:"밀수로 운영에 투자한다 · 160G",effect:"route_story",route:"underworld",amount:2.7,cost:160,reward:260,message:"위험한 밤이었지만 260G가 돌아왔습니다. 이제 밀수조직은 당신을 동업자로 봅니다."},
+      {label:"부상병용 포션만 통과시킨다",effect:"route_story",route:"underworld",amount:1.5,bonusRoute:"antihero",bonusAmount:.8,message:"공식 기록은 없지만 많은 부상병이 약을 받았습니다."},
+      {label:"왕실에 비밀 통로를 넘긴다",effect:"route_story",route:"royal",amount:2.2,message:"왕실군이 통로를 접수했고 뒷골목에서 당신 이름의 가격이 올라갔습니다."}
+    ]},
+    {stage:4,minScore:11,minDay:80,title:"지하 상단 회합",text:"전쟁이 끝나자 각 도시의 암시장 대표들이 하나의 거대 유통망을 만들자며 당신을 초대했습니다.",options:[
+      {label:"지하 유통망의 대표가 된다 · 220G",effect:"route_story",route:"underworld",amount:3,cost:220,message:"공식 지도에는 없지만 왕국 전체를 잇는 또 하나의 상단이 탄생했습니다."},
+      {label:"합법 상단과 암시장의 중개자만 맡는다",effect:"route_story",route:"underworld",amount:1.7,bonusRoute:"royal",bonusAmount:.5,message:"양쪽 모두 당신을 완전히 믿지는 않지만 아무도 무시할 수는 없게 됐습니다."},
+      {label:"이제 손을 씻고 장인 사업에 집중한다",effect:"route_story",route:"artisan",amount:1.8,message:"뒷골목 대표들은 웃었지만 당신이 정말 빠져나갈 수 있을지는 두고 볼 일입니다."}
+    ]}
+  ],
+  artisan:[
+    {stage:1,minScore:3,minDay:10,title:"장인조합 공동생산",text:"지역 공방들이 값싼 대량생산품에 밀리고 있습니다. 장인조합이 공동 브랜드를 만들자고 제안합니다.",options:[
+      {label:"공동 브랜드 설립비 80G를 댄다",effect:"route_story",route:"artisan",amount:2,cost:80,message:"공방 간판에 당신 상단의 문장이 함께 걸렸습니다."},
+      {label:"왕실 품질보증을 먼저 받자고 제안한다",effect:"route_story",route:"royal",amount:1.1,bonusRoute:"artisan",bonusAmount:.8,message:"장인들은 귀찮아했지만 품질보증 절차를 시작했습니다."},
+      {label:"싼 물건을 더 많이 파는 게 답이다",effect:"route_story",route:"artisan",amount:-.7,message:"장인조합은 조용히 다음 상인을 찾아갔습니다."}
+    ]},
+    {stage:2,minScore:6,minDay:30,title:"왕국 품질인증 심사",text:"장인조합 제품을 왕국 공식 특산품으로 등록할 기회가 왔습니다. 심사관은 까다롭기로 유명합니다.",options:[
+      {label:"최고급 재료와 심사비에 120G를 쓴다",effect:"route_story",route:"artisan",amount:2.4,cost:120,message:"품질인증 도장이 찍혔습니다. 장인들이 처음으로 당신을 '우리 상인'이라 불렀습니다."},
+      {label:"왕실 인맥으로 심사를 빠르게 처리한다",effect:"route_story",route:"royal",amount:1.4,bonusRoute:"artisan",bonusAmount:.8,cost:60,message:"심사는 빨리 끝났지만 몇몇 장인이 과정이 마음에 들지 않는 눈치입니다."},
+      {label:"인증 없이 암시장 고급품으로 판다",effect:"route_story",route:"underworld",amount:1.8,reward:90,message:"인증 도장은 없지만 '비밀 명품'이라는 소문으로 90G를 벌었습니다."}
+    ]},
+    {stage:3,minScore:9,minDay:50,title:"전시 공방연합",text:"전쟁으로 대형 공장이 군수품만 찍어내자 작은 공방들이 생활필수품 생산을 맡겠다며 연합을 제안합니다.",options:[
+      {label:"공방연합의 생산망을 조직한다",effect:"route_story",route:"artisan",amount:2.6,message:"여러 도시의 장인들이 당신의 발주표를 기준으로 움직이기 시작했습니다."},
+      {label:"왕실 군수계약에 공방연합을 편입한다",effect:"route_story",route:"royal",amount:1.4,bonusRoute:"artisan",bonusAmount:1,message:"왕실은 생산량을 얻었고 장인들은 안정적인 일감을 얻었습니다."},
+      {label:"희귀품만 만들어 암시장에 판다",effect:"route_story",route:"underworld",amount:2,reward:120,message:"품질 좋은 물건은 늘 조용한 골목에서 더 비싸게 팔렸습니다. 120G를 벌었습니다."}
+    ]},
+    {stage:4,minScore:11,minDay:80,title:"왕국 장인박람회",text:"전후 첫 대형 박람회의 총괄 상단을 맡아달라는 요청이 왔습니다. 성공하면 장인경제의 중심이 될 수 있습니다.",options:[
+      {label:"박람회에 200G를 투자하고 총괄한다",effect:"route_story",route:"artisan",amount:3,cost:200,reward:100,message:"박람회는 대성공이었습니다. 순수익 100G보다 더 큰 건 왕국 전체에 남은 당신의 이름입니다."},
+      {label:"왕실 후원 행사로 확대한다",effect:"route_story",route:"royal",amount:1.5,bonusRoute:"artisan",bonusAmount:1.2,message:"박람회는 왕실 행사로 커졌고 장인조합도 큰 판로를 얻었습니다."},
+      {label:"독립 장인시장으로 유지한다",effect:"route_story",route:"artisan",amount:2.4,bonusRoute:"antihero",bonusAmount:.6,message:"왕실 후원 없이도 박람회가 성공하며 독립 상인들의 상징이 됐습니다."}
+    ]}
+  ]
+};
+
+
 let S;
 
 function isWarActive(){
-  return S.active.some(e => e.tag === "전쟁" || e.n.includes("마왕"));
+  if(currentWorldPhase().war) return true;
+  return S.active.some(e => e.war === true || ["conscription","war_supply","demon_return"].includes(e.id));
 }
+
 function capitalIsSafe(){
   return S.city === "capital" && !isWarActive();
 }
@@ -343,9 +495,11 @@ function determineEndingRoute(){
     .map(k => [k,S.routeScores?.[k] || 0])
     .sort((a,b) => b[1]-a[1]);
   const top = entries[0], second = entries[1];
-  if(top[1] >= ROUTE_THRESHOLD && top[1] - second[1] >= ROUTE_LEAD) return top[0];
+  const storyComplete = (S.routeStory?.[top[0]] || 0) >= 4;
+  if(top[1] >= ROUTE_THRESHOLD && storyComplete && top[1] - second[1] >= ROUTE_LEAD) return top[0];
   return "normal";
 }
+
 function endingData(route){
   if(route === "royal") return {
     title:"왕실 공인 대상상이 되었습니다.",
@@ -373,15 +527,23 @@ function renderRoutes(){
   if(!box) return;
   const entries = Object.entries(ROUTES);
   box.innerHTML =
-    '<div class="route-head"><b>상단 성향</b><span class="mini muted">특수 엔딩: 10점 이상 + 2점 차이</span></div>' +
+    '<div class="route-head"><b>상단 성향 & 전용 스토리</b><span class="mini muted">특수 엔딩: 12점 + 스토리 4장 + 2점 차</span></div>' +
     '<div class="route-grid">' + entries.map(([k,r]) => {
       const v = S.routeScores?.[k] || 0;
+      const story = S.routeStory?.[k] || 0;
       const pct = Math.min(100,v/ROUTE_THRESHOLD*100);
+      const next = ROUTE_STORIES[k]?.find(x => x.stage === story + 1);
+      const nextText = story >= 4
+        ? "전용 스토리 완료"
+        : (next ? "다음 장: " + next.minDay + "일차 · " + next.minScore + "점 필요" : "스토리 완료");
       return '<article class="route-card"><div><b>' + r.name + '</b><span>' + routeScoreText(v) + '점</span></div>' +
-        '<div class="route-meter"><i style="width:' + pct + '%"></i></div><p>' + r.desc + '</p></article>';
+        '<div class="route-meter"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="route-story-progress">스토리 ' + story + ' / 4 · ' + nextText + '</div>' +
+        '<p>' + r.desc + '</p></article>';
     }).join("") + '</div>' +
-    '<p class="mini muted route-note">한두 번의 선택으로는 특수 엔딩이 열리지 않습니다. 조건이 애매하거나 성향이 비슷하면 노멀 엔딩으로 진행됩니다.</p>';
+    '<p class="mini muted route-note">점수만 올려서는 특수 엔딩이 열리지 않습니다. 해당 세력의 전용 스토리 4장을 끝까지 겪어야 하며, 조건이 애매하면 노멀 엔딩으로 진행됩니다.</p>';
 }
+
 function endingRequirementsMet(){
   return S.day >= ENDING_GOALS.day &&
     net() >= ENDING_GOALS.wealth &&
@@ -482,6 +644,27 @@ function upgradeCost(){
 function used(){
   return Object.keys(ITEMS).reduce((a,k) => a + S.inv[k] * ITEMS[k].w, 0);
 }
+function worldPhaseForDay(day){
+  return WORLD_PHASES.find(p => day >= p.start && day <= p.end) || WORLD_PHASES[WORLD_PHASES.length-1];
+}
+function currentWorldPhase(){
+  return worldPhaseForDay(S?.day || 1);
+}
+function phaseItemMult(item,key){
+  const phase = currentWorldPhase();
+  const direct = (phase[key] || {})[item];
+  if(direct != null) return direct;
+  const links = CRAFT_LINKS[item];
+  if(links){
+    const vals = links.map(k => ((phase[key] || {})[k] || 1));
+    return Math.sqrt(vals[0] * vals[1]);
+  }
+  return 1;
+}
+function travelCostTo(dest){
+  if(dest === S.city) return 0;
+  return CITIES[dest].travel + currentWorldPhase().travel;
+}
 function effectMult(city,item,key){
   let m = 1;
   for(const e of S.active){
@@ -515,11 +698,12 @@ function cityPrice(city,item){
     marketIndexFor(item) *
     (1 + pressure) *
     effectMult(city,item,"p") *
+    phaseItemMult(item,"p") *
     noise
   ));
 }
 function demand(item,city=S.city){
-  return (BASE_DEMAND[ITEMS[item].cat] || 1) * effectMult(city,item,"d");
+  return (BASE_DEMAND[ITEMS[item].cat] || 1) * effectMult(city,item,"d") * phaseItemMult(item,"d");
 }
 function updateTradePressure(){
   if(!S.world || !Object.keys(S.world).length) return;
@@ -541,6 +725,7 @@ function updateTradePressure(){
 }
 function updateGlobalMarket(){
   const keys = tradableKeys();
+  const phaseVol = currentWorldPhase().volatility || 1;
   const shockCount = S.day >= 50 ? 3 : 2;
   const shockSet = new Set();
   while(shockSet.size < Math.min(shockCount,keys.length)) shockSet.add(pick(keys));
@@ -556,14 +741,14 @@ function updateGlobalMarket(){
       let sign = Math.random() < .5 ? -1 : 1;
       if(old > 1.38 && Math.random() < .68) sign = -1;
       if(old < .68 && Math.random() < .68) sign = 1;
-      momentum += sign * (.045 + Math.random() * .075);
+      momentum += sign * (.045 + Math.random() * .075) * phaseVol;
     }
 
     // 플레이어가 한 품목을 시장에 과하게 풀면 상인들이 따라붙어 왕국 전체 가격도 조금 눌립니다.
     const listed = S.orders.filter(o => o.item === k).reduce((a,o)=>a+o.qty,0);
     if(listed >= 8) momentum -= Math.min(.045,listed * .0025);
 
-    momentum = Math.max(-.14,Math.min(.14,momentum));
+    momentum = Math.max(-.18,Math.min(.18,momentum));
     const next = Math.max(.52,Math.min(1.85,old * (1 + momentum)));
     S.marketIndex[k] = next;
     S.marketMomentum[k] = momentum;
@@ -628,13 +813,27 @@ function marketRumor(){
 }
 function newIntel(){
   let source = null;
-  if(S.pendingFollow && Math.random() < S.pendingFollow.chance){
+  const phase = currentWorldPhase();
+  const previousFollow = S.pendingFollow;
+
+  if(S.lastPhaseId !== phase.id){
+    source = {
+      id:"phase_intro_" + phase.id,
+      n:phase.news,
+      tag:"시대",
+      txt:phase.newsText,
+      days:2,
+      phaseIntro:true
+    };
+    S.lastPhaseId = phase.id;
+  }else if(S.pendingFollow && Math.random() < S.pendingFollow.chance){
     source = EVENT_BY_ID[S.pendingFollow.id] || null;
   }
 
   if(!source){
     const pool = EVENTS.filter(e => {
       if(e.chainOnly) return false;
+      if(e.phases && !e.phases.includes(phase.id)) return false;
       if(e.noCapital && S.city === "capital" && !isWarActive()) return false;
       return true;
     });
@@ -645,9 +844,10 @@ function newIntel(){
   e.remaining = e.days;
   S.today = e;
   S.active.push(e);
-  S.pendingFollow = e.follow || null;
+  S.pendingFollow = e.phaseIntro ? previousFollow : (e.follow || null);
   S.extra = null;
 }
+
 function saveGame(){
   if(!S) return;
   try{
@@ -690,7 +890,12 @@ function normalizeSavedState(state){
   state.ending ??= false;
   state.endingRoute ??= "normal";
   state.routeScores ||= {royal:0,antihero:0,underworld:0,artisan:0};
-  for(const key of Object.keys(ROUTES)) state.routeScores[key] ??= 0;
+  state.routeStory ||= {royal:0,antihero:0,underworld:0,artisan:0};
+  for(const key of Object.keys(ROUTES)){
+    state.routeScores[key] ??= 0;
+    state.routeStory[key] ??= 0;
+  }
+  state.lastPhaseId ??= null;
   state.gameOver ??= false;
   state.travelOpen ??= false;
   state.insurance ??= false;
@@ -774,7 +979,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal"
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",lastPhaseId:null
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -899,7 +1104,8 @@ function trouble(){
   if(capitalIsSafe()) return;
 
   const extraRisk = Math.min(.18,Math.max(0,S.day - 10) * .008);
-  if(Math.random() > .24 + extraRisk) return;
+  const phaseRisk = currentWorldPhase().risk || 0;
+  if(Math.random() > Math.min(.65,.24 + extraRisk + phaseRisk)) return;
 
   const tier = merchantTier();
 
@@ -962,7 +1168,7 @@ function advanceDay(dest){
     toast(blocked.n + " 때문에 " + CITIES[dest].name + " 이동이 불가능합니다.");
     return;
   }
-  const moveCost = dest === S.city ? 0 : CITIES[dest].travel;
+  const moveCost = travelCostTo(dest);
   const total = moveCost + fee();
   if(S.cash <= total){
     toast("이동/유지비 " + fmt(total) + "를 내면 파산합니다.");
@@ -1085,19 +1291,62 @@ function updateSaleContract(item,city,qty){
   c.progress = Math.min(c.qty,(c.progress || 0) + qty);
   if(c.progress >= c.qty) completeContract("길드 판매 목표 달성!");
 }
+function nextRouteStoryEvent(){
+  const candidates = [];
+  for(const route of Object.keys(ROUTE_STORIES)){
+    const nextStage = (S.routeStory?.[route] || 0) + 1;
+    const story = ROUTE_STORIES[route].find(x => x.stage === nextStage);
+    if(!story) continue;
+    const score = S.routeScores?.[route] || 0;
+    if(score < story.minScore || S.day < story.minDay) continue;
+    candidates.push({route,score,story});
+  }
+  if(!candidates.length) return null;
+  candidates.sort((a,b) => b.score - a.score);
+  const chosen = candidates[0];
+  return Object.assign({},chosen.story,{
+    id:"story_" + chosen.route + "_" + chosen.story.stage,
+    storyRoute:chosen.route,
+    storyStage:chosen.story.stage
+  });
+}
 function maybeGenerateChoiceEvent(){
   if(S.gameOver || S.choiceEvent || S.choiceResolvedDay === S.day) return;
+  const story = nextRouteStoryEvent();
+  if(story){
+    S.choiceEvent = story;
+    return;
+  }
   if(Math.random() < .34) S.choiceEvent = Object.assign({},pick(CHOICE_EVENTS));
 }
-function resolveChoice(effect){
+function resolveChoice(choice){
   if(!S.choiceEvent || S.gameOver) return;
+  const option = typeof choice === "object" && choice ? choice : null;
+  const effect = option ? option.effect : choice;
+  const activeStoryRoute = S.choiceEvent.storyRoute || null;
+  const activeStoryStage = S.choiceEvent.storyStage || 0;
   const finish = (msg) => {
+    if(activeStoryRoute && activeStoryStage){
+      S.routeStory[activeStoryRoute] = Math.max(S.routeStory[activeStoryRoute] || 0,activeStoryStage);
+    }
     S.choiceResolvedDay = S.day;
     S.choiceEvent = null;
     toast(msg);
     if(S.cash <= 0){ bankrupt("돌발 사건 비용을 감당하지 못함"); return; }
     render();
   };
+
+  if(effect === "route_story" && option){
+    const cost = Math.max(0,Number(option.cost || 0));
+    if(cost && S.cash <= cost){ toast(fmt(cost) + "가 필요합니다."); return; }
+    if(cost) S.cash -= cost;
+    if(option.reward) S.cash += Number(option.reward);
+    if(option.route && option.amount) addRoute(option.route,Number(option.amount));
+    if(option.bonusRoute && option.bonusAmount) addRoute(option.bonusRoute,Number(option.bonusAmount));
+    if(option.pendingFollow) S.pendingFollow = option.pendingFollow;
+    finish(option.message || "선택이 상단의 미래에 기록됐습니다.");
+    return;
+  }
 
   if(effect === "bribe"){
     if(S.cash <= 60){ toast("60G가 없습니다."); return; }
@@ -1402,6 +1651,12 @@ function render(){
   $("#capStat").textContent = used() + " / " + S.capacity;
   $("#marketTitle").textContent = CITIES[S.city].name + " 시장";
   $("#feeBadge").textContent = "판매 수수료 " + Math.round((CITIES[S.city].fee || 0) * 100) + "%";
+  const worldPhase = currentWorldPhase();
+  $("#worldPhaseBadge").textContent = worldPhase.name;
+  $("#worldPhaseBox").innerHTML =
+    '<div><b>' + worldPhase.name + '</b><span>' + worldPhase.start + (worldPhase.end >= 99999 ? '일차 이후' : ' ~ ' + worldPhase.end + '일차') + '</span></div>' +
+    '<p>' + worldPhase.desc + '</p>' +
+    '<div class="phase-effects"><span>이동 추가비 ' + fmt(worldPhase.travel) + '</span><span>위험도 ' + (worldPhase.risk ? '+' + Math.round(worldPhase.risk*100) + '%' : '기본') + '</span><span>시장 변동성 ×' + worldPhase.volatility.toFixed(2) + '</span></div>';
   $("#capBar").style.width = Math.min(100,used()/S.capacity*100) + "%";
 
   const inv = Object.keys(ITEMS).filter(k => S.inv[k] > 0).map(k => ITEMS[k].name + " " + S.inv[k] + "개");
@@ -1425,8 +1680,9 @@ function render(){
     ? "왕도 평시: 도적·쥐 피해 없음 · 대신 판매 수수료 " + Math.round(CITIES.capital.fee * 100) + "%"
     : ([S.insurance && "보험",S.guard && "호위대"].filter(Boolean).join(" · ") || (isWarActive() && S.city === "capital" ? "전시 중: 왕도 안전 효과 해제" : "오늘은 무방비입니다."));
 
-  const eventArea = S.today.cities ? " · " + S.today.cities.map(c => CITIES[c].name).join(", ") : "";
-  $("#newsBox").innerHTML = "<b>[" + S.today.tag + eventArea + "] " + S.today.n + "</b><p>" + S.today.txt + "</p>";
+  const today = S.today || {tag:"시대",n:worldPhase.news,txt:worldPhase.newsText};
+  const eventArea = today.cities ? " · " + today.cities.map(c => CITIES[c].name).join(", ") : "";
+  $("#newsBox").innerHTML = "<b>[" + today.tag + eventArea + "] " + today.n + "</b><p>" + today.txt + "</p>";
   $("#rumorBox").innerHTML = "<p>" + S.rumor + "</p>";
   $("#extraBox").textContent = S.extra || "아직 돈을 주지 않았습니다.";
   $("#informantBtn").disabled = S.informant || S.gameOver || S.travelOpen;
@@ -1541,7 +1797,7 @@ function renderTravel(){
     card.className = "travel-card" + (blocked ? " travel-blocked" : "");
     const status = blocked
       ? '<span class="mini travel-ban">⛔ ' + blocked.n + ' · 출입 금지</span>'
-      : '<span class="mini muted">' + (stay ? "이동비 없음" : "이동비 " + fmt(c.travel)) + " + 유지비 " + fmt(fee()) + '</span>';
+      : '<span class="mini muted">' + (stay ? "이동비 없음" : "이동비 " + fmt(travelCostTo(id))) + " + 유지비 " + fmt(fee()) + '</span>';
     card.innerHTML =
       "<b>" + (stay ? "여기서 하루 더 · " : "") + c.name + "</b><p>" + c.desc + "</p>" +
       status + '<button data-travel="' + id + '"' + (blocked ? " disabled" : "") + ">" +
@@ -1655,7 +1911,7 @@ $("#choiceOptions").addEventListener("click",(e) => {
   const b = e.target.closest("[data-choice]");
   if(!b || !S.choiceEvent) return;
   const option = S.choiceEvent.options[Number(b.dataset.choice)];
-  if(option) resolveChoice(option.effect);
+  if(option) resolveChoice(option);
 });
 $("#specialDealBox").addEventListener("click",(e) => {
   if(e.target.closest("#specialDealBtn")) useSpecialDeal();
