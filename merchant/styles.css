@@ -461,3 +461,37 @@ body.modal-open{overflow:hidden}
 .sale-ban-inline{color:#a12f27;font-weight:900}
 .black-ban-warning{font-size:10px;color:#9c2d25;background:#fff0ec;border:1px solid #d6a19b;border-radius:8px;padding:6px 8px;margin:6px 0;font-weight:900}
 .regulation-alert{color:#9a3028!important;border-color:#d5a09a!important;background:#fff0ec!important;font-weight:900}
+
+.day-summary-open{overflow:hidden}
+.day-summary-overlay{position:fixed;inset:0;z-index:160;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(52,39,27,.52);backdrop-filter:blur(3px)}
+.day-summary-overlay.hidden{display:none!important}
+.day-summary-modal{width:min(720px,100%);max-height:88vh;overflow:auto;border:2px solid #bda98d;box-shadow:0 24px 80px rgba(52,36,22,.34)}
+.day-summary-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.day-summary-head h2{margin:2px 0 4px;font-size:23px}
+.day-summary-head p{margin:0;font-size:11px}
+.day-summary-net{min-width:150px;text-align:right;border:1px solid #d9c8ad;border-radius:12px;background:#fff8ec;padding:9px 11px}
+.day-summary-net span{display:block;font-size:10px;color:#746658}
+.day-summary-net b{font-size:20px}
+.summary-profit{color:#176b38!important}
+.summary-loss{color:#a92828!important}
+.day-summary-money{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.day-summary-money>div{border:1px solid #ded0bb;border-radius:11px;background:#fffaf2;padding:9px}
+.day-summary-money span{display:block;font-size:10px;color:#76685a;margin-bottom:3px}
+.day-summary-money b{font-size:14px}
+.day-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.day-summary-grid article,.day-summary-stock{border:1px solid #ded0bb;border-radius:12px;background:#fffdf8;padding:10px}
+.day-summary-grid h3,.day-summary-stock h3{margin:0 0 7px;font-size:13px}
+.summary-line{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;border-top:1px solid #eee3d4;padding:6px 0;font-size:11px}
+.summary-line:first-child{border-top:0}
+.summary-line span{color:#5f5145;line-height:1.4}
+.summary-line strong{white-space:nowrap;color:#176b38}
+.day-summary-stock{margin:9px 0}
+.summary-stock-list{display:flex;gap:6px;flex-wrap:wrap}
+.summary-stock-list span{font-size:10px;border:1px solid #dfd0bb;border-radius:999px;background:#fff8ec;padding:4px 7px;color:#5f5145}
+.summary-stock-list .listed-stock{background:#f0f3e9;border-color:#cbd4bf}
+@media(max-width:680px){
+  .day-summary-overlay{padding:10px}
+  .day-summary-head{flex-direction:column}
+  .day-summary-net{width:100%;text-align:left}
+  .day-summary-money,.day-summary-grid{grid-template-columns:1fr}
+}
