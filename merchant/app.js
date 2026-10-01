@@ -58,7 +58,7 @@ const CRAFT_RECIPES = [
   {id:"arcane_potion",city:"arcane",stage:2,shop:"연금술 공방",name:"회복 포션 조제",inputs:{extract:1},output:{potion:1},fee:6},
   {id:"arcane_holy",city:"arcane",stage:2,shop:"성수 조제실",name:"성수 정제",inputs:{extract:1},output:{holy:1},fee:12}
 ];
-const MERC_MAX_ROSTER = 3;
+const MERC_MAX_ROSTER = 6;
 const MERC_RECRUIT_COST = 300;
 const MERC_NAMES = ["리아","브람","세라","카엘","미라","토르빈","유나","베른","엘리","로웬","니아","가론"];
 const MERC_GRADES = [
@@ -1715,6 +1715,8 @@ function normalizeSavedState(state){
   state.princessStatements ??= 0;
   state.lastPrincessDay ??= state.active.some(e => e.princess) ? (state.day || 1) : -999;
   state.plannedBlockade ??= null;
+  state.promotion ??= false;
+  state.promotionCostToday ??= 0;
   state.dayStartCash ??= state.cash;
   state.dayIncomeLog = Array.isArray(state.dayIncomeLog) ? state.dayIncomeLog : [];
   state.daySalesLog = Array.isArray(state.daySalesLog) ? state.daySalesLog : [];
@@ -1808,7 +1810,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},factionRep:{merchant:0,kingdom:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},factionRep:{merchant:0,kingdom:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,promotion:false,promotionCostToday:0,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -1907,7 +1909,8 @@ function processOrders(){
     const key = o.city + ":" + o.item;
     if(capacityLeft[key] == null){
       const d0 = demand(o.item,o.city);
-      capacityLeft[key] = Math.max(1,Math.round(1 + d0 * 2.4 + Math.random() * 2.5));
+      const baseCapacity = 1 + d0 * 2.4 + Math.random() * 2.5;
+      capacityLeft[key] = Math.max(1,Math.round(baseCapacity * (S.promotion ? 1.35 : 1)));
     }
 
     const currentMarket = S.world[o.city][o.item] || S.prices[o.item];
@@ -1915,7 +1918,8 @@ function processOrders(){
     const age = S.day - o.listed;
     const freshness = Math.max(.52,1 - Math.max(0,age - 1) * .09);
     let chance = .19 * demand(o.item,o.city) * freshness / Math.max(.62,premium * premium);
-    chance = Math.max(.015,Math.min(.90,chance));
+    if(S.promotion) chance *= 1.5;
+    chance = Math.max(.015,Math.min(.94,chance));
 
     let sold = 0;
     const possible = Math.min(o.qty,capacityLeft[key]);
@@ -2465,6 +2469,18 @@ function applyWeeklySettlement(){
   }
   return true;
 }
+function activatePromotion(){
+  if(checkBlocked()) return;
+  if(S.promotion){ toast("오늘은 이미 홍보활동을 진행 중입니다."); return; }
+  const cost = 60;
+  if(S.cash <= cost){ toast("홍보비 " + fmt(cost) + "가 부족합니다."); return; }
+  S.cash -= cost;
+  S.promotion = true;
+  S.promotionCostToday = cost;
+  changeFactionRep("merchant",1);
+  toast("홍보활동 시작! 오늘 등록 상품의 체결 확률 ×1.5 · 판매 가능 물량 +35%.");
+  render();
+}
 function openTravel(){
   if(checkBlocked()) return;
   S.travelOpen = true;
@@ -2511,7 +2527,12 @@ function advanceDay(dest){
   seedWorld();
   S.rumor = marketRumor();
   processOrders();
+  const usedPromotionCost = S.promotionCostToday || 0;
+  S.promotion = false;
+  S.promotionCostToday = 0;
   processMercenaryExpeditions();
+
+  if(usedPromotionCost) knownCosts.push({label:"홍보활동 비용",amount:usedPromotionCost});
 
   const troubleCashBefore = S.cash;
   const troubleInvBefore = Object.fromEntries(Object.keys(ITEMS).map(k => [k,S.inv[k] || 0]));
@@ -3114,6 +3135,10 @@ function render(){
     : (!warehouseGuard && !escortGuard
       ? "현재 무방비입니다. 용병대에서 대기 용병을 경비에 배치하세요."
       : "경비 배치는 유지되며 원정·훈련·승급 전에는 배치를 해제해야 합니다.");
+  $("#promotionBtn").textContent = S.promotion ? "홍보 진행 중 · 판매확률 ×1.5" : "홍보활동 60G";
+  $("#promotionText").textContent = S.promotion
+    ? "오늘 하루 마감 시 정규시장 체결 확률 ×1.5 · 판매 가능 물량 +35%가 적용됩니다."
+    : "정규시장 체결 확률 ×1.5 · 하루 판매 가능 물량 +35%";
 
   const newsList = (Array.isArray(S.todayNews) && S.todayNews.length)
     ? S.todayNews
@@ -3159,6 +3184,7 @@ function render(){
     }
   }else{
     $("#upgradeBtn").disabled = S.travelOpen;
+    $("#promotionBtn").disabled = S.promotion || S.travelOpen || S.cash <= 60;
 
   }
   saveGame();
@@ -3412,6 +3438,7 @@ $("#travelCancel").addEventListener("click",() => {
   }
 });
 $("#informantBtn").addEventListener("click",useInformant);
+$("#promotionBtn").addEventListener("click",activatePromotion);
 $("#upgradeBtn").addEventListener("click",upgrade);
 $("#restart").addEventListener("click",() => startNewGame(false));
 $("#endingContinue").addEventListener("click",continueEndlessMode);
