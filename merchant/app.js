@@ -238,10 +238,10 @@ const EVENTS = [
   {id:"adventurer_boom",n:"모험가 길드 신규 가입 폭증",tag:"경기",txt:"젊은이들이 전부 모험가가 되겠답니다. 검, 갑옷, 포션이 잘 팔립니다.",p:{sword:1.28,armor:1.3,potion:1.32},d:{sword:1.5,armor:1.5,potion:1.55},days:3},
   {id:"adventurer_quit",n:"모험가 절반이 첫 슬라임 보고 은퇴",tag:"정정",txt:"신규 모험가들이 현실을 깨달았습니다. 중고 장비가 시장에 쏟아집니다.",p:{sword:.68,armor:.7,potion:.88},d:{sword:.58,armor:.6,potion:.85},days:2},
   {id:"royal_lottery",n:"왕실 복권 대박 당첨자 등장",tag:"유행",txt:"평민 한 명이 갑자기 부자가 됐습니다. 따라 사려는 사람들 때문에 보석과 향신료가 뜁니다.",p:{gem:1.22,spice:1.18},d:{gem:1.38,spice:1.32},days:2},
-  {id:"royal_curfew",n:"왕실 야간 통행금지령",tag:"통제",blockedCities:["capital"],txt:"왕도가 이틀간 통행금지에 들어갔습니다. 왕도 출입이 막혀 길드 의뢰 일정이 꼬이기 시작했습니다.",p:{bread:1.12,beer:.9,holy:1.08},d:{bread:1.2,beer:.8,holy:1.15},days:2},
-  {id:"great_bridge_collapse",n:"철산 대교 붕괴",tag:"교통",blockedCities:["mine"],txt:"광산도시로 이어지는 대교가 무너졌습니다. 복구 전까지 철산 광산도시 출입이 금지됩니다.",p:{iron:1.25,sword:1.12,armor:1.12},d:{iron:1.35},days:2},
-  {id:"port_quarantine",n:"청해 항구 검역 봉쇄",tag:"통제",blockedCities:["port"],txt:"정체불명의 열병 신고로 항구가 봉쇄됐습니다. 배도 마차도 들어오고 나갈 수 없습니다.",p:{spice:1.32,gem:1.2,potion:1.25},d:{spice:1.4,potion:1.4},days:2},
-  {id:"arcane_lockdown",n:"마도도시 마력폭주 봉쇄",tag:"마법",blockedCities:["arcane"],txt:"도시 외곽 마법진이 폭주해 아르카나 출입이 전면 통제됐습니다. 교수들은 '예정된 실험'이라고 주장합니다.",p:{mana:1.35,potion:1.2},d:{mana:1.5,potion:1.3},days:2},
+  {id:"royal_curfew",n:"왕실 야간 통행금지령",tag:"통제",cities:["capital"],blockedCities:["capital"],txt:"왕도가 이틀간 통행금지에 들어갔습니다. 왕도 출입이 막혀 길드 의뢰 일정이 꼬이기 시작했습니다.",p:{bread:1.12,beer:.9,holy:1.08},d:{bread:1.2,beer:.8,holy:1.15},days:2},
+  {id:"great_bridge_collapse",n:"철산 대교 붕괴",tag:"교통",cities:["mine"],blockedCities:["mine"],txt:"광산도시로 이어지는 대교가 무너졌습니다. 복구 전까지 철산 광산도시 출입이 금지됩니다.",p:{iron:1.25,sword:1.12,armor:1.12},d:{iron:1.35},days:2},
+  {id:"port_quarantine",n:"청해 항구 검역 봉쇄",tag:"통제",cities:["port"],blockedCities:["port"],txt:"정체불명의 열병 신고로 항구가 봉쇄됐습니다. 배도 마차도 들어오고 나갈 수 없습니다.",p:{spice:1.32,gem:1.2,potion:1.25},d:{spice:1.4,potion:1.4},days:2},
+  {id:"arcane_lockdown",n:"마도도시 마력폭주 봉쇄",tag:"마법",cities:["arcane"],blockedCities:["arcane"],txt:"도시 외곽 마법진이 폭주해 아르카나 출입이 전면 통제됐습니다. 교수들은 '예정된 실험'이라고 주장합니다.",p:{mana:1.35,potion:1.2},d:{mana:1.5,potion:1.3},days:2},
   {id:"princess_bread_diet",n:"공주: '요즘 빵 먹으면 얼굴이 붓는 것 같아요'",tag:"공주 발언",princess:true,
     txt:"공주의 아침 인터뷰 한마디에 귀족들이 빵을 식탁에서 치우기 시작했습니다. 제빵사들은 왕궁 방향을 바라보며 깊게 한숨 쉽니다.",
     p:{bread:.55,wheat:.68,spice:1.16},d:{bread:.38,wheat:.55,spice:1.25},shock:{bread:.84,wheat:.90},days:1,
@@ -301,6 +301,17 @@ const EVENTS = [
     txt:"왕실이 주문을 취소하자 귀족 탐험대도 일제히 따라 취소했습니다. 마족보다 공주의 취향 변화가 더 추적하기 어렵습니다.",
     p:{mana:.9},d:{mana:.82},
     gearP:{monster_demon_compass:.50,monster_slime_cooler:.84},days:1},
+
+  {id:"royal_weapon_sale_ban",n:"왕실, 민간 무기 판매 3일간 금지",tag:"판매금지",txt:"왕실이 치안 안정을 이유로 검과 갑옷의 민간 판매를 전면 금지했습니다. 이미 진열한 물건도 거래가 중지됩니다.",bannedItems:["sword","armor"],p:{sword:.86,armor:.88},d:{sword:.35,armor:.38},days:3},
+  {id:"potion_sale_ban",n:"왕실 보건국, 포션 판매 일시 금지",tag:"판매금지",txt:"성분표시 오류가 발견됐다는 이유로 포션 판매가 며칠간 금지됐습니다. 약초상들은 자기들은 무관하다며 웃고 있습니다.",bannedItems:["potion"],p:{potion:.72,herb:1.18},d:{potion:.2,herb:1.3},days:2},
+  {id:"grain_sale_control",n:"왕실, 곡물 사재기 방지 판매통제",tag:"판매금지",txt:"빵과 밀을 비축한 상인이 너무 많아지자 왕실이 민간 판매를 잠시 막았습니다. 창고에 곡물이 있는 상인들의 표정이 굳었습니다.",bannedItems:["bread","wheat"],p:{bread:.78,wheat:.74},d:{bread:.28,wheat:.25},days:2},
+  {id:"luxury_capital_ban",n:"왕도 사치품 거래 자숙령",tag:"판매금지",cities:["capital"],banCities:["capital"],txt:"왕실이 민심 수습을 이유로 왕도에서 보석과 향신료 판매를 금지했습니다. 귀족들은 즉시 하인들을 다른 도시로 보냈습니다.",bannedItems:["gem","spice"],p:{gem:.64,spice:.7},d:{gem:.25,spice:.3},days:3},
+  {id:"monster_gear_inspection",n:"몬스터 소재 장비 안전검사 명령",tag:"판매금지",txt:"가공 불량 신고가 접수돼 몬스터 소재 장비 전 품목의 판매가 잠시 중지됐습니다. 철산 공방들은 검사가 끝날 때까지 재고를 쌓아야 합니다.",bannedItems:["monster_hide_cover","monster_slime_cooler","monster_ogre_horn","monster_wyvern_armor","monster_demon_compass"],days:2},
+
+  {id:"farm_entry_ban",n:"풍요 평원 외부인 출입금지",tag:"출입금지",cities:["farm"],blockedCities:["farm"],txt:"가축 전염병 의심 신고로 풍요 평원이 봉쇄됐습니다. 주민은 나갈 수 없고 외부 상단도 들어갈 수 없습니다.",p:{wheat:1.18,bread:1.15,herb:1.1},d:{wheat:1.3,bread:1.25},days:3},
+  {id:"mine_entry_ban",n:"철산 광산도시 군사통제구역 지정",tag:"출입금지",cities:["mine"],blockedCities:["mine"],txt:"갱도 깊은 곳에서 정체불명의 폭발이 발생해 철산 전체가 임시 군사통제구역으로 지정됐습니다.",p:{iron:1.28,sword:1.14,armor:1.16},d:{iron:1.4},days:3},
+  {id:"port_entry_ban",n:"청해 항구 전면 입항·입성 금지",tag:"출입금지",cities:["port"],blockedCities:["port"],txt:"밀수선 추적작전 때문에 항구 출입문과 부두가 동시에 봉쇄됐습니다. 멀쩡한 상인들까지 같이 갇혔습니다.",p:{spice:1.25,gem:1.18},d:{spice:1.35,gem:1.3},days:2},
+  {id:"arcane_entry_ban",n:"아르카나 외부인 접근금지",tag:"출입금지",cities:["arcane"],blockedCities:["arcane"],txt:"마법대학이 '도시 규모의 실험'을 시작한다며 외부인 접근을 막았습니다. 교수들은 안전하다는 말만 반복합니다.",p:{mana:1.3,potion:1.16},d:{mana:1.42,potion:1.26},days:2},
 
   {id:"prosperity_trade_fair",phases:["prosperity"],n:"왕국 대교역 박람회 개막",tag:"호황",txt:"전국 상인이 왕도로 몰려들었습니다. 보석과 향신료는 진열하자마자 팔립니다.",p:{gem:1.12,spice:1.14},d:{gem:1.45,spice:1.5},days:2},
   {id:"prosperity_tourism",phases:["prosperity"],n:"용사 성지순례 관광상품 대박",tag:"유행",txt:"아직 마왕도 안 나타났는데 용사 생가 관광상품이 먼저 대박 났습니다.",p:{beer:1.14,bread:1.08,gem:1.08},d:{beer:1.4,bread:1.25,gem:1.2},days:2},
@@ -540,6 +551,17 @@ function capitalIsSafe(){
 function travelBlockEvent(dest){
   if(dest === S.city) return null;
   return S.active.find(e => e.blockedCities && (e.blockedCities.includes(dest) || e.blockedCities.includes(S.city))) || null;
+}
+function saleBanEvent(item,city=S.city){
+  return S.active.find(e =>
+    Array.isArray(e.bannedItems) &&
+    e.bannedItems.includes(item) &&
+    (!e.banCities || e.banCities.includes(city))
+  ) || null;
+}
+function saleBanText(item,city=S.city){
+  const e = saleBanEvent(item,city);
+  return e ? e.n + " · " + e.remaining + "일 남음" : "";
 }
 function contractPenalty(type,reward){
   const rate = type === "rush" ? .70 : type === "sale" ? .50 : type === "courier" ? .45 : .45;
@@ -1196,7 +1218,8 @@ function newIntel(){
   }
 
   // 하루에 공주 발언은 최대 1개만. 뉴스 수가 늘어도 공주가 세 번 말하는 참사는 막습니다.
-  if(sources.length < targetCount && !sources.some(e => e.princess) && !S.active.some(e => e.princess)){
+  const princessCooldownReady = S.day - (S.lastPrincessDay ?? -999) >= 5;
+  if(sources.length < targetCount && princessCooldownReady && !sources.some(e => e.princess) && !S.active.some(e => e.princess)){
     const princessChance = phase.id === "merchant_age" ? .20 : S.day >= 50 ? .16 : .12;
     if(Math.random() < princessChance){
       const princessPool = EVENTS.filter(e =>
@@ -1218,8 +1241,8 @@ function newIntel(){
       if(e.noCapital && S.city === "capital" && !isWarActive()) return false;
       // 같은 사건이 아직 진행 중이면 새 뉴스 슬롯에서 또 뽑지 않습니다.
       if(S.active.some(a => a.id === e.id)) return false;
-      // 공주 발언은 하루 최대 1건.
-      if(e.princess && sources.some(x => x.princess)) return false;
+      // 공주 발언은 전용 확률 + 5일 쿨다운을 통해서만 발생합니다.
+      if(e.princess) return false;
       return true;
     });
     if(!pool.length) break;
@@ -1237,6 +1260,7 @@ function newIntel(){
 
     if(e.princess){
       S.princessStatements = (S.princessStatements || 0) + 1;
+      S.lastPrincessDay = S.day;
       applyEventMarketShock(e);
     }
 
@@ -1340,6 +1364,7 @@ function normalizeSavedState(state){
     state.mercGearMigrationV2 = true;
   }
   state.princessStatements ??= 0;
+  state.lastPrincessDay ??= state.active.some(e => e.princess) ? (state.day || 1) : -999;
   state.lastMercEventDay ??= 0;
   state.banditSuppressionUntil ??= 0;
   state.gameOver ??= false;
@@ -1429,7 +1454,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -1486,6 +1511,11 @@ function buy(item,qty){
 }
 function listForSale(item,qty){
   if(checkBlocked()) return;
+  const ban = saleBanEvent(item,S.city);
+  if(ban){
+    toast("판매금지령 적용 중: " + ITEMS[item].name + " · " + ban.remaining + "일 남음");
+    return;
+  }
   if(qty === 999) qty = S.inv[item];
   qty = Math.max(0,Math.min(qty,S.inv[item]));
   if(qty < 1){ toast("판매할 재고가 없습니다."); return; }
@@ -1514,6 +1544,11 @@ function processOrders(){
   const capacityLeft = {};
 
   for(const o of S.orders){
+    const ban = saleBanEvent(o.item,o.city);
+    if(ban){
+      keep.push(o);
+      continue;
+    }
     const key = o.city + ":" + o.item;
     if(capacityLeft[key] == null){
       const d0 = demand(o.item,o.city);
@@ -1682,6 +1717,8 @@ function craftMercGear(id){
 function sellMercGear(item,qty=1){
   if(checkBlocked()) return;
   if(!ITEMS[item]?.monsterGear) return;
+  const ban = saleBanEvent(item,S.city);
+  if(ban){ toast("몬스터 장비 판매금지령 적용 중 · " + ban.remaining + "일 남음"); return; }
   const held = S.inv[item] || 0;
   if(qty === 999) qty = held;
   qty = Math.max(0,Math.min(qty,held));
@@ -1779,8 +1816,9 @@ function renderMercenaries(){
             const item = gear.item;
             const q = S.inv[item] || 0;
             const each = mercGearSalePrice(item);
-            return '<article class="gear-sell-row"><div><b>' + ITEMS[item].name + '</b><span>보유 ' + q + '개 · ' + fmt(each) + '/개</span></div>' +
-              '<div><button data-merc-sell="' + item + '" data-q="1">1개 판매</button><button data-merc-sell="' + item + '" data-q="999">전부 판매</button></div></article>';
+            const ban = saleBanEvent(item,S.city);
+            return '<article class="gear-sell-row"><div><b>' + ITEMS[item].name + '</b><span>보유 ' + q + '개 · ' + fmt(each) + '/개' + (ban ? ' · ⛔ 판매금지 ' + ban.remaining + '일' : '') + '</span></div>' +
+              '<div><button data-merc-sell="' + item + '" data-q="1"' + (ban ? ' disabled' : '') + '>' + (ban ? '판매금지' : '1개 판매') + '</button><button data-merc-sell="' + item + '" data-q="999"' + (ban ? ' disabled' : '') + '>' + (ban ? '거래 중지' : '전부 판매') + '</button></div></article>';
           }).join("")
         : '<p class="mini muted">판매할 제작 장비가 없습니다. 철산 공방에서 먼저 제작하세요.</p>') +
     '</div>';
@@ -2266,22 +2304,24 @@ function sellBlackMarket(item,qty){
     return;
   }
 
-  const each = Math.max(1,Math.round(S.prices[item] * .8));
+  const ban = saleBanEvent(item,S.city);
+  const each = Math.max(1,Math.round(S.prices[item] * (ban ? .95 : .8)));
   const gross = each * qty;
   S.inv[item] -= qty;
   S.cash += gross;
   addRoute("underworld",.6);
 
-  if(Math.random() < .05){
-    const fine = Math.max(60,Math.round(gross * .35));
+  const catchChance = ban ? .22 : .05;
+  if(Math.random() < catchChance){
+    const fine = Math.max(ban ? 150 : 60,Math.round(gross * (ban ? .65 : .35)));
     S.cash -= fine;
-    toast("암시장 단속! " + ITEMS[item].name + " " + qty + "개를 " + fmt(gross) + "에 넘겼지만 벌금 " + fmt(fine) + "을 냈습니다.");
+    toast((ban ? "금지품 밀매 적발! " : "암시장 단속! ") + ITEMS[item].name + " " + qty + "개를 " + fmt(gross) + "에 넘겼지만 벌금 " + fmt(fine) + "을 냈습니다.");
     if(S.cash <= 0){
       bankrupt("암시장 단속 벌금을 감당하지 못함");
       return;
     }
   }else{
-    toast("암시장 즉시 매각: " + ITEMS[item].name + " " + qty + "개 · " + fmt(gross) + " 입금.");
+    toast((ban ? "금지품 밀매 성공: " : "암시장 즉시 매각: ") + ITEMS[item].name + " " + qty + "개 · " + fmt(gross) + " 입금.");
   }
   render();
 }
@@ -2311,6 +2351,7 @@ function renderBlackMarket(){
     row.className = "black-market-item";
     row.innerHTML =
       '<div class="bm-head"><div><h3>' + ITEMS[k].name + '</h3><div class="black-market-meta">보유 ' + S.inv[k] + '개 · 정상 시세 ' + fmt(S.prices[k]) + '</div></div><div class="black-market-price">' + fmt(each) + '/개</div></div>' +
+      (saleBanEvent(k,S.city) ? '<div class="black-ban-warning">⛔ 금지품 밀매 · 매입가 상승 / 적발 확률 22%</div>' : '') +
       '<div class="black-market-actions"><button data-black="' + k + '" data-q="1">1개 즉시 매각</button><button data-black="' + k + '" data-q="999">전부 매각</button></div>';
     list.appendChild(row);
   }
@@ -2327,6 +2368,8 @@ function useSpecialDeal(){
     S.inv[d.item] += d.qty;
     toast("수상한 거래 성사. " + ITEMS[d.item].name + " " + d.qty + "개를 " + fmt(total) + "에 샀습니다.");
   }else{
+    const ban = saleBanEvent(d.item,S.city);
+    if(ban){ toast("판매금지령 때문에 이 거래를 할 수 없습니다: " + ITEMS[d.item].name); return; }
     if(S.inv[d.item] < d.qty){ toast(ITEMS[d.item].name + " " + d.qty + "개가 필요합니다."); return; }
     const total = d.each * d.qty;
     S.inv[d.item] -= d.qty;
@@ -2384,7 +2427,8 @@ function renderExtras(){
       dealBox.innerHTML =
         "<p>" + d.text + "</p><h3>" + ITEMS[d.item].name + " " + d.qty + "개 급구</h3>" +
         '<div class="deal-price">즉시 ' + fmt(total) + '</div>' +
-        '<button id="specialDealBtn"' + (S.inv[d.item] >= d.qty ? "" : " disabled") + '>즉시 판매</button>';
+        '<button id="specialDealBtn"' + (S.inv[d.item] >= d.qty && !saleBanEvent(d.item,S.city) ? "" : " disabled") + '>' +
+        (saleBanEvent(d.item,S.city) ? "판매금지 적용 중" : "즉시 판매") + '</button>';
     }
   }
 }
@@ -2411,6 +2455,8 @@ function render(){
     '<div class="phase-effects"><span>이동 추가비 ' + fmt(worldPhase.travel) + '</span><span>위험도 ' + (worldPhase.risk ? '+' + Math.round(worldPhase.risk*100) + '%' : '기본') + '</span><span>시장 변동성 ×' + worldPhase.volatility.toFixed(2) + '</span>' +
       (S.active.some(e => e.princess) ? '<span class="princess-alert">👑 공주 발언 충격 진행 중</span>' : '') +
       (S.princessStatements ? '<span>공주 발언 누적 ' + S.princessStatements + '회</span>' : '') +
+      (S.active.some(e => e.bannedItems) ? '<span class="regulation-alert">⛔ 판매금지령 발효 중</span>' : '') +
+      (S.active.some(e => e.blockedCities) ? '<span class="regulation-alert">🚧 지역 출입통제 중</span>' : '') +
     '</div>';
   $("#capBar").style.width = Math.min(100,used()/S.capacity*100) + "%";
 
@@ -2505,6 +2551,7 @@ function renderMarket(){
     const demandClass = d > 1.4 ? "demand-high" : d < .7 ? "demand-low" : "";
     const demandText = d > 1.6 ? "수요 폭발" : d > 1.25 ? "수요 높음" : d > .8 ? "수요 보통" : "수요 낮음";
     const listed = S.orders.filter(o => o.item === k).reduce((a,o) => a + o.qty,0);
+    const ban = saleBanEvent(k,S.city);
     const trendClass = globalDelta > 2 ? "price-up" : globalDelta < -2 ? "price-down" : "";
     const trendText = Math.abs(globalDelta) < 1
       ? "왕국 추세 → 보합"
@@ -2514,13 +2561,15 @@ function renderMarket(){
       '<div class="title-row"><div><h3>' + it.name + '</h3><span class="' + priceClass + '">' +
       fmt(p) + ' ' + (delta >= 0 ? '▲ ' : '▼ ') + Math.abs(delta).toFixed(0) +
       '%</span></div><b class="' + demandClass + '">' + demandText + '</b></div>' +
-      '<div class="market-meta"><span>재고 ' + S.inv[k] + '</span><span>판매중 ' + listed + '</span><span>무게 ' + it.w + '</span><span class="' + trendClass + '">' + trendText + '</span></div>' +
+      '<div class="market-meta"><span>재고 ' + S.inv[k] + '</span><span>판매중 ' + listed + '</span><span>무게 ' + it.w + '</span><span class="' + trendClass + '">' + trendText + '</span>' +
+        (ban ? '<span class="sale-ban-badge">⛔ 판매금지 · ' + ban.remaining + '일</span>' : '') +
+      '</div>' +
       '<div class="market-actions"><div class="qty">' +
       '<button data-buy="' + k + '" data-q="1">1개 매입</button>' +
       '<button data-buy="' + k + '" data-q="5">5개</button>' +
       '<button data-buy="' + k + '" data-q="999">최대</button></div>' +
-      '<button data-sell="' + k + '" data-q="1">1개 판매등록</button>' +
-      '<button data-sell="' + k + '" data-q="999">전부 등록</button></div>';
+      '<button data-sell="' + k + '" data-q="1"' + (ban ? ' disabled' : '') + '>' + (ban ? '판매금지' : '1개 판매등록') + '</button>' +
+      '<button data-sell="' + k + '" data-q="999"' + (ban ? ' disabled' : '') + '>' + (ban ? '거래 중지' : '전부 등록') + '</button></div>';
 
     box.appendChild(card);
   }
@@ -2542,10 +2591,12 @@ function renderOrders(){
   S.orders.forEach((o,i) => {
     const row = document.createElement("article");
     row.className = "order";
+    const ban = saleBanEvent(o.item,o.city);
     row.innerHTML =
       "<div><b>" + ITEMS[o.item].name + " " + o.qty + "개</b><p>" +
       CITIES[o.city].name + " · 희망가 " + fmt(o.ask) + " · 수수료 " + Math.round((CITIES[o.city].fee || 0) * 100) + "% · " + (S.day-o.listed) +
-      '일째</p></div><button data-cancel="' + i + '">회수</button>';
+      '일째' + (ban ? ' · <span class="sale-ban-inline">⛔ 판매금지로 체결 중지</span>' : '') +
+      '</p></div><button data-cancel="' + i + '">회수</button>';
     box.appendChild(row);
   });
 }
