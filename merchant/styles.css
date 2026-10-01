@@ -365,3 +365,39 @@ body.modal-open{overflow:hidden}
   .intel-actions{justify-content:flex-start;width:100%}
   .world-phase-box>div:first-child{align-items:flex-start;flex-direction:column;gap:2px}
 }
+
+.mercenary-status{border:1px solid #d7c7ae;background:#fbf2e5;border-radius:12px;padding:10px;margin:10px 0}
+.merc-materials,.merc-affinity{display:flex;gap:7px;flex-wrap:wrap}
+.merc-materials span,.merc-affinity span{font-size:11px;border:1px solid #dfd0bb;border-radius:999px;background:#fffaf3;padding:4px 8px;color:#665548}
+.merc-affinity{margin-top:7px}
+.merc-safe{color:#25603d!important;border-color:#9fc4aa!important;background:#eef7ef!important;font-weight:900}
+.merc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.merc-card{border:1px solid #d8c9b1;border-radius:13px;background:#fffdf8;padding:12px}
+.merc-card-head{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.merc-card-head h3{margin:0;font-size:15px}
+.merc-card-head span{font-size:11px;font-weight:900;color:#78593a}
+.merc-card p{font-size:12px;color:#66594d;line-height:1.45;margin:6px 0}
+.merc-yield{font-size:11px;color:#315f49;min-height:34px}
+.merc-card button{width:100%;margin-top:9px}
+.merc-active-list{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:9px;border-top:1px solid #e4d7c5}
+.merc-active-list>b{width:100%;font-size:12px}
+.merc-active-list span{font-size:11px;background:#eef3e9;border:1px solid #c7d2bd;border-radius:999px;padding:4px 7px}
+.merc-none{margin:9px 0 0}
+.merc-workshop-head{border-top:1px solid #dfd1bd;margin-top:14px;padding-top:13px}
+.merc-workshop-head h3{margin:0 0 3px;font-size:16px}
+.merc-workshop-head p{font-size:11px;color:#6a5c4f;margin:0}
+.gear-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
+.gear-card{border:1px solid #d8c9b1;background:#faf5ec;border-radius:11px;padding:10px}
+.gear-made{background:#eef5ea;border-color:#adc39f}
+.gear-head{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.gear-head h4{margin:0;font-size:13px}
+.gear-head span{font-size:10px;font-weight:900;color:#6a593e}
+.gear-card p{font-size:11px;margin:6px 0;color:#4f5e46;font-weight:700}
+.gear-recipe{font-size:10px;color:#746658;line-height:1.4}
+.gear-card button{width:100%;margin-top:7px}
+.merc-log{border-top:1px solid #dfd1bd;margin-top:12px;padding-top:10px;display:flex;flex-direction:column;gap:4px}
+.merc-log>b{font-size:12px}
+.merc-log span{font-size:10px;color:#6c5e51}
+@media(max-width:680px){
+  .merc-grid,.gear-grid{grid-template-columns:1fr}
+}
