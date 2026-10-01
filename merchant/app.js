@@ -1141,7 +1141,119 @@ function net(){
 function toast(t){
   $("#toast").textContent = t;
 }
+function recordDayIncome(amount,label){
+  amount = Math.max(0,Number(amount || 0));
+  if(!amount) return;
+  S.dayIncomeLog ||= [];
+  S.dayIncomeLog.push({amount,label:label || "기타 수입"});
+}
+function recordDaySale(item,qty,amount,source){
+  amount = Math.max(0,Number(amount || 0));
+  qty = Math.max(0,Number(qty || 0));
+  if(!item || !qty || !amount) return;
+  S.daySalesLog ||= [];
+  S.daySalesLog.push({item,qty,amount,source:source || "판매"});
+  recordDayIncome(amount,source || "상품 판매");
+}
+function aggregateDaySales(rows){
+  const map = new Map();
+  for(const r of rows || []){
+    const key = r.item + "|" + r.source;
+    const old = map.get(key) || {item:r.item,source:r.source,qty:0,amount:0};
+    old.qty += r.qty;
+    old.amount += r.amount;
+    map.set(key,old);
+  }
+  return [...map.values()];
+}
+function buildDaySummary(closingDay,startCity,endCity,knownCosts,inventoryLosses){
+  const startCash = Number(S.dayStartCash ?? S.cash);
+  const endCash = S.cash;
+  const netCash = endCash - startCash;
+  const trackedIncome = (S.dayIncomeLog || []).reduce((a,x) => a + Number(x.amount || 0),0);
+  const income = Math.max(trackedIncome,netCash,0);
+  const outflow = Math.max(0,income - netCash);
+  const remaining = Object.keys(ITEMS)
+    .filter(k => (S.inv[k] || 0) > 0)
+    .map(k => ({item:k,qty:S.inv[k]}));
+  const listed = Object.keys(ITEMS)
+    .map(k => ({item:k,qty:S.orders.filter(o => o.item === k).reduce((a,o) => a + o.qty,0)}))
+    .filter(x => x.qty > 0);
+
+  return {
+    open:true,
+    day:closingDay,
+    nextDay:S.day,
+    startCity,
+    endCity,
+    startCash,
+    endCash,
+    income,
+    outflow,
+    netCash,
+    sales:aggregateDaySales(S.daySalesLog || []),
+    incomeLog:[...(S.dayIncomeLog || [])],
+    costs:knownCosts.filter(x => x.amount > 0),
+    inventoryLosses:inventoryLosses || [],
+    remaining,
+    listed
+  };
+}
+function renderDaySummary(){
+  const panel = $("#daySummaryPanel");
+  const d = S.daySummary;
+  const open = !!(d && d.open && !S.gameOver);
+  panel.classList.toggle("hidden",!open);
+  document.body.classList.toggle("day-summary-open",open);
+  if(!open) return;
+
+  $("#daySummaryTitle").textContent = d.day + "일차 장사 결산";
+  $("#daySummarySub").textContent =
+    CITIES[d.startCity]?.name + " → " + CITIES[d.endCity]?.name + " · " + d.nextDay + "일차 시작";
+  $("#daySummaryNet").innerHTML =
+    '<span>순현금 변화</span><b class="' + (d.netCash >= 0 ? 'summary-profit' : 'summary-loss') + '">' +
+    (d.netCash >= 0 ? "+" : "") + fmt(d.netCash) + '</b>';
+
+  $("#daySummaryMoney").innerHTML =
+    '<div><span>판매·의뢰 수입</span><b class="summary-profit">+' + fmt(d.income) + '</b></div>' +
+    '<div><span>사용·비용·손실</span><b class="summary-loss">-' + fmt(d.outflow) + '</b></div>' +
+    '<div><span>현금</span><b>' + fmt(d.startCash) + ' → ' + fmt(d.endCash) + '</b></div>';
+
+  $("#daySummarySales").innerHTML = d.sales.length
+    ? d.sales.map(x =>
+        '<div class="summary-line"><span><b>' + ITEMS[x.item].name + '</b> ' + x.qty + '개 · ' + x.source +
+        '</span><strong>+' + fmt(x.amount) + '</strong></div>'
+      ).join("")
+    : '<p class="mini muted">오늘 체결된 판매가 없습니다.</p>';
+
+  const lossLines = [];
+  for(const x of d.costs){
+    lossLines.push('<div class="summary-line"><span>' + x.label + '</span><strong class="summary-loss">-' + fmt(x.amount) + '</strong></div>');
+  }
+  for(const x of d.inventoryLosses){
+    lossLines.push('<div class="summary-line"><span>' + ITEMS[x.item].name + ' 손실</span><strong class="summary-loss">-' + x.qty + '개</strong></div>');
+  }
+  $("#daySummaryLosses").innerHTML = lossLines.length
+    ? lossLines.join("")
+    : '<p class="mini muted">특별한 비용이나 재고 손실이 없습니다.</p>';
+
+  const stockRows = d.remaining.map(x =>
+    '<span><b>' + ITEMS[x.item].name + '</b> ' + x.qty + '개</span>'
+  );
+  const listedRows = d.listed.map(x =>
+    '<span class="listed-stock"><b>' + ITEMS[x.item].name + '</b> 판매등록 ' + x.qty + '개</span>'
+  );
+  $("#daySummaryStock").innerHTML = stockRows.concat(listedRows).length
+    ? '<div class="summary-stock-list">' + stockRows.concat(listedRows).join("") + '</div>'
+    : '<p class="mini muted">남은 재고가 없습니다.</p>';
+}
+function closeDaySummary(){
+  if(!S.daySummary) return;
+  S.daySummary.open = false;
+  render();
+}
 function checkBlocked(){
+  if(S.daySummary?.open){ toast("하루 결산부터 확인해주세요."); return true; }
   if(S.ending){ toast("이미 왕실 공인 대상인이 되었습니다."); return true; }
   if(S.gameOver){ toast("이미 파산했습니다."); return true; }
   if(S.choiceEvent){ toast("돌발 선택지부터 결정해주세요."); return true; }
@@ -1430,6 +1542,10 @@ function normalizeSavedState(state){
   state.princessStatements ??= 0;
   state.lastPrincessDay ??= state.active.some(e => e.princess) ? (state.day || 1) : -999;
   state.plannedBlockade ??= null;
+  state.dayStartCash ??= state.cash;
+  state.dayIncomeLog = Array.isArray(state.dayIncomeLog) ? state.dayIncomeLog : [];
+  state.daySalesLog = Array.isArray(state.daySalesLog) ? state.daySalesLog : [];
+  state.daySummary ??= null;
   state.lastMercEventDay ??= 0;
   state.banditSuppressionUntil ??= 0;
   state.gameOver ??= false;
@@ -1519,7 +1635,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -1642,6 +1758,7 @@ function processOrders(){
       const commission = Math.round(gross * rate);
       const payout = gross - commission;
       S.cash += payout;
+      recordDaySale(o.item,sold,payout,"정규 시장");
       updateSaleContract(o.item,o.city,sold);
       soldText.push(ITEMS[o.item].name + " " + sold + "개 " + fmt(payout) + (commission ? " (수수료 -" + fmt(commission) + ")" : ""));
     }
@@ -1793,6 +1910,7 @@ function sellMercGear(item,qty=1){
   const total = each * qty;
   S.inv[item] -= qty;
   S.cash += total;
+  recordDaySale(item,qty,total,"몬스터 장비 매입상");
   addMercLog("장비 판매 · " + ITEMS[item].name + " " + qty + "개 · " + fmt(total));
   toast(CITIES[S.city].name + " 장비 매입상에게 " + ITEMS[item].name + " " + qty + "개를 " + fmt(total) + "에 판매했습니다.");
   render();
@@ -1966,14 +2084,17 @@ function openTravel(){
   render();
 }
 function advanceDay(dest){
-  if(!S.travelOpen || S.gameOver || S.ending) return;
+  if(!S.travelOpen || S.gameOver || S.ending || S.daySummary?.open) return;
   const blocked = travelBlockEvent(dest);
   if(blocked){
     toast(blocked.n + " 때문에 " + CITIES[dest].name + " 이동이 불가능합니다.");
     return;
   }
+  const closingDay = S.day;
+  const startCity = S.city;
   const moveCost = travelCostTo(dest);
-  const total = moveCost + fee();
+  const upkeep = fee();
+  const total = moveCost + upkeep;
   if(S.cash <= total){
     toast("이동/유지비 " + fmt(total) + "를 내면 파산합니다.");
     return;
@@ -1982,6 +2103,11 @@ function advanceDay(dest){
     render();
     return;
   }
+
+  const knownCosts = [];
+  if(moveCost > 0) knownCosts.push({label:"이동비",amount:moveCost});
+  if(upkeep > 0) knownCosts.push({label:"유지비·운영비·보관비",amount:upkeep});
+
   S.cash -= total;
   S.day += 1;
   S.city = dest;
@@ -2000,9 +2126,25 @@ function advanceDay(dest){
   S.rumor = marketRumor();
   processOrders();
   processMercenaryExpeditions();
+
+  const troubleCashBefore = S.cash;
+  const troubleInvBefore = Object.fromEntries(Object.keys(ITEMS).map(k => [k,S.inv[k] || 0]));
   trouble();
+  const troubleCashLoss = Math.max(0,troubleCashBefore - S.cash);
+  if(troubleCashLoss) knownCosts.push({label:"도적·사고 현금 손실",amount:troubleCashLoss});
+  const inventoryLosses = Object.keys(ITEMS)
+    .map(k => ({item:k,qty:Math.max(0,(troubleInvBefore[k] || 0) - (S.inv[k] || 0))}))
+    .filter(x => x.qty > 0);
+
+  const beforeDeadline = S.cash;
   if(checkContractDeadline() === false) return;
+  const deadlineLoss = Math.max(0,beforeDeadline - S.cash);
+  if(deadlineLoss) knownCosts.push({label:"의뢰 위약금",amount:deadlineLoss});
+
+  const beforeSettlement = S.cash;
   if(!applyWeeklySettlement()) return;
+  const settlementLoss = Math.max(0,beforeSettlement - S.cash);
+  if(settlementLoss) knownCosts.push({label:"상인 길드 주간 결산",amount:settlementLoss});
 
   if(S.cash <= 0){
     bankrupt("하루 비용을 버티지 못함");
@@ -2014,8 +2156,14 @@ function advanceDay(dest){
   maybeGenerateChoiceEvent();
   S.peak = Math.max(S.peak,net());
   checkFinalChapter();
+
+  S.daySummary = buildDaySummary(closingDay,startCity,S.city,knownCosts,inventoryLosses);
+  S.dayStartCash = S.cash;
+  S.dayIncomeLog = [];
+  S.daySalesLog = [];
   render();
 }
+
 function useInformant(){
   if(checkBlocked()) return;
   if(S.informant){ toast("정보상은 오늘 이미 떠들었습니다."); return; }
@@ -2079,6 +2227,7 @@ function completeContract(message="의뢰 완료!"){
   if(!S.contractActive) return;
   const reward = S.contractActive.reward;
   S.cash += reward;
+  recordDayIncome(reward,"길드 의뢰 보상");
   S.completedContracts += 1;
   addRoute("royal",.4);
   S.contractDoneDay = S.day;
@@ -2151,10 +2300,13 @@ function resolveChoice(choice){
   const effect = option ? option.effect : choice;
   const activeStoryRoute = S.choiceEvent.storyRoute || null;
   const activeStoryStage = S.choiceEvent.storyStage || 0;
+  const choiceCashBefore = S.cash;
   const finish = (msg) => {
     if(activeStoryRoute && activeStoryStage){
       S.routeStory[activeStoryRoute] = Math.max(S.routeStory[activeStoryRoute] || 0,activeStoryStage);
     }
+    const choiceDelta = S.cash - choiceCashBefore;
+    if(choiceDelta > 0) recordDayIncome(choiceDelta,"돌발 이벤트");
     S.choiceResolvedDay = S.day;
     S.choiceEvent = null;
     toast(msg);
@@ -2386,6 +2538,7 @@ function sellBlackMarket(item,qty){
   const gross = each * qty;
   S.inv[item] -= qty;
   S.cash += gross;
+  recordDaySale(item,qty,gross,ban ? "금지품 암시장" : "암시장");
   addRoute("underworld",.6);
 
   const catchChance = ban ? .22 : .05;
@@ -2451,6 +2604,7 @@ function useSpecialDeal(){
     const total = d.each * d.qty;
     S.inv[d.item] -= d.qty;
     S.cash += total;
+    recordDaySale(d.item,d.qty,total,"특수 구매자");
     toast("특수 구매자에게 즉시 판매! " + fmt(total) + " 입금.");
   }
   S.specialDeal = null;
@@ -2588,10 +2742,11 @@ function render(){
   renderOrders();
   renderTravel();
   renderChoiceEvent();
+  renderDaySummary();
 
   if(S.gameOver || S.ending){
     document.querySelectorAll("button").forEach(b => {
-      if(!["restart","endingRestart","endingContinue","saveSharedRank","rankRefresh","newGameBtn"].includes(b.id)) b.disabled = true;
+      if(!["restart","endingRestart","endingContinue","saveSharedRank","rankRefresh","newGameBtn","daySummaryClose"].includes(b.id)) b.disabled = true;
     });
     if(S.ending){
       $("#saveSharedRank").disabled = !!S.rankSaved;
@@ -2824,6 +2979,7 @@ $("#choiceOptions").addEventListener("click",(e) => {
 $("#specialDealBox").addEventListener("click",(e) => {
   if(e.target.closest("#specialDealBtn")) useSpecialDeal();
 });
+$("#daySummaryClose").addEventListener("click",closeDaySummary);
 $("#endingGoalBox").addEventListener("click",(e) => {
   if(e.target.closest("#trialDeliveryBtn")) deliverFinalTrialGoods();
 });
