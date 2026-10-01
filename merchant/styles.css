@@ -561,3 +561,15 @@ body.modal-open{overflow:hidden}
   .faction-head{align-items:flex-start;flex-direction:column}
   .faction-grid{grid-template-columns:1fr}
 }
+
+.merc-assigned{font-size:9px;border-radius:999px;padding:3px 6px;font-weight:900;white-space:nowrap;background:#edf1fb;color:#3f5f92;border:1px solid #b7c5df}
+.merc-defense-now{border:1px solid #b9c8df;background:#f1f5fb;border-radius:8px;padding:6px;margin-top:7px;display:flex;flex-direction:column;gap:2px}
+.merc-defense-now b{font-size:10px;color:#38577f}
+.merc-defense-now span{font-size:9px;color:#64758b}
+.merc-defense-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
+.merc-defense-actions button{font-size:9px;padding:6px 5px}
+.merc-defense-actions button:only-child{grid-column:1/-1}
+.merc-defense-side{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.defense-status{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid #ddd0bd;background:#fffaf2;border-radius:9px;padding:7px 8px}
+.defense-status b{font-size:11px}
+.defense-status span{font-size:9px;color:#5e6f83;text-align:right}
