@@ -22,7 +22,12 @@ const ITEMS = {
   slime_core:{name:"슬라임 핵",base:0,w:0,cat:"material",craftOnly:true,monsterMaterial:true},
   ogre_horn:{name:"오우거 뿔",base:0,w:0,cat:"material",craftOnly:true,monsterMaterial:true},
   wyvern_scale:{name:"와이번 비늘",base:0,w:0,cat:"material",craftOnly:true,monsterMaterial:true},
-  demon_claw:{name:"마족 발톱",base:0,w:0,cat:"material",craftOnly:true,monsterMaterial:true}
+  demon_claw:{name:"마족 발톱",base:0,w:0,cat:"material",craftOnly:true,monsterMaterial:true},
+  monster_hide_cover:{name:"마수가죽 화물덮개",base:520,w:3,cat:"gear",craftOnly:true,monsterGear:true},
+  monster_slime_cooler:{name:"슬라임 핵 냉각상자",base:820,w:2,cat:"gear",craftOnly:true,monsterGear:true},
+  monster_ogre_horn:{name:"오우거뿔 경적",base:1050,w:2,cat:"gear",craftOnly:true,monsterGear:true},
+  monster_wyvern_armor:{name:"와이번 비늘 마차갑옷",base:1650,w:5,cat:"gear",craftOnly:true,monsterGear:true},
+  monster_demon_compass:{name:"마족 추적 나침반",base:2350,w:1,cat:"gear",craftOnly:true,monsterGear:true}
 };
 
 const CRAFT_LINKS = {
@@ -94,29 +99,29 @@ const MERC_EXPEDITIONS = [
 
 const MERC_GEAR = [
   {
-    id:"hide_cover",name:"마수가죽 화물덮개",fee:140,unlockDay:1,
+    id:"hide_cover",item:"monster_hide_cover",name:"마수가죽 화물덮개",fee:140,unlockDay:1,
     inputs:{beast_hide:4,iron:1},
-    effect:"쥐떼의 재고 피해량 35% 감소"
+    desc:"질긴 마수 가죽을 덧댄 상단용 화물덮개. 초보 상단과 개척대가 자주 찾습니다."
   },
   {
-    id:"slime_cooler",name:"슬라임 핵 냉각상자",fee:220,unlockDay:10,
+    id:"slime_cooler",item:"monster_slime_cooler",name:"슬라임 핵 냉각상자",fee:220,unlockDay:10,
     inputs:{slime_core:4,steel:1,mana:1},
-    effect:"재고 보관비 25% 감소"
+    desc:"슬라임 핵의 냉기를 이용한 고급 보관상자. 항구와 마도도시에서 특히 인기가 높습니다."
   },
   {
-    id:"ogre_horn",name:"오우거뿔 경적",fee:270,unlockDay:20,
+    id:"ogre_horn",item:"monster_ogre_horn",name:"오우거뿔 경적",fee:270,unlockDay:20,
     inputs:{ogre_horn:3,steel:1},
-    effect:"도적 조우 시 30% 확률로 위협해 습격 무효"
+    desc:"오우거 뿔로 만든 거대한 경적. 호위대와 모험가 상단이 장식 겸 신호장비로 구매합니다."
   },
   {
-    id:"wyvern_armor",name:"와이번 비늘 마차갑옷",fee:430,unlockDay:30,
+    id:"wyvern_armor",item:"monster_wyvern_armor",name:"와이번 비늘 마차갑옷",fee:430,unlockDay:30,
     inputs:{wyvern_scale:3,steel:2},
-    effect:"도적에게 빼앗기는 현금 40% 감소"
+    desc:"희귀 와이번 비늘을 이어붙인 고급 마차 장갑. 전시와 국경 긴장기에 값이 크게 뜁니다."
   },
   {
-    id:"demon_compass",name:"마족 추적 나침반",fee:650,unlockDay:50,
+    id:"demon_compass",item:"monster_demon_compass",name:"마족 추적 나침반",fee:650,unlockDay:50,
     inputs:{demon_claw:2,mana:2,gem:1},
-    effect:"용병 원정 귀환 시 희귀 몬스터 소재 1개 추가 확보"
+    desc:"마족의 마력을 감지하도록 만든 최고급 나침반. 귀족 탐험대와 마도 연구소가 노립니다."
   }
 ];
 
@@ -902,9 +907,7 @@ function listedMarketValue(){
 }
 function holdingCost(){
   // 손에 든 재고 0.30%, 판매 등록 재고 0.60%/일. 무한 대기 전략에 실제 비용을 만듭니다.
-  let cost = carriedMarketValue() * .003 + listedMarketValue() * .006;
-  if(S.mercEquipment?.slime_cooler) cost *= .75;
-  return Math.round(cost);
+  return Math.round(carriedMarketValue() * .003 + listedMarketValue() * .006);
 }
 function fee(){
   const t = (S.capacity - 20) / 5;
@@ -1195,7 +1198,15 @@ function normalizeSavedState(state){
   state.mercExpeditions = Array.isArray(state.mercExpeditions) ? state.mercExpeditions : [];
   state.mercLog = Array.isArray(state.mercLog) ? state.mercLog : [];
   state.mercEquipment ||= {};
-  for(const gear of MERC_GEAR) state.mercEquipment[gear.id] ??= false;
+  if(!state.mercGearMigrationV2){
+    for(const gear of MERC_GEAR){
+      if(state.mercEquipment[gear.id]){
+        state.inv[gear.item] = (state.inv[gear.item] || 0) + 1;
+      }
+    }
+    state.mercEquipment = {};
+    state.mercGearMigrationV2 = true;
+  }
   state.lastMercEventDay ??= 0;
   state.banditSuppressionUntil ??= 0;
   state.gameOver ??= false;
@@ -1285,7 +1296,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -1295,7 +1306,6 @@ function init(){
     S.marketMomentum[k] = 0;
     S.marketChange[k] = 0;
   }
-  for(const gear of MERC_GEAR) S.mercEquipment[gear.id] = false;
   for(const c of Object.keys(CITIES)){
     S.tradePressure[c] = {};
     for(const k of Object.keys(ITEMS)) S.tradePressure[c][k] = 0;
@@ -1463,13 +1473,6 @@ function rollMercenaryLoot(def){
     loot[y.item] = y.min;
   }
 
-  if(S.mercEquipment?.demon_compass){
-    const rare = def.yields.filter(y => y.rare);
-    if(rare.length){
-      const bonus = pick(rare);
-      loot[bonus.item] = (loot[bonus.item] || 0) + 1;
-    }
-  }
   return loot;
 }
 function processMercenaryExpeditions(){
@@ -1491,22 +1494,65 @@ function processMercenaryExpeditions(){
   }
   S.mercExpeditions = keep;
 }
+function mercGearCityRate(city){
+  return ({capital:1.18,farm:.88,mine:1.00,port:1.10,arcane:1.14})[city] || 1;
+}
+function mercGearPhaseRate(item){
+  const phase = currentWorldPhase().id;
+  if(phase === "war"){
+    if(["monster_hide_cover","monster_ogre_horn","monster_wyvern_armor"].includes(item)) return 1.22;
+    return 1.10;
+  }
+  if(phase === "tension") return 1.10;
+  if(phase === "recovery") return .94;
+  if(phase === "merchant_age") return 1.08;
+  return 1;
+}
+function mercGearSalePrice(item){
+  const it = ITEMS[item];
+  if(!it?.monsterGear) return 0;
+  return Math.max(1,Math.round(it.base * mercGearCityRate(S.city) * mercGearPhaseRate(item)));
+}
 function craftMercGear(id){
   if(checkBlocked()) return;
   const gear = MERC_GEAR.find(x => x.id === id);
-  if(!gear || S.mercEquipment[gear.id]) return;
+  if(!gear) return;
   if(S.day < gear.unlockDay){ toast(gear.unlockDay + "일차부터 제작할 수 있습니다."); return; }
-  if(S.city !== "mine"){ toast("몬스터 장비는 철산 광산도시 장비공방에서 제작할 수 있습니다."); return; }
+  if(S.city !== "mine"){ toast("몬스터 장비 상품은 철산 광산도시 장비공방에서 제작할 수 있습니다."); return; }
   if(S.cash <= gear.fee){ toast("공임 " + fmt(gear.fee) + "를 내면 파산합니다."); return; }
   for(const [k,q] of Object.entries(gear.inputs)){
     if((S.inv[k] || 0) < q){ toast(ITEMS[k].name + " " + q + "개가 필요합니다."); return; }
   }
+
+  const freedWeight = Object.entries(gear.inputs).reduce((a,[k,q]) => a + ITEMS[k].w*q,0);
+  const outputWeight = ITEMS[gear.item].w;
+  if(used() - freedWeight + outputWeight > S.capacity){
+    toast("완성 장비를 실을 마차 공간이 부족합니다.");
+    return;
+  }
+
   for(const [k,q] of Object.entries(gear.inputs)) S.inv[k] -= q;
   S.cash -= gear.fee;
-  S.mercEquipment[gear.id] = true;
-  addRoute("artisan",1);
-  addMercLog("장비 제작 · " + gear.name);
-  toast(gear.name + " 제작 완료. " + gear.effect);
+  S.inv[gear.item] = (S.inv[gear.item] || 0) + 1;
+  addRoute("artisan",.7);
+  addMercLog("장비 상품 제작 · " + gear.name);
+  toast(gear.name + " 제작 완료. 현재 " + CITIES[S.city].name + " 매입가 " + fmt(mercGearSalePrice(gear.item)) + ".");
+  render();
+}
+function sellMercGear(item,qty=1){
+  if(checkBlocked()) return;
+  if(!ITEMS[item]?.monsterGear) return;
+  const held = S.inv[item] || 0;
+  if(qty === 999) qty = held;
+  qty = Math.max(0,Math.min(qty,held));
+  if(qty < 1){ toast("판매할 제작 장비가 없습니다."); return; }
+
+  const each = mercGearSalePrice(item);
+  const total = each * qty;
+  S.inv[item] -= qty;
+  S.cash += total;
+  addMercLog("장비 판매 · " + ITEMS[item].name + " " + qty + "개 · " + fmt(total));
+  toast(CITIES[S.city].name + " 장비 매입상에게 " + ITEMS[item].name + " " + qty + "개를 " + fmt(total) + "에 판매했습니다.");
   render();
 }
 function mercenaryEventCandidate(){
@@ -1570,19 +1616,34 @@ function renderMercenaries(){
       ? '<div class="merc-active-list"><b>파견 중</b>' + active.map(j => '<span>' + j.name + ' · ' + Math.max(0,j.returnDay-S.day) + '일 남음 (' + j.returnDay + '일차 귀환)</span>').join("") + '</div>'
       : '<p class="mini muted merc-none">현재 파견 중인 용병단이 없습니다.</p>');
 
-  gearBox.innerHTML = '<div class="gear-grid">' + MERC_GEAR.map(gear => {
-    const made = !!S.mercEquipment[gear.id];
-    const locked = S.day < gear.unlockDay;
-    const inputs = Object.entries(gear.inputs).map(([k,q]) => ITEMS[k].name + " " + q + "개").join(" + ");
-    const enough = Object.entries(gear.inputs).every(([k,q]) => (S.inv[k] || 0) >= q);
-    const disabled = made || locked || S.city !== "mine" || !enough || S.cash <= gear.fee;
-    return '<article class="gear-card' + (made ? ' gear-made' : '') + '">' +
-      '<div class="gear-head"><h4>' + gear.name + '</h4><span>' + (made ? "보유" : "영구 장비") + '</span></div>' +
-      '<p>' + gear.effect + '</p><div class="gear-recipe">' + inputs + ' · 공임 ' + fmt(gear.fee) + '</div>' +
-      '<button data-merc-gear="' + gear.id + '"' + (disabled ? " disabled" : "") + '>' +
-        (made ? "제작 완료" : locked ? gear.unlockDay + "일차 해금" : S.city !== "mine" ? "철산에서 제작" : "장비 제작") +
-      '</button></article>';
-  }).join("") + '</div>';
+  const heldGear = MERC_GEAR.filter(gear => (S.inv[gear.item] || 0) > 0);
+  gearBox.innerHTML =
+    '<div class="gear-grid">' + MERC_GEAR.map(gear => {
+      const locked = S.day < gear.unlockDay;
+      const inputs = Object.entries(gear.inputs).map(([k,q]) => ITEMS[k].name + " " + q + "개").join(" + ");
+      const enough = Object.entries(gear.inputs).every(([k,q]) => (S.inv[k] || 0) >= q);
+      const disabled = locked || S.city !== "mine" || !enough || S.cash <= gear.fee;
+      const held = S.inv[gear.item] || 0;
+      return '<article class="gear-card">' +
+        '<div class="gear-head"><h4>' + gear.name + '</h4><span>보유 ' + held + '개</span></div>' +
+        '<p>' + gear.desc + '</p>' +
+        '<div class="gear-recipe">' + inputs + ' · 공임 ' + fmt(gear.fee) + ' · 무게 ' + ITEMS[gear.item].w + '</div>' +
+        '<div class="gear-value">현재 ' + CITIES[S.city].name + ' 매입가 <b>' + fmt(mercGearSalePrice(gear.item)) + '</b></div>' +
+        '<button data-merc-gear="' + gear.id + '"' + (disabled ? " disabled" : "") + '>' +
+          (locked ? gear.unlockDay + "일차 해금" : S.city !== "mine" ? "철산에서 제작" : "1개 제작") +
+        '</button></article>';
+    }).join("") + '</div>' +
+    '<div class="gear-buyer"><div class="gear-buyer-head"><b>몬스터 장비 전문 매입상</b><span>도시·시대에 따라 매입가 변동</span></div>' +
+      (heldGear.length
+        ? heldGear.map(gear => {
+            const item = gear.item;
+            const q = S.inv[item] || 0;
+            const each = mercGearSalePrice(item);
+            return '<article class="gear-sell-row"><div><b>' + ITEMS[item].name + '</b><span>보유 ' + q + '개 · ' + fmt(each) + '/개</span></div>' +
+              '<div><button data-merc-sell="' + item + '" data-q="1">1개 판매</button><button data-merc-sell="' + item + '" data-q="999">전부 판매</button></div></article>';
+          }).join("")
+        : '<p class="mini muted">판매할 제작 장비가 없습니다. 철산 공방에서 먼저 제작하세요.</p>') +
+    '</div>';
 
   log.innerHTML = S.mercLog.length
     ? '<b>용병 길드 기록</b>' + S.mercLog.map(x => '<span>' + x + '</span>').join("")
@@ -1615,11 +1676,7 @@ function trouble(){
         toast("친분이 쌓인 용병단이 우연히 근처를 순찰하다 도적을 쫓아냈습니다.");
         return;
       }
-      if(S.mercEquipment?.ogre_horn && Math.random() < .30){
-        toast("오우거뿔 경적 소리에 도적들이 더 큰 용병단이 오는 줄 알고 도망쳤습니다.");
-        return;
-      }
-      const rate = (.08 + Math.random() * .08 + tier.level * .015) * (S.mercEquipment?.wyvern_armor ? .60 : 1);
+      const rate = .08 + Math.random() * .08 + tier.level * .015;
       const loss = Math.min(Math.max(0,S.cash - 1),Math.max(60,Math.round(S.cash * rate)));
       if(loss > 0){
         S.cash -= loss;
@@ -1637,8 +1694,7 @@ function trouble(){
         for(let h=0;h<hits;h++){
           const k = pick(candidates.filter(x => !damaged.some(v => v.k === x)));
           if(!k) break;
-          let rate = tier.level >= 2 ? (.20 + Math.random() * .16) : (.12 + Math.random() * .13);
-          if(S.mercEquipment?.hide_cover) rate *= .65;
+          const rate = tier.level >= 2 ? (.20 + Math.random() * .16) : (.12 + Math.random() * .13);
           const loss = Math.max(1,Math.ceil(S.inv[k] * rate));
           S.inv[k] -= loss;
           damaged.push({k,loss});
@@ -2453,8 +2509,10 @@ $("#mercenaryBox").addEventListener("click",(e) => {
   if(b) hireMercenary(b.dataset.mercHire);
 });
 $("#mercGearBox").addEventListener("click",(e) => {
-  const b = e.target.closest("[data-merc-gear]");
-  if(b) craftMercGear(b.dataset.mercGear);
+  const craft = e.target.closest("[data-merc-gear]");
+  if(craft) craftMercGear(craft.dataset.mercGear);
+  const sell = e.target.closest("[data-merc-sell]");
+  if(sell) sellMercGear(sell.dataset.mercSell,Number(sell.dataset.q));
 });
 $("#blackMarketBox").addEventListener("click",(e) => {
   const b = e.target.closest("[data-black]");
