@@ -245,7 +245,7 @@ const EVENTS = [
   {id:"princess_bread_diet",n:"공주: '요즘 빵 먹으면 얼굴이 붓는 것 같아요'",tag:"공주 발언",princess:true,
     txt:"공주의 아침 인터뷰 한마디에 귀족들이 빵을 식탁에서 치우기 시작했습니다. 제빵사들은 왕궁 방향을 바라보며 깊게 한숨 쉽니다.",
     p:{bread:.55,wheat:.68,spice:1.16},d:{bread:.38,wheat:.55,spice:1.25},shock:{bread:.84,wheat:.90},days:1,
-    follow:{id:"princess_bread_reverse",chance:.92}},
+    follow:{id:"princess_bread_reverse",chance:.5}},
   {id:"princess_bread_reverse",n:"공주: '아, 크림빵은 매일 먹는데요?'",tag:"공주 정정",princess:true,chainOnly:true,
     txt:"어제 빵을 던진 상인들이 오늘은 다시 빵을 사기 위해 줄을 섰습니다. 공주는 왜 시장이 시끄러운지 모르겠다는 표정입니다.",
     p:{bread:1.82,wheat:1.42,spice:1.18},d:{bread:2.05,wheat:1.55,spice:1.3},shock:{bread:1.18,wheat:1.10},days:1},
@@ -253,7 +253,7 @@ const EVENTS = [
   {id:"princess_potion_skin",n:"공주: '피부 관리에는 포션 세 병이 기본이죠'",tag:"공주 발언",princess:true,
     txt:"전국 귀족가에서 회복 포션을 화장수처럼 주문하기 시작했습니다. 약초상들은 의학적 근거를 묻지 않기로 했습니다.",
     p:{potion:1.72,herb:1.38,holy:.92},d:{potion:2.1,herb:1.55,holy:.82},shock:{potion:1.16,herb:1.08},days:1,
-    follow:{id:"princess_potion_reverse",chance:.9}},
+    follow:{id:"princess_potion_reverse",chance:.5}},
   {id:"princess_potion_reverse",n:"공주: '포션 냄새가 싫어서 성수로 바꿨어요'",tag:"공주 정정",princess:true,chainOnly:true,
     txt:"어제 포션을 사재기한 귀족들이 오늘 전부 성수를 찾습니다. 연금술사들은 공주의 피부가 아니라 자기 혈압을 걱정합니다.",
     p:{potion:.54,herb:.78,holy:1.75},d:{potion:.35,herb:.7,holy:2.05},shock:{potion:.82,holy:1.16},days:1},
@@ -261,7 +261,7 @@ const EVENTS = [
   {id:"princess_gem_old",n:"공주: '보석은 좀... 어머니 세대 취향 아닌가요?'",tag:"공주 발언",princess:true,
     txt:"귀족 영애들이 보석함을 급히 처분하고 마법석 장식을 찾기 시작했습니다. 보석상 조합장이 인터뷰 도중 말을 잃었습니다.",
     p:{gem:.52,mana:1.68,spice:1.08},d:{gem:.32,mana:1.95,spice:1.15},shock:{gem:.82,mana:1.15},days:1,
-    follow:{id:"princess_gem_reverse",chance:.93}},
+    follow:{id:"princess_gem_reverse",chance:.5}},
   {id:"princess_gem_reverse",n:"공주: '근데 파란 보석은 정말 예쁘던데요?'",tag:"공주 정정",princess:true,chainOnly:true,
     txt:"파란 보석만 찾는 손님이 몰렸지만 시장은 색상 구분 데이터가 없습니다. 결국 모든 보석 가격이 미쳐 날뛰고 있습니다.",
     p:{gem:1.88,mana:.62},d:{gem:2.15,mana:.5},shock:{gem:1.18,mana:.86},days:1},
@@ -269,7 +269,7 @@ const EVENTS = [
   {id:"princess_weapon_scary",n:"공주: '검이랑 갑옷은 너무 무섭고 칙칙해요'",tag:"공주 발언",princess:true,
     txt:"귀족 호위대가 체면 때문에 주문을 취소하기 시작했습니다. 전쟁터의 기사들은 인터뷰를 보고 한동안 아무 말도 하지 않았습니다.",
     p:{sword:.56,armor:.60,gem:1.12},d:{sword:.38,armor:.4,gem:1.2},shock:{sword:.84,armor:.85},days:1,
-    follow:{id:"princess_weapon_reverse",chance:.88}},
+    follow:{id:"princess_weapon_reverse",chance:.5}},
   {id:"princess_weapon_reverse",n:"공주, 갑옷 입고 화보 촬영",tag:"공주 정정",princess:true,chainOnly:true,
     txt:"오늘 공개된 왕실 화보에서 공주가 갑옷과 장식검을 들었습니다. 어제 주문을 취소한 귀족들이 두 배 가격으로 다시 주문합니다.",
     p:{sword:1.58,armor:1.86,gem:1.22},d:{sword:1.8,armor:2.1,gem:1.35},shock:{sword:1.12,armor:1.18},days:1},
@@ -277,7 +277,7 @@ const EVENTS = [
   {id:"princess_beer_smell",n:"공주: '맥주는 냄새 때문에 정말 싫어요'",tag:"공주 발언",princess:true,
     txt:"왕도 선술집들이 갑자기 와인 흉내를 내기 시작했습니다. 맥주 재고는 창고를 가득 채우고 양조장 주인들의 표정도 같이 썩어갑니다.",
     p:{beer:.48,wheat:.84,spice:1.16},d:{beer:.3,wheat:.72,spice:1.28},shock:{beer:.80},days:1,
-    follow:{id:"princess_beer_reverse",chance:.94}},
+    follow:{id:"princess_beer_reverse",chance:.5}},
   {id:"princess_beer_reverse",n:"공주: '과일맥주는 맛있던데요? 그건 맥주 아닌가요?'",tag:"공주 정정",princess:true,chainOnly:true,
     txt:"어제 맥주를 버린 상인들이 오늘 빈 통까지 주워 담고 있습니다. 양조장들은 왕궁에 감사 편지 대신 청구서를 보내고 싶어합니다.",
     p:{beer:1.92,wheat:1.28,spice:1.25},d:{beer:2.2,wheat:1.4,spice:1.38},shock:{beer:1.20,wheat:1.07},days:1},
@@ -286,7 +286,7 @@ const EVENTS = [
     txt:"귀족 상단들이 와이번 비늘 장비를 장식품처럼 사들이기 시작했습니다. 용병 길드는 산을 향해 뛰어가는 상인들을 말리지 않습니다.",
     p:{armor:1.12,gem:1.08},d:{armor:1.2,gem:1.15},
     gearP:{monster_wyvern_armor:1.72,monster_ogre_horn:1.18,monster_hide_cover:1.12},days:1,
-    follow:{id:"princess_wyvern_reverse",chance:.9}},
+    follow:{id:"princess_wyvern_reverse",chance:.5}},
   {id:"princess_wyvern_reverse",n:"공주: '가까이서 보니까 비늘이 좀 징그러워요'",tag:"공주 정정",princess:true,chainOnly:true,
     txt:"어제 와이번 갑옷을 웃돈 주고 산 귀족들이 오늘 중고 매물을 쏟아냅니다. 철산 장비공방에서 욕설이 들린다는 신고가 접수됐습니다.",
     p:{armor:.88},d:{armor:.8},
@@ -296,7 +296,7 @@ const EVENTS = [
     txt:"귀족 탐험대들이 마족 추적 나침반을 경쟁적으로 주문합니다. 아무도 실제로 마족을 추적할 생각은 없습니다.",
     p:{mana:1.18,gem:1.12},d:{mana:1.28,gem:1.2},
     gearP:{monster_demon_compass:1.85,monster_slime_cooler:1.18},days:1,
-    follow:{id:"princess_magic_reverse",chance:.86}},
+    follow:{id:"princess_magic_reverse",chance:.5}},
   {id:"princess_magic_reverse",n:"공주: '나침반 바늘이 계속 움직여서 무서워요'",tag:"공주 정정",princess:true,chainOnly:true,
     txt:"왕실이 주문을 취소하자 귀족 탐험대도 일제히 따라 취소했습니다. 마족보다 공주의 취향 변화가 더 추적하기 어렵습니다.",
     p:{mana:.9},d:{mana:.82},
@@ -1240,7 +1240,9 @@ function newIntel(){
       applyEventMarketShock(e);
     }
 
-    if(!nextFollow && e.follow) nextFollow = e.follow;
+    if(!nextFollow && e.follow){
+      nextFollow = e.princess ? {...e.follow,chance:.5} : e.follow;
+    }
   }
 
   S.todayNews = todayNews;
@@ -1293,6 +1295,9 @@ function normalizeSavedState(state){
   state.todayNews = Array.isArray(state.todayNews)
     ? state.todayNews
     : (state.today ? [state.today] : []);
+  if(state.pendingFollow?.id?.startsWith("princess_")){
+    state.pendingFollow.chance = .5;
+  }
   state.rankSaved ??= false;
   state.ending ??= false;
   state.endingRoute ??= "normal";
