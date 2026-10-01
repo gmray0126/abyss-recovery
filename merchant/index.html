@@ -68,7 +68,7 @@
 
   <main class="layout">
     <div class="main-col">
-      <section class="panel">
+      <section class="panel" data-mobile-tab="info">
         <div class="panel-head">
           <div>
             <h2>오늘의 정보</h2>
@@ -96,7 +96,7 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel" data-mobile-tab="info">
         <div class="panel-head">
           <div>
             <h2>상인 길드 & 특수 거래</h2>
@@ -115,7 +115,7 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel" data-mobile-tab="market">
         <div class="panel-head">
           <div>
             <h2 id="marketTitle">왕도 시장</h2>
@@ -129,7 +129,7 @@
         <div id="marketCards" class="market-grid"></div>
       </section>
 
-      <section id="craftPanel" class="panel">
+      <section id="craftPanel" class="panel" data-mobile-tab="craft">
         <div class="panel-head">
           <div>
             <h2>지역 제작소</h2>
@@ -140,7 +140,7 @@
         <div id="craftBox"></div>
       </section>
 
-      <section id="mercenaryPanel" class="panel">
+      <section id="mercenaryPanel" class="panel" data-mobile-tab="merc">
         <div class="panel-head">
           <div>
             <h2>상단 용병대 · 육성 & 몬스터 원정</h2>
@@ -148,7 +148,7 @@
           </div>
           <div class="badges">
             <span id="mercFriendBadge" class="badge">우호도 0</span>
-            <span id="mercActiveBadge" class="badge">용병 0 / 3</span>
+            <span id="mercActiveBadge" class="badge">용병 0 / 6</span>
           </div>
         </div>
         <div id="mercenaryStatus" class="mercenary-status"></div>
@@ -163,7 +163,7 @@
         <div id="mercLog" class="merc-log"></div>
       </section>
 
-      <section id="blackMarketPanel" class="panel">
+      <section id="blackMarketPanel" class="panel" data-mobile-tab="market">
         <div class="panel-head">
           <div>
             <h2>암시장</h2>
@@ -174,7 +174,7 @@
         <div id="blackMarketBox"></div>
       </section>
 
-      <section class="panel">
+      <section class="panel" data-mobile-tab="market">
         <div class="panel-head">
           <div>
             <h2>판매 등록</h2>
@@ -199,7 +199,7 @@
     </div>
 
     <aside class="side-col">
-      <section class="panel">
+      <section class="panel" data-mobile-tab="caravan">
         <h2>내 상단</h2>
         <div class="bar"><i id="capBar"></i></div>
         <p id="inventoryText" class="muted">재고 없음</p>
@@ -212,13 +212,13 @@
         </div>
       </section>
 
-      <section class="panel goal-panel">
+      <section class="panel goal-panel" data-mobile-tab="caravan">
         <h2>상단의 최종 목표</h2>
         <div id="endingGoalBox"></div>
         <div id="routeBox" class="route-box"></div>
       </section>
 
-      <section class="panel">
+      <section class="panel" data-mobile-tab="merc">
         <h2>용병 활동 배치</h2>
         <div class="merc-defense-side">
           <div id="warehouseGuardStatus" class="defense-status"><b>창고 경비</b><span>미배치</span></div>
@@ -228,13 +228,13 @@
         <p id="serviceText" class="mini muted">대기 용병을 원정·경비·호위·홍보 중 어디에 쓸지 결정하세요.</p>
       </section>
 
-      <section class="panel sticky-action">
+      <section class="panel sticky-action" data-mobile-persistent>
         <h2>오늘 장사 끝내기</h2>
         <button id="endDayBtn" class="wide primary">하루 마감 / 이동 선택</button>
         <p class="mini muted">현금이 0G 이하가 되는 순간 즉시 파산합니다.</p>
       </section>
 
-      <section class="panel">
+      <section class="panel" data-mobile-tab="caravan">
         <div class="panel-head compact">
           <h2>공용 클리어 랭킹</h2>
           <button id="rankRefresh" class="ghost">새로고침</button>
@@ -244,6 +244,15 @@
       </section>
     </aside>
   </main>
+
+
+  <nav id="mobileNav" class="mobile-nav" aria-label="모바일 메뉴">
+    <button type="button" data-mobile-nav="market"><span>🛒</span><b>시장</b></button>
+    <button type="button" data-mobile-nav="info"><span>📰</span><b>정보</b></button>
+    <button type="button" data-mobile-nav="craft"><span>🔨</span><b>제작</b></button>
+    <button type="button" data-mobile-nav="merc"><span>⚔️</span><b>용병</b></button>
+    <button type="button" data-mobile-nav="caravan"><span>📦</span><b>상단</b></button>
+  </nav>
 
   <section id="daySummaryPanel" class="day-summary-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="daySummaryTitle">
     <div class="day-summary-modal panel">
