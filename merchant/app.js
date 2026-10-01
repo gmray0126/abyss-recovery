@@ -58,19 +58,29 @@ const CRAFT_RECIPES = [
   {id:"arcane_potion",city:"arcane",stage:2,shop:"연금술 공방",name:"회복 포션 조제",inputs:{extract:1},output:{potion:1},fee:6},
   {id:"arcane_holy",city:"arcane",stage:2,shop:"성수 조제실",name:"성수 정제",inputs:{extract:1},output:{holy:1},fee:12}
 ];
-const MERC_MAX_ACTIVE = 4;
+const MERC_MAX_ROSTER = 3;
+const MERC_RECRUIT_COST = 300;
+const MERC_NAMES = ["리아","브람","세라","카엘","미라","토르빈","유나","베른","엘리","로웬","니아","가론"];
+const MERC_GRADES = [
+  {id:"E",name:"E급",promoteXp:6,promoteCost:180,trainCost:70,loot:1.00,rare:0.00,dayCut:0},
+  {id:"D",name:"D급",promoteXp:14,promoteCost:320,trainCost:110,loot:1.18,rare:0.04,dayCut:0},
+  {id:"C",name:"C급",promoteXp:26,promoteCost:560,trainCost:170,loot:1.42,rare:0.09,dayCut:0},
+  {id:"B",name:"B급",promoteXp:42,promoteCost:900,trainCost:260,loot:1.72,rare:0.15,dayCut:1},
+  {id:"A",name:"A급",promoteXp:65,promoteCost:1450,trainCost:400,loot:2.05,rare:0.22,dayCut:1},
+  {id:"S",name:"S급",promoteXp:null,promoteCost:null,trainCost:620,loot:2.55,rare:0.30,dayCut:2}
+];
 const MERC_EXPEDITIONS = [
   {
-    id:"grass_hunt",name:"근교 마수 토벌",days:2,cost:120,unlockDay:1,
-    desc:"초원과 농로의 마수들을 정리합니다. 값싼 대신 희귀 소재는 거의 없습니다.",
+    id:"grass_hunt",name:"근교 마수 토벌",days:2,cost:30,unlockDay:1,minGrade:0,xp:2,
+    desc:"초원과 농로의 마수들을 정리합니다. E급부터 가능하며 기본 소재를 안정적으로 모읍니다.",
     yields:[
       {item:"beast_hide",min:1,max:3,chance:1},
       {item:"slime_core",min:1,max:2,chance:.55}
     ]
   },
   {
-    id:"ruins_hunt",name:"폐광 몬스터 소탕",days:3,cost:240,unlockDay:10,
-    desc:"버려진 갱도와 폐광을 뒤져 슬라임과 오우거를 상대합니다.",
+    id:"ruins_hunt",name:"폐광 몬스터 소탕",days:3,cost:55,unlockDay:10,minGrade:1,xp:3,
+    desc:"폐광의 슬라임과 오우거를 상대합니다. D급 이상이 필요합니다.",
     yields:[
       {item:"slime_core",min:1,max:3,chance:1},
       {item:"ogre_horn",min:1,max:2,chance:.62},
@@ -78,8 +88,8 @@ const MERC_EXPEDITIONS = [
     ]
   },
   {
-    id:"wyvern_hunt",name:"산악 와이번 추적",days:4,cost:430,unlockDay:25,
-    desc:"산악지대를 며칠씩 추적하는 위험한 원정입니다. 와이번 비늘을 얻을 수 있는 첫 파견입니다.",
+    id:"wyvern_hunt",name:"산악 와이번 추적",days:4,cost:90,unlockDay:25,minGrade:2,xp:4,
+    desc:"산악지대를 추적하는 C급 이상 원정입니다. 와이번 비늘을 본격적으로 얻습니다.",
     yields:[
       {item:"ogre_horn",min:1,max:2,chance:.7},
       {item:"wyvern_scale",min:1,max:2,chance:.58,rare:true},
@@ -87,12 +97,21 @@ const MERC_EXPEDITIONS = [
     ]
   },
   {
-    id:"demon_hunt",name:"마왕군 잔당 추적",days:5,cost:680,unlockDay:50,
-    desc:"전쟁터와 마계 잔당의 흔적을 쫓습니다. 가장 비싸고 위험하지만 마족 발톱은 여기서만 나옵니다.",
+    id:"demon_hunt",name:"마왕군 잔당 추적",days:5,cost:140,unlockDay:50,minGrade:3,xp:5,
+    desc:"전쟁터와 마계 잔당을 쫓는 B급 이상 원정입니다. 마족 발톱을 확보할 수 있습니다.",
     yields:[
       {item:"wyvern_scale",min:1,max:2,chance:.72,rare:true},
       {item:"demon_claw",min:1,max:2,chance:.62,rare:true},
       {item:"ogre_horn",min:1,max:2,chance:.55}
+    ]
+  },
+  {
+    id:"abyss_hunt",name:"마계 심층 원정",days:6,cost:220,unlockDay:75,minGrade:4,xp:7,
+    desc:"A급 이상만 들어갈 수 있는 최고위 원정입니다. 희귀 소재를 대량으로 노릴 수 있습니다.",
+    yields:[
+      {item:"demon_claw",min:1,max:3,chance:.82,rare:true},
+      {item:"wyvern_scale",min:1,max:3,chance:.78,rare:true},
+      {item:"ogre_horn",min:1,max:3,chance:.7}
     ]
   }
 ];
@@ -1528,6 +1547,50 @@ function normalizeSavedState(state){
   state.mercTotalHires ??= 0;
   state.mercCompleted ??= 0;
   state.mercExpeditions = Array.isArray(state.mercExpeditions) ? state.mercExpeditions : [];
+  state.mercRoster = Array.isArray(state.mercRoster) ? state.mercRoster : [];
+
+  if(!state.mercRoster.length && (state.mercCompleted > 0 || state.mercTotalHires > 0 || state.mercExpeditions.length)){
+    const legacyJobs = state.mercExpeditions.slice(0,MERC_MAX_ROSTER);
+    if(legacyJobs.length){
+      legacyJobs.forEach((job,i) => {
+        const def = MERC_EXPEDITIONS.find(x => x.id === job.id);
+        const gradeIndex = Math.max(def?.minGrade || 0,
+          state.mercCompleted >= 12 ? 3 : state.mercCompleted >= 7 ? 2 : state.mercCompleted >= 3 ? 1 : 0);
+        state.mercRoster.push({
+          id:"legacy_" + i + "_" + (state.day || 1),
+          name:["구면 용병대","오래된 동료","베테랑 용병"][i] || "구면 용병",
+          gradeIndex,
+          xp:gradeIndex === 0 ? Math.min(5,state.mercCompleted) : MERC_GRADES[Math.max(0,gradeIndex-1)].promoteXp || 0,
+          missions:Math.max(0,Math.floor(state.mercCompleted / legacyJobs.length)),
+          busyUntil:job.returnDay || 0,
+          expeditionId:job.id || null,
+          hiredDay:Math.max(1,(state.day || 1)-10)
+        });
+      });
+    }else{
+      const gradeIndex = state.mercCompleted >= 12 ? 3 : state.mercCompleted >= 7 ? 2 : state.mercCompleted >= 3 ? 1 : 0;
+      state.mercRoster.push({
+        id:"legacy_veteran_" + (state.day || 1),
+        name:"구면 용병대",
+        gradeIndex,
+        xp:gradeIndex === 0 ? Math.min(5,state.mercCompleted) : MERC_GRADES[Math.max(0,gradeIndex-1)].promoteXp || 0,
+        missions:state.mercCompleted,
+        busyUntil:0,
+        expeditionId:null,
+        hiredDay:1
+      });
+    }
+  }
+  for(const m of state.mercRoster){
+    m.gradeIndex = Math.max(0,Math.min(MERC_GRADES.length-1,Number(m.gradeIndex || 0)));
+    m.xp = Math.max(0,Number(m.xp || 0));
+    m.missions = Math.max(0,Number(m.missions || 0));
+    m.busyUntil = Math.max(0,Number(m.busyUntil || 0));
+    m.expeditionId ??= null;
+    m.hiredDay ??= 1;
+  }
+  state.mercRoster = state.mercRoster.slice(0,MERC_MAX_ROSTER);
+  state.mercExpeditions = [];
   state.mercLog = Array.isArray(state.mercLog) ? state.mercLog : [];
   state.mercEquipment ||= {};
   if(!state.mercGearMigrationV2){
@@ -1635,7 +1698,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -1778,71 +1841,170 @@ function mercDiscountRate(){
   if(S.mercFriendship >= 20) return .05;
   return 0;
 }
-function mercHireCost(expedition){
-  return Math.max(1,Math.round(expedition.cost * (1 - mercDiscountRate())));
+function mercById(id){
+  return (S.mercRoster || []).find(m => String(m.id) === String(id)) || null;
+}
+function mercGrade(merc){
+  return MERC_GRADES[Math.max(0,Math.min(MERC_GRADES.length-1,merc?.gradeIndex || 0))];
+}
+function mercIsBusy(merc){
+  return !!(merc?.expeditionId && merc.busyUntil > S.day);
+}
+function mercRecruitCost(){
+  return Math.round(MERC_RECRUIT_COST * (1 - mercDiscountRate()));
+}
+function mercTrainingCost(merc){
+  return mercGrade(merc).trainCost;
+}
+function mercExpeditionCost(def){
+  return Math.max(1,Math.round(def.cost * (1 - mercDiscountRate())));
+}
+function mercExpeditionDays(merc,def){
+  return Math.max(1,def.days - mercGrade(merc).dayCut);
 }
 function addMercLog(text){
   S.mercLog ||= [];
   S.mercLog.unshift(S.day + "일차 · " + text);
-  S.mercLog = S.mercLog.slice(0,6);
+  S.mercLog = S.mercLog.slice(0,8);
 }
-function hireMercenary(id){
+function uniqueMercName(){
+  const used = new Set((S.mercRoster || []).map(m => m.name));
+  const pool = MERC_NAMES.filter(n => !used.has(n));
+  return pick(pool.length ? pool : MERC_NAMES) + (pool.length ? "" : " " + (S.mercRoster.length+1));
+}
+function recruitMercenary(){
   if(checkBlocked()) return;
-  const def = MERC_EXPEDITIONS.find(x => x.id === id);
-  if(!def) return;
-  if(S.day < def.unlockDay){ toast(def.unlockDay + "일차부터 고용할 수 있습니다."); return; }
-  if(S.mercExpeditions.length >= MERC_MAX_ACTIVE){ toast("동시에 고용할 수 있는 용병단은 " + MERC_MAX_ACTIVE + "개까지입니다."); return; }
-
-  const cost = mercHireCost(def);
+  S.mercRoster ||= [];
+  if(S.mercRoster.length >= MERC_MAX_ROSTER){
+    toast("상단에서 직접 관리할 수 있는 용병은 " + MERC_MAX_ROSTER + "명까지입니다.");
+    return;
+  }
+  const cost = mercRecruitCost();
   if(S.cash <= cost){ toast("고용비 " + fmt(cost) + "를 내면 파산합니다."); return; }
 
+  const merc = {
+    id:"merc_" + S.day + "_" + Math.random().toString(36).slice(2,8),
+    name:uniqueMercName(),
+    gradeIndex:0,
+    xp:0,
+    missions:0,
+    busyUntil:0,
+    expeditionId:null,
+    hiredDay:S.day
+  };
   S.cash -= cost;
   S.mercTotalHires += 1;
-  changeMercFriendship(1);
-  S.mercExpeditions.push({
-    id:def.id,
-    name:def.name,
-    startDay:S.day,
-    returnDay:S.day + def.days,
-    cost
-  });
-  addMercLog(def.name + " 파견 · " + def.days + "일 뒤 귀환 예정");
-  toast(def.name + "을 고용했습니다. " + (S.day + def.days) + "일차에 돌아옵니다.");
+  changeMercFriendship(2);
+  S.mercRoster.push(merc);
+  addMercLog(merc.name + " E급 용병 고용");
+  toast(merc.name + "을 E급 용병으로 고용했습니다.");
   render();
 }
-function rollMercenaryLoot(def){
+function investMercenary(id){
+  if(checkBlocked()) return;
+  const merc = mercById(id);
+  if(!merc) return;
+  if(mercIsBusy(merc)){ toast("원정 중인 용병은 훈련시킬 수 없습니다."); return; }
+  const cost = mercTrainingCost(merc);
+  if(S.cash <= cost){ toast("훈련 투자비 " + fmt(cost) + "가 부족합니다."); return; }
+
+  const gain = 2 + Math.floor(Math.random()*3);
+  S.cash -= cost;
+  merc.xp += gain;
+  changeMercFriendship(1);
+  addMercLog(merc.name + " 훈련 투자 · 경험 +" + gain);
+  toast(merc.name + "에게 " + fmt(cost) + "를 투자했습니다. 경험 +" + gain + ".");
+  render();
+}
+function promoteMercenary(id){
+  if(checkBlocked()) return;
+  const merc = mercById(id);
+  if(!merc) return;
+  if(mercIsBusy(merc)){ toast("원정 중에는 승급 심사를 받을 수 없습니다."); return; }
+  const grade = mercGrade(merc);
+  if(merc.gradeIndex >= MERC_GRADES.length-1){ toast("이미 S급 최고 등급입니다."); return; }
+  if(merc.xp < grade.promoteXp){
+    toast("승급 경험이 부족합니다. " + merc.xp + " / " + grade.promoteXp);
+    return;
+  }
+  if(S.cash <= grade.promoteCost){ toast("승급비 " + fmt(grade.promoteCost) + "가 부족합니다."); return; }
+
+  S.cash -= grade.promoteCost;
+  merc.gradeIndex += 1;
+  changeMercFriendship(3);
+  const next = mercGrade(merc);
+  addMercLog(merc.name + " 승급 · " + next.name);
+  toast(merc.name + "이 " + next.name + " 용병으로 승급했습니다.");
+  render();
+}
+function dispatchMercenary(mercId,expeditionId){
+  if(checkBlocked()) return;
+  const merc = mercById(mercId);
+  const def = MERC_EXPEDITIONS.find(x => x.id === expeditionId);
+  if(!merc || !def) return;
+  if(mercIsBusy(merc)){ toast("이미 원정 중인 용병입니다."); return; }
+  if(S.day < def.unlockDay){ toast(def.unlockDay + "일차부터 가능한 원정입니다."); return; }
+  if(merc.gradeIndex < def.minGrade){
+    toast(def.name + "은 " + MERC_GRADES[def.minGrade].name + " 이상이 필요합니다.");
+    return;
+  }
+  const cost = mercExpeditionCost(def);
+  if(S.cash <= cost){ toast("원정 준비비 " + fmt(cost) + "가 부족합니다."); return; }
+
+  const days = mercExpeditionDays(merc,def);
+  S.cash -= cost;
+  merc.expeditionId = def.id;
+  merc.busyUntil = S.day + days;
+  addMercLog(merc.name + " → " + def.name + " 파견 · " + days + "일");
+  toast(merc.name + "을 " + def.name + "에 보냈습니다. " + merc.busyUntil + "일차 귀환 예정.");
+  render();
+}
+function rollMercenaryLoot(def,merc){
+  const grade = mercGrade(merc);
+  const growth = 1 + Math.min(.25,(merc.xp || 0) * .005);
+  const mult = grade.loot * growth;
   const loot = {};
+
   for(const y of def.yields){
-    if(Math.random() <= y.chance){
-      const q = y.min + Math.floor(Math.random() * (y.max - y.min + 1));
+    const chance = Math.min(.98,y.chance + (y.rare ? grade.rare : grade.rare*.35));
+    if(Math.random() <= chance){
+      const base = y.min + Math.floor(Math.random() * (y.max - y.min + 1));
+      const q = Math.max(1,Math.round(base * mult * (.9 + Math.random()*.22)));
       loot[y.item] = (loot[y.item] || 0) + q;
     }
   }
   if(!Object.keys(loot).length){
     const y = def.yields[0];
-    loot[y.item] = y.min;
+    loot[y.item] = Math.max(1,Math.round(y.min * mult));
   }
-
   return loot;
 }
 function processMercenaryExpeditions(){
-  if(!S.mercExpeditions.length) return;
-  const keep = [];
-  for(const job of S.mercExpeditions){
-    if(job.returnDay > S.day){
-      keep.push(job);
+  S.mercRoster ||= [];
+  for(const merc of S.mercRoster){
+    if(!merc.expeditionId || merc.busyUntil > S.day) continue;
+    const def = MERC_EXPEDITIONS.find(x => x.id === merc.expeditionId);
+    if(!def){
+      merc.expeditionId = null;
+      merc.busyUntil = 0;
       continue;
     }
-    const def = MERC_EXPEDITIONS.find(x => x.id === job.id);
-    if(!def) continue;
-    const loot = rollMercenaryLoot(def);
+
+    const loot = rollMercenaryLoot(def,merc);
     for(const [k,q] of Object.entries(loot)) S.inv[k] = (S.inv[k] || 0) + q;
+
+    const xpGain = def.xp + Math.floor(Math.random()*3);
+    merc.xp += xpGain;
+    merc.missions += 1;
+    merc.expeditionId = null;
+    merc.busyUntil = 0;
     S.mercCompleted += 1;
     changeMercFriendship(2);
+
     const text = Object.entries(loot).map(([k,q]) => ITEMS[k].name + " " + q + "개").join(", ");
-    addMercLog(def.name + " 귀환 · " + text);
+    addMercLog(merc.name + " 귀환 · " + text + " · 경험 +" + xpGain);
+    toast(merc.name + " 원정 귀환: " + text);
   }
-  S.mercExpeditions = keep;
 }
 function mercGearCityRate(city){
   return ({capital:1.18,farm:.88,mine:1.00,port:1.10,arcane:1.14})[city] || 1;
@@ -1934,7 +2096,8 @@ function mercenaryEventCandidate(){
     }
   }
 
-  const activeBonus = Math.min(.14,S.mercExpeditions.length * .035);
+  const activeCount = (S.mercRoster || []).filter(mercIsBusy).length;
+  const activeBonus = Math.min(.14,activeCount * .035);
   if(Math.random() > .12 + activeBonus) return null;
   S.lastMercEventDay = S.day;
   return Object.assign({},pick(MERCENARY_EVENTS));
@@ -1945,36 +2108,79 @@ function renderMercenaries(){
   const status = $("#mercenaryStatus");
   const log = $("#mercLog");
   const materials = ["beast_hide","slime_core","ogre_horn","wyvern_scale","demon_claw"];
-  const active = S.mercExpeditions || [];
+  const roster = S.mercRoster || [];
+  const active = roster.filter(mercIsBusy);
+  const idle = roster.filter(m => !mercIsBusy(m));
   const discount = Math.round(mercDiscountRate() * 100);
 
-  $("#mercFriendBadge").textContent = "우호도 " + S.mercFriendship + (discount ? " · 고용 -" + discount + "%" : "");
-  $("#mercActiveBadge").textContent = "파견 " + active.length + " / " + MERC_MAX_ACTIVE;
+  $("#mercFriendBadge").textContent = "길드 우호도 " + S.mercFriendship + (discount ? " · 비용 -" + discount + "%" : "");
+  $("#mercActiveBadge").textContent = "용병 " + roster.length + " / " + MERC_MAX_ROSTER + " · 원정 " + active.length;
 
   const suppression = S.banditSuppressionUntil >= S.day
     ? '<span class="merc-safe">도적단 소탕 효과 · ' + S.banditSuppressionUntil + '일차까지</span>'
     : '<span>도적단 소탕 효과 없음</span>';
   status.innerHTML =
     '<div class="merc-materials">' + materials.map(k => '<span><b>' + ITEMS[k].name + '</b> ' + (S.inv[k] || 0) + '</span>').join("") + '</div>' +
-    '<div class="merc-affinity"><span>완료 원정 ' + S.mercCompleted + '회</span><span>누적 고용 ' + S.mercTotalHires + '회</span>' + suppression + '</div>';
+    '<div class="merc-affinity"><span>누적 원정 ' + S.mercCompleted + '회</span><span>고용한 용병 ' + S.mercTotalHires + '명</span>' + suppression + '</div>';
 
-  box.innerHTML =
+  const recruitCost = mercRecruitCost();
+  const recruitDisabled = roster.length >= MERC_MAX_ROSTER || S.cash <= recruitCost;
+  const recruit =
+    '<div class="merc-recruit-bar"><div><b>상단 소속 용병</b><span>새 용병은 E급으로 시작합니다. 훈련 투자와 실전 원정으로 경험을 쌓아 승급하세요.</span></div>' +
+    '<button data-merc-recruit' + (recruitDisabled ? ' disabled' : '') + '>' +
+      (roster.length >= MERC_MAX_ROSTER ? '정원 가득 참' : '신규 용병 고용 · ' + fmt(recruitCost)) +
+    '</button></div>';
+
+  const rosterHtml = roster.length
+    ? '<div class="merc-roster-grid">' + roster.map(merc => {
+        const grade = mercGrade(merc);
+        const busy = mercIsBusy(merc);
+        const def = busy ? MERC_EXPEDITIONS.find(x => x.id === merc.expeditionId) : null;
+        const nextXp = grade.promoteXp;
+        const xpPct = nextXp ? Math.min(100,(merc.xp / nextXp)*100) : 100;
+        const trainCost = mercTrainingCost(merc);
+        const promoteReady = nextXp != null && merc.xp >= nextXp;
+        const promoteText = nextXp == null
+          ? '최고 등급'
+          : promoteReady
+            ? '승급 심사 · ' + fmt(grade.promoteCost)
+            : '승급 ' + merc.xp + ' / ' + nextXp + ' XP';
+        return '<article class="merc-unit-card grade-' + grade.id + '">' +
+          '<div class="merc-unit-head"><div><span class="merc-grade">' + grade.name + '</span><h3>' + merc.name + '</h3></div>' +
+            '<span class="' + (busy ? 'merc-busy' : 'merc-idle') + '">' + (busy ? '원정 중' : '대기') + '</span></div>' +
+          '<div class="merc-xp-row"><span>경험 ' + merc.xp + (nextXp ? ' / ' + nextXp : '') + '</span><span>완료 원정 ' + merc.missions + '회</span></div>' +
+          '<div class="merc-xp-bar"><i style="width:' + xpPct + '%"></i></div>' +
+          (busy
+            ? '<div class="merc-mission-now"><b>' + (def?.name || '원정') + '</b><span>' + Math.max(0,merc.busyUntil-S.day) + '일 남음 · ' + merc.busyUntil + '일차 귀환</span></div>'
+            : '<p class="merc-grade-bonus">소재 획득 ×' + grade.loot.toFixed(2) + (grade.rare ? ' · 희귀확률 +' + Math.round(grade.rare*100) + '%' : '') + (grade.dayCut ? ' · 원정 -' + grade.dayCut + '일' : '') + '</p>') +
+          '<div class="merc-unit-actions">' +
+            '<button data-merc-invest="' + merc.id + '"' + (busy || S.cash <= trainCost ? ' disabled' : '') + '>훈련 투자 ' + fmt(trainCost) + '</button>' +
+            '<button data-merc-promote="' + merc.id + '"' + (busy || !promoteReady || nextXp == null || S.cash <= (grade.promoteCost || 0) ? ' disabled' : '') + '>' + promoteText + '</button>' +
+          '</div>' +
+        '</article>';
+      }).join("") + '</div>'
+    : '<div class="merc-empty"><b>아직 상단 소속 용병이 없습니다.</b><span>용병을 고용하면 계속 성장시키며 반복해서 원정을 보낼 수 있습니다.</span></div>';
+
+  const expeditionHtml =
+    '<div class="merc-expedition-head"><b>원정 게시판</b><span>높은 등급일수록 수량·희귀재료 확률이 증가하고 B급부터 귀환도 빨라집니다.</span></div>' +
     '<div class="merc-grid">' + MERC_EXPEDITIONS.map(def => {
-      const locked = S.day < def.unlockDay;
-      const cost = mercHireCost(def);
-      const disabled = locked || active.length >= MERC_MAX_ACTIVE || S.cash <= cost;
-      const possible = def.yields.map(y => ITEMS[y.item].name + " " + y.min + "~" + y.max + "개" + (y.chance < 1 ? " (" + Math.round(y.chance*100) + "%)" : "")).join(" · ");
+      const unlocked = S.day >= def.unlockDay;
+      const eligible = idle.filter(m => m.gradeIndex >= def.minGrade);
+      const cost = mercExpeditionCost(def);
+      const possible = def.yields.map(y => ITEMS[y.item].name + " " + y.min + "~" + y.max + (y.rare ? " · 희귀" : "")).join(" / ");
       return '<article class="merc-card">' +
-        '<div class="merc-card-head"><h3>' + def.name + '</h3><span>' + def.days + '일</span></div>' +
+        '<div class="merc-card-head"><h3>' + def.name + '</h3><span>' + MERC_GRADES[def.minGrade].name + ' 이상 · 기본 ' + def.days + '일</span></div>' +
         '<p>' + def.desc + '</p>' +
         '<div class="merc-yield">' + possible + '</div>' +
-        '<button data-merc-hire="' + def.id + '"' + (disabled ? " disabled" : "") + '>' +
-          (locked ? def.unlockDay + "일차 해금" : "고용 " + fmt(cost)) +
-        '</button></article>';
-    }).join("") + '</div>' +
-    (active.length
-      ? '<div class="merc-active-list"><b>파견 중</b>' + active.map(j => '<span>' + j.name + ' · ' + Math.max(0,j.returnDay-S.day) + '일 남음 (' + j.returnDay + '일차 귀환)</span>').join("") + '</div>'
-      : '<p class="mini muted merc-none">현재 파견 중인 용병단이 없습니다.</p>');
+        '<div class="merc-dispatch-row"><select data-exp-select="' + def.id + '"' + (!unlocked || !eligible.length ? ' disabled' : '') + '>' +
+          '<option value="">' + (!unlocked ? def.unlockDay + '일차 해금' : eligible.length ? '파견할 용병 선택' : MERC_GRADES[def.minGrade].name + ' 이상 대기 용병 필요') + '</option>' +
+          eligible.map(m => '<option value="' + m.id + '">' + m.name + ' · ' + mercGrade(m).name + ' · ' + mercExpeditionDays(m,def) + '일</option>').join("") +
+        '</select>' +
+        '<button data-merc-dispatch="' + def.id + '"' + (!unlocked || !eligible.length || S.cash <= cost ? ' disabled' : '') + '>파견 · 준비비 ' + fmt(cost) + '</button></div>' +
+      '</article>';
+    }).join("") + '</div>';
+
+  box.innerHTML = recruit + rosterHtml + expeditionHtml;
 
   const heldGear = MERC_GEAR.filter(gear => (S.inv[gear.item] || 0) > 0);
   gearBox.innerHTML =
@@ -2007,8 +2213,8 @@ function renderMercenaries(){
     '</div>';
 
   log.innerHTML = S.mercLog.length
-    ? '<b>용병 길드 기록</b>' + S.mercLog.map(x => '<span>' + x + '</span>').join("")
-    : '<span class="muted">아직 용병 길드와 거래한 기록이 없습니다.</span>';
+    ? '<b>용병대 기록</b>' + S.mercLog.map(x => '<span>' + x + '</span>').join("")
+    : '<span class="muted">아직 용병을 고용하거나 원정을 보낸 기록이 없습니다.</span>';
 }
 
 function trouble(){
@@ -2944,8 +3150,21 @@ $("#craftBox").addEventListener("click",(e) => {
   if(b) craftRecipe(b.dataset.craft,Number(b.dataset.q));
 });
 $("#mercenaryBox").addEventListener("click",(e) => {
-  const b = e.target.closest("[data-merc-hire]");
-  if(b) hireMercenary(b.dataset.mercHire);
+  if(e.target.closest("[data-merc-recruit]")){ recruitMercenary(); return; }
+
+  const invest = e.target.closest("[data-merc-invest]");
+  if(invest){ investMercenary(invest.dataset.mercInvest); return; }
+
+  const promote = e.target.closest("[data-merc-promote]");
+  if(promote){ promoteMercenary(promote.dataset.mercPromote); return; }
+
+  const dispatch = e.target.closest("[data-merc-dispatch]");
+  if(dispatch){
+    const expeditionId = dispatch.dataset.mercDispatch;
+    const select = $("#mercenaryBox").querySelector('[data-exp-select="' + expeditionId + '"]');
+    if(!select?.value){ toast("파견할 용병을 선택해주세요."); return; }
+    dispatchMercenary(select.value,expeditionId);
+  }
 });
 $("#mercGearBox").addEventListener("click",(e) => {
   const craft = e.target.closest("[data-merc-gear]");
