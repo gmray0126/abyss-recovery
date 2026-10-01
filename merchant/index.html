@@ -41,8 +41,8 @@
 
   <section id="endingPanel" class="ending-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="endingTitle">
     <div class="ending-modal panel">
-      <span class="choice-kicker">왕실 최종심사 통과</span>
-      <h2 id="endingTitle">왕실 공인 대상인이 되었습니다.</h2>
+      <span id="endingKicker" class="choice-kicker">상단의 결말</span>
+      <h2 id="endingTitle">당신의 상단 이야기가 끝났습니다.</h2>
       <p id="endingText"></p>
       <div class="ending-stats" id="endingStats"></div>
       <div class="ending-rank-form">
@@ -50,7 +50,10 @@
         <button id="saveSharedRank" class="primary">공용 랭킹에 저장</button>
       </div>
       <p id="endingRankStatus" class="mini muted">클리어 기록은 모든 플레이어가 보는 공용 랭킹에 등록할 수 있습니다.</p>
-      <button id="endingRestart" class="wide">새 상단 시작</button>
+      <div class="ending-actions">
+        <button id="endingContinue" class="primary wide">엔드리스 모드로 계속</button>
+        <button id="endingRestart" class="wide">새 상단 시작</button>
+      </div>
     </div>
   </section>
 
