@@ -91,7 +91,7 @@ function identity(body){
   if(u.id) return {key:safeKey(u.id),type:'USER'};
   return {key:'',type:'NONE'};
 }
-function utter(body){ return String(body&&body.userRequest&&body.userRequest.utterance||'').trim().replace(/^//,''); }
+function utter(body){ return String(body&&body.userRequest&&body.userRequest.utterance||'').trim().replace(/^\//,''); }
 async function load(cache,id){
   let x=await cache.get(PLAYER_PREFIX+id.key);
   if(!x) return fresh(id);
