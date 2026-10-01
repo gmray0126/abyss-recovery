@@ -17,7 +17,12 @@ const ITEMS = {
   holy:{name:"성수",base:92,w:1,cat:"alchemy"},
   flour:{name:"밀가루",base:22,w:1,cat:"food",craftOnly:true},
   steel:{name:"강철재",base:88,w:2,cat:"metal",craftOnly:true},
-  extract:{name:"약초 농축액",base:52,w:1,cat:"alchemy",craftOnly:true}
+  extract:{name:"약초 농축액",base:52,w:1,cat:"alchemy",craftOnly:true},
+  beast_hide:{name:"마수 가죽",base:0,w:0,cat:"material",craftOnly:true,monsterMaterial:true},
+  slime_core:{name:"슬라임 핵",base:0,w:0,cat:"material",craftOnly:true,monsterMaterial:true},
+  ogre_horn:{name:"오우거 뿔",base:0,w:0,cat:"material",craftOnly:true,monsterMaterial:true},
+  wyvern_scale:{name:"와이번 비늘",base:0,w:0,cat:"material",craftOnly:true,monsterMaterial:true},
+  demon_claw:{name:"마족 발톱",base:0,w:0,cat:"material",craftOnly:true,monsterMaterial:true}
 };
 
 const CRAFT_LINKS = {
@@ -48,6 +53,101 @@ const CRAFT_RECIPES = [
   {id:"arcane_potion",city:"arcane",stage:2,shop:"연금술 공방",name:"회복 포션 조제",inputs:{extract:1},output:{potion:1},fee:6},
   {id:"arcane_holy",city:"arcane",stage:2,shop:"성수 조제실",name:"성수 정제",inputs:{extract:1},output:{holy:1},fee:12}
 ];
+const MERC_MAX_ACTIVE = 4;
+const MERC_EXPEDITIONS = [
+  {
+    id:"grass_hunt",name:"근교 마수 토벌",days:2,cost:120,unlockDay:1,
+    desc:"초원과 농로의 마수들을 정리합니다. 값싼 대신 희귀 소재는 거의 없습니다.",
+    yields:[
+      {item:"beast_hide",min:1,max:3,chance:1},
+      {item:"slime_core",min:1,max:2,chance:.55}
+    ]
+  },
+  {
+    id:"ruins_hunt",name:"폐광 몬스터 소탕",days:3,cost:240,unlockDay:10,
+    desc:"버려진 갱도와 폐광을 뒤져 슬라임과 오우거를 상대합니다.",
+    yields:[
+      {item:"slime_core",min:1,max:3,chance:1},
+      {item:"ogre_horn",min:1,max:2,chance:.62},
+      {item:"beast_hide",min:1,max:2,chance:.5}
+    ]
+  },
+  {
+    id:"wyvern_hunt",name:"산악 와이번 추적",days:4,cost:430,unlockDay:25,
+    desc:"산악지대를 며칠씩 추적하는 위험한 원정입니다. 와이번 비늘을 얻을 수 있는 첫 파견입니다.",
+    yields:[
+      {item:"ogre_horn",min:1,max:2,chance:.7},
+      {item:"wyvern_scale",min:1,max:2,chance:.58,rare:true},
+      {item:"beast_hide",min:1,max:2,chance:.45}
+    ]
+  },
+  {
+    id:"demon_hunt",name:"마왕군 잔당 추적",days:5,cost:680,unlockDay:50,
+    desc:"전쟁터와 마계 잔당의 흔적을 쫓습니다. 가장 비싸고 위험하지만 마족 발톱은 여기서만 나옵니다.",
+    yields:[
+      {item:"wyvern_scale",min:1,max:2,chance:.72,rare:true},
+      {item:"demon_claw",min:1,max:2,chance:.62,rare:true},
+      {item:"ogre_horn",min:1,max:2,chance:.55}
+    ]
+  }
+];
+
+const MERC_GEAR = [
+  {
+    id:"hide_cover",name:"마수가죽 화물덮개",fee:140,unlockDay:1,
+    inputs:{beast_hide:4,iron:1},
+    effect:"쥐떼의 재고 피해량 35% 감소"
+  },
+  {
+    id:"slime_cooler",name:"슬라임 핵 냉각상자",fee:220,unlockDay:10,
+    inputs:{slime_core:4,steel:1,mana:1},
+    effect:"재고 보관비 25% 감소"
+  },
+  {
+    id:"ogre_horn",name:"오우거뿔 경적",fee:270,unlockDay:20,
+    inputs:{ogre_horn:3,steel:1},
+    effect:"도적 조우 시 30% 확률로 위협해 습격 무효"
+  },
+  {
+    id:"wyvern_armor",name:"와이번 비늘 마차갑옷",fee:430,unlockDay:30,
+    inputs:{wyvern_scale:3,steel:2},
+    effect:"도적에게 빼앗기는 현금 40% 감소"
+  },
+  {
+    id:"demon_compass",name:"마족 추적 나침반",fee:650,unlockDay:50,
+    inputs:{demon_claw:2,mana:2,gem:1},
+    effect:"용병 원정 귀환 시 희귀 몬스터 소재 1개 추가 확보"
+  }
+];
+
+const MERCENARY_EVENTS = [
+  {
+    id:"merc_feast",title:"용병단의 합동 회식",text:"최근 당신이 일을 많이 맡기자 여러 용병단이 한 선술집에 모였습니다. 계산서가 자연스럽게 당신 앞으로 왔습니다.",
+    options:[
+      {label:"100G를 내고 끝까지 함께 마신다",effect:"merc_feast_full"},
+      {label:"50G만 보태고 먼저 빠진다",effect:"merc_feast_half"},
+      {label:"고용주는 술값까지 안 냅니다",effect:"merc_feast_skip"}
+    ]
+  },
+  {
+    id:"merc_injured",title:"부상당한 용병의 부탁",text:"귀환한 용병 한 명이 치료비를 아끼려 버티고 있습니다. 동료들이 슬쩍 당신 쪽을 봅니다.",
+    options:[
+      {label:"포션 1개를 내준다",effect:"merc_heal_potion"},
+      {label:"치료비 90G를 대신 낸다",effect:"merc_heal_cash"},
+      {label:"계약은 끝났습니다",effect:"merc_heal_ignore"}
+    ]
+  },
+  {
+    id:"merc_brawl",title:"용병단끼리 선술집 난투",text:"동시에 여러 용병단을 고용하다 보니 서로 누가 더 강한지 싸움이 붙었습니다. 가구가 부서지는 소리가 납니다.",
+    options:[
+      {label:"수리비 80G를 내고 직접 중재한다",effect:"merc_brawl_mediate"},
+      {label:"경비대에 맡긴다",effect:"merc_brawl_guard"},
+      {label:"누가 이기나 구경한다",effect:"merc_brawl_watch"}
+    ]
+  }
+];
+
+
 
 const EVENTS = [
   {id:"bandits",n:"도적떼 출몰",tag:"위험",noCapital:true,txt:"북부 교역로에 도적떼가 나타났습니다. 식량과 호위장비가 귀해집니다.",p:{bread:1.42,wheat:1.3,sword:1.25,armor:1.2},d:{bread:1.6,wheat:1.35,sword:1.45,armor:1.35},days:3},
@@ -623,14 +723,19 @@ function projectedSettlement(){
   return Math.max(80,Math.round(net() * settlementRate()));
 }
 function carriedMarketValue(){
-  return Object.keys(ITEMS).reduce((a,k) => a + S.inv[k] * (S.prices[k] || ITEMS[k].base),0);
+  return Object.keys(ITEMS).reduce((a,k) => {
+    if(ITEMS[k].monsterMaterial) return a;
+    return a + S.inv[k] * (S.prices[k] || ITEMS[k].base);
+  },0);
 }
 function listedMarketValue(){
   return S.orders.reduce((a,o) => a + o.qty * (S.world[o.city]?.[o.item] || o.ask || ITEMS[o.item].base),0);
 }
 function holdingCost(){
   // 손에 든 재고 0.30%, 판매 등록 재고 0.60%/일. 무한 대기 전략에 실제 비용을 만듭니다.
-  return Math.round(carriedMarketValue() * .003 + listedMarketValue() * .006);
+  let cost = carriedMarketValue() * .003 + listedMarketValue() * .006;
+  if(S.mercEquipment?.slime_cooler) cost *= .75;
+  return Math.round(cost);
 }
 function fee(){
   const t = (S.capacity - 20) / 5;
@@ -769,7 +874,10 @@ function refreshCurrentMarket(){
 }
 function stockValue(){
   let v = 0;
-  for(const k of Object.keys(ITEMS)) v += S.inv[k] * S.prices[k];
+  for(const k of Object.keys(ITEMS)){
+    if(ITEMS[k].monsterMaterial) continue;
+    v += S.inv[k] * S.prices[k];
+  }
   for(const o of S.orders) v += o.qty * (S.world[o.city][o.item] || S.prices[o.item]);
   return v;
 }
@@ -896,6 +1004,15 @@ function normalizeSavedState(state){
     state.routeStory[key] ??= 0;
   }
   state.lastPhaseId ??= null;
+  state.mercFriendship ??= 0;
+  state.mercTotalHires ??= 0;
+  state.mercCompleted ??= 0;
+  state.mercExpeditions = Array.isArray(state.mercExpeditions) ? state.mercExpeditions : [];
+  state.mercLog = Array.isArray(state.mercLog) ? state.mercLog : [];
+  state.mercEquipment ||= {};
+  for(const gear of MERC_GEAR) state.mercEquipment[gear.id] ??= false;
+  state.lastMercEventDay ??= 0;
+  state.banditSuppressionUntil ??= 0;
   state.gameOver ??= false;
   state.travelOpen ??= false;
   state.insurance ??= false;
@@ -979,7 +1096,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",lastPhaseId:null
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -989,6 +1106,7 @@ function init(){
     S.marketMomentum[k] = 0;
     S.marketChange[k] = 0;
   }
+  for(const gear of MERC_GEAR) S.mercEquipment[gear.id] = false;
   for(const c of Object.keys(CITIES)){
     S.tradePressure[c] = {};
     for(const k of Object.keys(ITEMS)) S.tradePressure[c][k] = 0;
@@ -1100,6 +1218,186 @@ function processOrders(){
   S.orders = keep;
   if(soldText.length) toast("판매 체결: " + soldText.join(", "));
 }
+function changeMercFriendship(amount){
+  S.mercFriendship = Math.max(0,Math.min(100,(S.mercFriendship || 0) + amount));
+}
+function mercDiscountRate(){
+  if(S.mercFriendship >= 70) return .15;
+  if(S.mercFriendship >= 40) return .10;
+  if(S.mercFriendship >= 20) return .05;
+  return 0;
+}
+function mercHireCost(expedition){
+  return Math.max(1,Math.round(expedition.cost * (1 - mercDiscountRate())));
+}
+function addMercLog(text){
+  S.mercLog ||= [];
+  S.mercLog.unshift(S.day + "일차 · " + text);
+  S.mercLog = S.mercLog.slice(0,6);
+}
+function hireMercenary(id){
+  if(checkBlocked()) return;
+  const def = MERC_EXPEDITIONS.find(x => x.id === id);
+  if(!def) return;
+  if(S.day < def.unlockDay){ toast(def.unlockDay + "일차부터 고용할 수 있습니다."); return; }
+  if(S.mercExpeditions.length >= MERC_MAX_ACTIVE){ toast("동시에 고용할 수 있는 용병단은 " + MERC_MAX_ACTIVE + "개까지입니다."); return; }
+
+  const cost = mercHireCost(def);
+  if(S.cash <= cost){ toast("고용비 " + fmt(cost) + "를 내면 파산합니다."); return; }
+
+  S.cash -= cost;
+  S.mercTotalHires += 1;
+  changeMercFriendship(1);
+  S.mercExpeditions.push({
+    id:def.id,
+    name:def.name,
+    startDay:S.day,
+    returnDay:S.day + def.days,
+    cost
+  });
+  addMercLog(def.name + " 파견 · " + def.days + "일 뒤 귀환 예정");
+  toast(def.name + "을 고용했습니다. " + (S.day + def.days) + "일차에 돌아옵니다.");
+  render();
+}
+function rollMercenaryLoot(def){
+  const loot = {};
+  for(const y of def.yields){
+    if(Math.random() <= y.chance){
+      const q = y.min + Math.floor(Math.random() * (y.max - y.min + 1));
+      loot[y.item] = (loot[y.item] || 0) + q;
+    }
+  }
+  if(!Object.keys(loot).length){
+    const y = def.yields[0];
+    loot[y.item] = y.min;
+  }
+
+  if(S.mercEquipment?.demon_compass){
+    const rare = def.yields.filter(y => y.rare);
+    if(rare.length){
+      const bonus = pick(rare);
+      loot[bonus.item] = (loot[bonus.item] || 0) + 1;
+    }
+  }
+  return loot;
+}
+function processMercenaryExpeditions(){
+  if(!S.mercExpeditions.length) return;
+  const keep = [];
+  for(const job of S.mercExpeditions){
+    if(job.returnDay > S.day){
+      keep.push(job);
+      continue;
+    }
+    const def = MERC_EXPEDITIONS.find(x => x.id === job.id);
+    if(!def) continue;
+    const loot = rollMercenaryLoot(def);
+    for(const [k,q] of Object.entries(loot)) S.inv[k] = (S.inv[k] || 0) + q;
+    S.mercCompleted += 1;
+    changeMercFriendship(2);
+    const text = Object.entries(loot).map(([k,q]) => ITEMS[k].name + " " + q + "개").join(", ");
+    addMercLog(def.name + " 귀환 · " + text);
+  }
+  S.mercExpeditions = keep;
+}
+function craftMercGear(id){
+  if(checkBlocked()) return;
+  const gear = MERC_GEAR.find(x => x.id === id);
+  if(!gear || S.mercEquipment[gear.id]) return;
+  if(S.day < gear.unlockDay){ toast(gear.unlockDay + "일차부터 제작할 수 있습니다."); return; }
+  if(S.city !== "mine"){ toast("몬스터 장비는 철산 광산도시 장비공방에서 제작할 수 있습니다."); return; }
+  if(S.cash <= gear.fee){ toast("공임 " + fmt(gear.fee) + "를 내면 파산합니다."); return; }
+  for(const [k,q] of Object.entries(gear.inputs)){
+    if((S.inv[k] || 0) < q){ toast(ITEMS[k].name + " " + q + "개가 필요합니다."); return; }
+  }
+  for(const [k,q] of Object.entries(gear.inputs)) S.inv[k] -= q;
+  S.cash -= gear.fee;
+  S.mercEquipment[gear.id] = true;
+  addRoute("artisan",1);
+  addMercLog("장비 제작 · " + gear.name);
+  toast(gear.name + " 제작 완료. " + gear.effect);
+  render();
+}
+function mercenaryEventCandidate(){
+  if(S.mercTotalHires < 3 || S.day - (S.lastMercEventDay || 0) < 4) return null;
+
+  if(S.mercFriendship >= 60 && S.mercCompleted >= 4 && S.banditSuppressionUntil < S.day){
+    if(Math.random() < .34){
+      S.lastMercEventDay = S.day;
+      return {
+        id:"merc_bandit_nest",
+        title:"용병단이 도적단 본거지를 찾아냈습니다",
+        text:"오랫동안 거래한 용병들이 인근 도적단의 본거지를 찾아냈다며 먼저 소탕해주겠다고 합니다. 우호도가 쌓인 덕분입니다.",
+        options:[
+          {label:"부탁한다 · 보수 없이 맡긴다",effect:"merc_bandit_free"},
+          {label:"150G를 추가 지급해 완전히 쓸어버린다",effect:"merc_bandit_bonus"},
+          {label:"우리 일은 장사뿐입니다",effect:"merc_bandit_decline"}
+        ]
+      };
+    }
+  }
+
+  const activeBonus = Math.min(.14,S.mercExpeditions.length * .035);
+  if(Math.random() > .12 + activeBonus) return null;
+  S.lastMercEventDay = S.day;
+  return Object.assign({},pick(MERCENARY_EVENTS));
+}
+function renderMercenaries(){
+  const box = $("#mercenaryBox");
+  const gearBox = $("#mercGearBox");
+  const status = $("#mercenaryStatus");
+  const log = $("#mercLog");
+  const materials = ["beast_hide","slime_core","ogre_horn","wyvern_scale","demon_claw"];
+  const active = S.mercExpeditions || [];
+  const discount = Math.round(mercDiscountRate() * 100);
+
+  $("#mercFriendBadge").textContent = "우호도 " + S.mercFriendship + (discount ? " · 고용 -" + discount + "%" : "");
+  $("#mercActiveBadge").textContent = "파견 " + active.length + " / " + MERC_MAX_ACTIVE;
+
+  const suppression = S.banditSuppressionUntil >= S.day
+    ? '<span class="merc-safe">도적단 소탕 효과 · ' + S.banditSuppressionUntil + '일차까지</span>'
+    : '<span>도적단 소탕 효과 없음</span>';
+  status.innerHTML =
+    '<div class="merc-materials">' + materials.map(k => '<span><b>' + ITEMS[k].name + '</b> ' + (S.inv[k] || 0) + '</span>').join("") + '</div>' +
+    '<div class="merc-affinity"><span>완료 원정 ' + S.mercCompleted + '회</span><span>누적 고용 ' + S.mercTotalHires + '회</span>' + suppression + '</div>';
+
+  box.innerHTML =
+    '<div class="merc-grid">' + MERC_EXPEDITIONS.map(def => {
+      const locked = S.day < def.unlockDay;
+      const cost = mercHireCost(def);
+      const disabled = locked || active.length >= MERC_MAX_ACTIVE || S.cash <= cost;
+      const possible = def.yields.map(y => ITEMS[y.item].name + " " + y.min + "~" + y.max + "개" + (y.chance < 1 ? " (" + Math.round(y.chance*100) + "%)" : "")).join(" · ");
+      return '<article class="merc-card">' +
+        '<div class="merc-card-head"><h3>' + def.name + '</h3><span>' + def.days + '일</span></div>' +
+        '<p>' + def.desc + '</p>' +
+        '<div class="merc-yield">' + possible + '</div>' +
+        '<button data-merc-hire="' + def.id + '"' + (disabled ? " disabled" : "") + '>' +
+          (locked ? def.unlockDay + "일차 해금" : "고용 " + fmt(cost)) +
+        '</button></article>';
+    }).join("") + '</div>' +
+    (active.length
+      ? '<div class="merc-active-list"><b>파견 중</b>' + active.map(j => '<span>' + j.name + ' · ' + Math.max(0,j.returnDay-S.day) + '일 남음 (' + j.returnDay + '일차 귀환)</span>').join("") + '</div>'
+      : '<p class="mini muted merc-none">현재 파견 중인 용병단이 없습니다.</p>');
+
+  gearBox.innerHTML = '<div class="gear-grid">' + MERC_GEAR.map(gear => {
+    const made = !!S.mercEquipment[gear.id];
+    const locked = S.day < gear.unlockDay;
+    const inputs = Object.entries(gear.inputs).map(([k,q]) => ITEMS[k].name + " " + q + "개").join(" + ");
+    const enough = Object.entries(gear.inputs).every(([k,q]) => (S.inv[k] || 0) >= q);
+    const disabled = made || locked || S.city !== "mine" || !enough || S.cash <= gear.fee;
+    return '<article class="gear-card' + (made ? ' gear-made' : '') + '">' +
+      '<div class="gear-head"><h4>' + gear.name + '</h4><span>' + (made ? "보유" : "영구 장비") + '</span></div>' +
+      '<p>' + gear.effect + '</p><div class="gear-recipe">' + inputs + ' · 공임 ' + fmt(gear.fee) + '</div>' +
+      '<button data-merc-gear="' + gear.id + '"' + (disabled ? " disabled" : "") + '>' +
+        (made ? "제작 완료" : locked ? gear.unlockDay + "일차 해금" : S.city !== "mine" ? "철산에서 제작" : "장비 제작") +
+      '</button></article>';
+  }).join("") + '</div>';
+
+  log.innerHTML = S.mercLog.length
+    ? '<b>용병 길드 기록</b>' + S.mercLog.map(x => '<span>' + x + '</span>').join("")
+    : '<span class="muted">아직 용병 길드와 거래한 기록이 없습니다.</span>';
+}
+
 function trouble(){
   if(capitalIsSafe()) return;
 
@@ -1110,12 +1408,27 @@ function trouble(){
   const tier = merchantTier();
 
   if(Math.random() < .5){
+    if(S.banditSuppressionUntil >= S.day){
+      toast("용병단이 미리 소탕한 덕분에 이 지역에서는 도적이 모습을 보이지 않습니다.");
+      return;
+    }
     if(S.guard){
       toast(isWarActive() && S.city === "capital"
         ? "전시 혼란을 틈탄 도적을 호위대가 막았습니다."
         : "도적이 나타났지만 호위대가 막았습니다.");
     }else{
-      const rate = .08 + Math.random() * .08 + tier.level * .015;
+      const patrolChance = S.mercFriendship >= 75 ? .45 : S.mercFriendship >= 50 ? .25 : 0;
+      if(patrolChance && Math.random() < patrolChance){
+        changeMercFriendship(1);
+        addMercLog("순찰 중이던 용병단이 도적 습격을 대신 막아줌");
+        toast("친분이 쌓인 용병단이 우연히 근처를 순찰하다 도적을 쫓아냈습니다.");
+        return;
+      }
+      if(S.mercEquipment?.ogre_horn && Math.random() < .30){
+        toast("오우거뿔 경적 소리에 도적들이 더 큰 용병단이 오는 줄 알고 도망쳤습니다.");
+        return;
+      }
+      const rate = (.08 + Math.random() * .08 + tier.level * .015) * (S.mercEquipment?.wyvern_armor ? .60 : 1);
       const loss = Math.min(Math.max(0,S.cash - 1),Math.max(60,Math.round(S.cash * rate)));
       if(loss > 0){
         S.cash -= loss;
@@ -1133,7 +1446,8 @@ function trouble(){
         for(let h=0;h<hits;h++){
           const k = pick(candidates.filter(x => !damaged.some(v => v.k === x)));
           if(!k) break;
-          const rate = tier.level >= 2 ? (.20 + Math.random() * .16) : (.12 + Math.random() * .13);
+          let rate = tier.level >= 2 ? (.20 + Math.random() * .16) : (.12 + Math.random() * .13);
+          if(S.mercEquipment?.hide_cover) rate *= .65;
           const loss = Math.max(1,Math.ceil(S.inv[k] * rate));
           S.inv[k] -= loss;
           damaged.push({k,loss});
@@ -1191,6 +1505,7 @@ function advanceDay(dest){
   seedWorld();
   S.rumor = marketRumor();
   processOrders();
+  processMercenaryExpeditions();
   trouble();
   if(checkContractDeadline() === false) return;
   if(!applyWeeklySettlement()) return;
@@ -1317,6 +1632,11 @@ function maybeGenerateChoiceEvent(){
     S.choiceEvent = story;
     return;
   }
+  const mercEvent = mercenaryEventCandidate();
+  if(mercEvent){
+    S.choiceEvent = mercEvent;
+    return;
+  }
   if(Math.random() < .34) S.choiceEvent = Object.assign({},pick(CHOICE_EVENTS));
 }
 function resolveChoice(choice){
@@ -1400,6 +1720,47 @@ function resolveChoice(choice){
     const item = pick(tradableKeys()); const q = 1 + Math.floor(Math.random()*4);
     S.inv[item] += q; finish("상자 안에는 " + ITEMS[item].name + " " + q + "개가 들어 있었습니다."); return;
   }
+  if(effect === "merc_feast_full"){
+    if(S.cash <= 100){ toast("100G가 없습니다."); return; }
+    S.cash -= 100; changeMercFriendship(7); addMercLog("합동 회식 후 우호도 상승");
+    finish("술값은 비쌌지만 용병들이 이제 당신을 고용주보다 동료에 가깝게 부릅니다."); return;
+  }
+  if(effect === "merc_feast_half"){
+    if(S.cash <= 50){ toast("50G가 없습니다."); return; }
+    S.cash -= 50; changeMercFriendship(4); finish("적당히 계산하고 빠졌습니다. 용병들도 적당히 고마워합니다."); return;
+  }
+  if(effect === "merc_feast_skip"){ changeMercFriendship(-2); finish("용병들은 계산서를 보며 당신 이름을 한 번 더 확인했습니다."); return; }
+  if(effect === "merc_heal_potion"){
+    if(S.inv.potion < 1){ toast("회복 포션이 없습니다."); return; }
+    S.inv.potion -= 1; changeMercFriendship(8); addMercLog("부상 용병에게 포션 지원");
+    finish("치료받은 용병이 다음 원정은 무조건 당신 상단 일을 먼저 받겠다고 합니다."); return;
+  }
+  if(effect === "merc_heal_cash"){
+    if(S.cash <= 90){ toast("90G가 없습니다."); return; }
+    S.cash -= 90; changeMercFriendship(5); finish("치료비를 대신 냈습니다. 용병단 분위기가 눈에 띄게 좋아졌습니다."); return;
+  }
+  if(effect === "merc_heal_ignore"){ changeMercFriendship(-4); finish("계약상 틀린 말은 아니었지만 용병들은 꽤 오래 기억할 것 같습니다."); return; }
+  if(effect === "merc_brawl_mediate"){
+    if(S.cash <= 80){ toast("80G가 없습니다."); return; }
+    S.cash -= 80; changeMercFriendship(5); finish("부서진 의자는 많았지만 싸움은 끝났습니다. 두 용병단 모두 당신 중재를 받아들였습니다."); return;
+  }
+  if(effect === "merc_brawl_guard"){ changeMercFriendship(-3); addRoute("royal",.5); finish("경비대가 난투를 정리했습니다. 왕실은 좋아했지만 용병들은 덜 좋아했습니다."); return; }
+  if(effect === "merc_brawl_watch"){
+    if(Math.random() < .5){ S.cash += 60; finish("누군가 즉석 내기판을 열었고 우연히 60G를 벌었습니다."); }
+    else { changeMercFriendship(-2); finish("구경만 하다 술잔 하나가 마차 창문을 깼습니다."); }
+    return;
+  }
+  if(effect === "merc_bandit_free"){
+    S.banditSuppressionUntil = S.day + 10; changeMercFriendship(3); addMercLog("도적단 본거지 소탕 · 10일간 도적 위험 억제");
+    finish("용병단이 보수도 받지 않고 도적소굴을 정리했습니다. 쌓아온 우호도가 처음으로 돈보다 강해졌습니다."); return;
+  }
+  if(effect === "merc_bandit_bonus"){
+    if(S.cash <= 150){ toast("150G가 없습니다."); return; }
+    S.cash -= 150; S.banditSuppressionUntil = S.day + 18; changeMercFriendship(6); addMercLog("도적단 대규모 소탕 · 18일간 도적 위험 억제");
+    finish("용병단이 주변 도적 조직까지 연달아 쓸어버렸습니다. 한동안 이 지역 상인들은 밤에도 길을 다닐 수 있습니다."); return;
+  }
+  if(effect === "merc_bandit_decline"){ changeMercFriendship(-2); finish("용병단은 아쉬워했지만 계약 밖의 일이라며 물러났습니다."); return; }
+
   if(effect === "route_royal_meeting"){ addRoute("royal",2); finish("왕실은 당신을 '협조적인 상인' 명단에 올렸습니다."); return; }
   if(effect === "route_antihero_meeting"){ addRoute("antihero",2); S.pendingFollow={id:"antihero_rally",chance:.9}; finish("회의장 밖 상인들이 당신의 성명서에 박수를 보냈습니다."); return; }
   if(effect === "route_artisan_meeting"){ addRoute("artisan",2); finish("장인조합이 당신에게 공방상단 명예패를 건넸습니다."); return; }
@@ -1693,6 +2054,7 @@ function render(){
   renderExtras();
   renderMarket();
   renderCrafting();
+  renderMercenaries();
   renderBlackMarket();
   renderOrders();
   renderTravel();
@@ -1889,6 +2251,14 @@ $("#marketCards").addEventListener("click",(e) => {
 $("#craftBox").addEventListener("click",(e) => {
   const b = e.target.closest("[data-craft]");
   if(b) craftRecipe(b.dataset.craft,Number(b.dataset.q));
+});
+$("#mercenaryBox").addEventListener("click",(e) => {
+  const b = e.target.closest("[data-merc-hire]");
+  if(b) hireMercenary(b.dataset.mercHire);
+});
+$("#mercGearBox").addEventListener("click",(e) => {
+  const b = e.target.closest("[data-merc-gear]");
+  if(b) craftMercGear(b.dataset.mercGear);
 });
 $("#blackMarketBox").addEventListener("click",(e) => {
   const b = e.target.closest("[data-black]");
