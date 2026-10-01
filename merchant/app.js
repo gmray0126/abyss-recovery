@@ -1184,10 +1184,63 @@ function applyEventMarketShock(event){
     S.marketChange[item] = (next / old - 1) * 100;
   }
 }
-function dailyNewsCount(){
-  if(S.day >= 50) return 3;
-  if(S.day >= 20) return 2;
+function dailyNewsCountForDay(day){
+  if(day >= 50) return 3;
+  if(day >= 20) return 2;
   return 1;
+}
+function blockadeChanceForDay(day){
+  const count = dailyNewsCountForDay(day);
+  return count >= 3 ? .24 : count === 2 ? .17 : .10;
+}
+function planTomorrowBlockade(){
+  const tomorrow = S.day + 1;
+
+  if(S.plannedBlockade && S.plannedBlockade.day >= tomorrow) return;
+
+  // 후속 스토리 뉴스가 예약된 날에는 봉쇄 예고를 억지로 끼워 넣지 않습니다.
+  if(S.pendingFollow) {
+    S.plannedBlockade = null;
+    return;
+  }
+
+  // 이미 지역 봉쇄가 진행 중이면 연속 봉쇄를 남발하지 않습니다.
+  if(S.active.some(e => Array.isArray(e.blockedCities) && e.blockedCities.length)){
+    S.plannedBlockade = null;
+    return;
+  }
+
+  if(Math.random() >= blockadeChanceForDay(tomorrow)){
+    S.plannedBlockade = null;
+    return;
+  }
+
+  const tomorrowPhase = worldPhaseForDay(tomorrow);
+  const pool = EVENTS.filter(e =>
+    Array.isArray(e.blockedCities) &&
+    e.blockedCities.length &&
+    !e.chainOnly &&
+    (!e.phases || e.phases.includes(tomorrowPhase.id))
+  );
+  if(!pool.length){
+    S.plannedBlockade = null;
+    return;
+  }
+
+  const event = pick(pool);
+  S.plannedBlockade = {
+    day:tomorrow,
+    eventId:event.id,
+    cities:[...event.blockedCities],
+    days:event.days
+  };
+}
+function plannedBlockadeEventForToday(){
+  if(!S.plannedBlockade || S.plannedBlockade.day !== S.day) return null;
+  return EVENT_BY_ID[S.plannedBlockade.eventId] || null;
+}
+function dailyNewsCount(){
+  return dailyNewsCountForDay(S.day);
 }
 function newIntel(){
   const phase = currentWorldPhase();
@@ -1213,6 +1266,11 @@ function newIntel(){
       phaseIntro:true
     });
     S.lastPhaseId = phase.id;
+  }
+
+  const plannedBlockade = plannedBlockadeEventForToday();
+  if(plannedBlockade){
+    addSource(plannedBlockade);
   }else if(S.pendingFollow && Math.random() < S.pendingFollow.chance){
     addSource(EVENT_BY_ID[S.pendingFollow.id] || null);
   }
@@ -1236,6 +1294,7 @@ function newIntel(){
   while(sources.length < targetCount && safety++ < 30){
     const pool = EVENTS.filter(e => {
       if(e.chainOnly) return false;
+      if(Array.isArray(e.blockedCities) && e.blockedCities.length) return false;
       if(usedIds.has(e.id)) return false;
       if(e.phases && !e.phases.includes(phase.id)) return false;
       if(e.noCapital && S.city === "capital" && !isWarActive()) return false;
@@ -1275,6 +1334,11 @@ function newIntel(){
   // 시대 전환 뉴스만 나온 날에는 기존 후속 사건 예약을 보존합니다.
   const onlyPhaseIntros = todayNews.length && todayNews.every(e => e.phaseIntro);
   S.pendingFollow = nextFollow || (onlyPhaseIntros ? previousFollow : null);
+
+  if(S.plannedBlockade?.day === S.day){
+    S.plannedBlockade = null;
+  }
+  planTomorrowBlockade();
   S.extra = null;
 }
 
@@ -1365,6 +1429,7 @@ function normalizeSavedState(state){
   }
   state.princessStatements ??= 0;
   state.lastPrincessDay ??= state.active.some(e => e.princess) ? (state.day || 1) : -999;
+  state.plannedBlockade ??= null;
   state.lastMercEventDay ??= 0;
   state.banditSuppressionUntil ??= 0;
   state.gameOver ??= false;
@@ -1454,7 +1519,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -1957,7 +2022,19 @@ function useInformant(){
   if(S.cash <= 35){ toast("정보료를 내면 파산합니다."); return; }
   S.cash -= 35;
   S.informant = true;
-  if(Math.random() < .78){
+
+  if(S.plannedBlockade && S.plannedBlockade.day === S.day + 1){
+    const event = EVENT_BY_ID[S.plannedBlockade.eventId];
+    const cityNames = S.plannedBlockade.cities.map(c => CITIES[c]?.name || c).join(", ");
+    const trapped = S.plannedBlockade.cities.includes(S.city);
+    S.extra =
+      "[확정 정보 · 내일] 왕실 내부문서 입수. " + cityNames +
+      "에 「" + (event?.n || "출입통제") + "」가 발효될 예정입니다. 예상 통제기간 " +
+      S.plannedBlockade.days + "일. " +
+      (trapped
+        ? "현재 그 지역에 있습니다. 오늘 떠나지 않으면 통제기간 동안 밖으로 나갈 수 없습니다."
+        : "내일 이후에는 해당 지역으로 들어갈 수 없습니다.");
+  }else if(Math.random() < .78){
     S.extra = "[그럴듯함] " + marketRumor();
   }else{
     const c = pick(Object.keys(CITIES));
