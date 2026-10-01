@@ -3367,6 +3367,32 @@ function escapeHtml(s){
   return s.replace(/[&<>"']/g,m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 }
 
+function isMobileLayout(){
+  return window.matchMedia("(max-width: 680px)").matches;
+}
+function setMobileTab(tab,scroll=true){
+  const allowed = ["market","info","craft","merc","caravan"];
+  if(!allowed.includes(tab)) tab = "market";
+  document.body.dataset.mobileTab = tab;
+  document.querySelectorAll("[data-mobile-nav]").forEach(btn => {
+    btn.classList.toggle("active",btn.dataset.mobileNav === tab);
+    btn.setAttribute("aria-current",btn.dataset.mobileNav === tab ? "page" : "false");
+  });
+  try{ localStorage.setItem("fantasyMerchantMobileTab",tab); }catch{}
+  if(scroll && isMobileLayout()){
+    const y = Math.max(0,document.querySelector(".stats")?.getBoundingClientRect().bottom + window.scrollY - 6 || 0);
+    window.scrollTo({top:y,behavior:"smooth"});
+  }
+}
+function initMobileTabs(){
+  let saved = "market";
+  try{ saved = localStorage.getItem("fantasyMerchantMobileTab") || "market"; }catch{}
+  setMobileTab(saved,false);
+  $("#mobileNav")?.addEventListener("click",e => {
+    const btn = e.target.closest("[data-mobile-nav]");
+    if(btn) setMobileTab(btn.dataset.mobileNav,true);
+  });
+}
 $("#marketCards").addEventListener("click",(e) => {
   const b = e.target.closest("button");
   if(!b) return;
@@ -3458,3 +3484,4 @@ document.addEventListener("visibilitychange",() => {
 });
 
 if(!restoreSavedGame()) init();
+initMobileTabs();
