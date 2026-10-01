@@ -601,6 +601,10 @@ function determineEndingRoute(){
 }
 
 function endingData(route){
+  if(route === "bad_merchant") return {
+    title:"평범한 상인으로 남았습니다.",
+    text:"상단은 충분히 크고 유명해졌지만 마지막 7일 납품심사에서 약속을 지키지 못했습니다. 특별한 칭호도 전설도 얻지 못한 채, 왕국 어딘가에서 계속 장사하는 평범한 상인으로 남았습니다."
+  };
   if(route === "royal") return {
     title:"왕실 공인 대상상이 되었습니다.",
     text:"왕실과 상인 길드가 당신의 상단을 왕국 공식 대상단으로 인정했습니다. 이제 귀족들도 가격 흥정 전에 당신의 눈치를 봅니다."
@@ -644,51 +648,165 @@ function renderRoutes(){
     '<p class="mini muted route-note">점수만 올려서는 특수 엔딩이 열리지 않습니다. 해당 세력의 전용 스토리 4장을 끝까지 겪어야 하며, 조건이 애매하면 노멀 엔딩으로 진행됩니다.</p>';
 }
 
+function finalTrialRequirement(){
+  const pool = ["bread","wheat","iron","sword","armor","herb","potion","gem","spice","mana","beer","holy"];
+  const item = pick(pool);
+  const base = ITEMS[item].base;
+  const qty = base >= 150
+    ? 1 + Math.floor(Math.random()*2)
+    : base >= 90
+      ? 2 + Math.floor(Math.random()*2)
+      : base >= 40
+        ? 2 + Math.floor(Math.random()*3)
+        : 3 + Math.floor(Math.random()*4);
+  return {day:S.day,item,qty,delivered:false};
+}
+function ensureFinalTrialRequirement(){
+  if(!S.finalTrial || S.finalTrial.finished || S.day >= S.finalTrial.endDay) return;
+  if(!S.finalTrial.requirement || S.finalTrial.requirement.day !== S.day){
+    S.finalTrial.requirement = finalTrialRequirement();
+  }
+}
+function deliverFinalTrialGoods(){
+  if(checkBlocked()) return;
+  if(!S.finalTrial || S.finalTrial.finished || S.day >= S.finalTrial.endDay) return;
+  ensureFinalTrialRequirement();
+  const req = S.finalTrial.requirement;
+  if(req.delivered){ toast("오늘의 최종심사 납품은 이미 완료했습니다."); return; }
+  if((S.inv[req.item] || 0) < req.qty){
+    toast(ITEMS[req.item].name + " " + req.qty + "개가 필요합니다.");
+    return;
+  }
+  S.inv[req.item] -= req.qty;
+  req.delivered = true;
+  S.finalTrial.delivered = (S.finalTrial.delivered || 0) + 1;
+  toast("최종심사 납품 완료: " + ITEMS[req.item].name + " " + req.qty + "개 · " + S.finalTrial.delivered + " / " + ENDING_GOALS.trialDays);
+  render();
+}
+function showEnding(route){
+  S.ending = true;
+  S.endingRoute = route;
+  S.travelOpen = false;
+  S.choiceEvent = null;
+  if(S.finalTrial) S.finalTrial.finished = true;
+
+  const data = endingData(route);
+  const bad = route === "bad_merchant";
+  $("#endingPanel").classList.remove("hidden");
+  $("#endingKicker").textContent = bad ? "최종 납품심사 실패 · BAD END" : "상단의 결말";
+  $("#endingTitle").textContent = data.title;
+  $("#endingText").textContent = data.text;
+  $("#endingStats").innerHTML =
+    "<b>" + S.day + "일 생존</b><span>최종 자산 " + fmt(net()) + "</span><span>완료 의뢰 " + S.completedContracts + "회</span><span>최고 자산 " + fmt(S.peak) + "</span>";
+
+  const rankForm = $(".ending-rank-form");
+  const rankStatus = $("#endingRankStatus");
+  if(rankForm) rankForm.classList.toggle("hidden",bad);
+  if(rankStatus){
+    rankStatus.textContent = bad
+      ? "평범한 상인 배드엔딩은 공용 클리어 랭킹에 등록되지 않습니다."
+      : (S.rankSaved ? "이 클리어 기록은 이미 공용 랭킹에 저장되었습니다." : "클리어 기록은 모든 플레이어가 보는 공용 랭킹에 등록할 수 있습니다.");
+  }
+
+  toast("엔딩 달성: " + (bad ? "평범한 상인" : route === "normal" ? "전설의 대상인" : ROUTES[route].ending));
+}
+function failFinalTrial(){
+  if(!S.finalTrial || S.finalTrial.finished || S.ending || S.endless) return false;
+  ensureFinalTrialRequirement();
+  const req = S.finalTrial.requirement;
+  if(req && !req.delivered){
+    showEnding("bad_merchant");
+    return true;
+  }
+  return false;
+}
+function continueEndlessMode(){
+  if(!S.ending) return;
+  const seen = S.endingRoute || "normal";
+  const name = seen === "bad_merchant" ? "평범한 상인" : seen === "normal" ? "전설의 대상인" : ROUTES[seen]?.ending || "엔딩";
+  S.endless = true;
+  S.ending = false;
+  S.travelOpen = false;
+  S.choiceEvent = null;
+  if(S.finalTrial) S.finalTrial.finished = true;
+  $("#endingPanel").classList.add("hidden");
+  toast(name + " 엔딩 이후, 엔드리스 모드로 장사를 계속합니다.");
+  render();
+}
 function endingRequirementsMet(){
   return S.day >= ENDING_GOALS.day &&
     net() >= ENDING_GOALS.wealth &&
     S.completedContracts >= ENDING_GOALS.contracts;
 }
 function checkFinalChapter(){
-  if(S.gameOver || S.ending) return;
+  if(S.gameOver || S.ending || S.endless) return;
 
   if(!S.finalTrial && endingRequirementsMet()){
     S.finalTrial = {
       startDay:S.day,
-      endDay:S.day + ENDING_GOALS.trialDays
+      endDay:S.day + ENDING_GOALS.trialDays,
+      delivered:0,
+      requirement:null,
+      finished:false
     };
-    toast("상단의 운명을 정할 마지막 7일이 시작됐습니다.");
+    ensureFinalTrialRequirement();
+    toast("마지막 7일 납품심사가 시작됐습니다. 매일 요구 물품을 납품해야 합니다.");
   }
 
-  if(S.finalTrial && S.day >= S.finalTrial.endDay){
-    S.ending = true;
-    S.endingRoute = determineEndingRoute();
-    const data = endingData(S.endingRoute);
-    S.travelOpen = false;
-    S.choiceEvent = null;
-    $("#endingPanel").classList.remove("hidden");
-    $("#endingTitle").textContent = data.title;
-    $("#endingText").textContent = data.text;
-    $("#endingStats").innerHTML =
-      "<b>" + S.day + "일 생존</b><span>최종 자산 " + fmt(net()) + "</span><span>완료 의뢰 " + S.completedContracts + "회</span><span>최고 자산 " + fmt(S.peak) + "</span>";
-    toast("엔딩 달성: " + (S.endingRoute === "normal" ? "전설의 대상인" : ROUTES[S.endingRoute].ending));
-  }
-}
-function renderEndingGoal(){
-  const box = $("#endingGoalBox");
-  if(S.ending){
-    box.innerHTML = '<p class="success-note">왕실 공인 대상단 자격 획득 완료</p>';
+  if(!S.finalTrial || S.finalTrial.finished) return;
+
+  if(S.day >= S.finalTrial.endDay){
+    if((S.finalTrial.delivered || 0) < ENDING_GOALS.trialDays){
+      showEnding("bad_merchant");
+      return;
+    }
+    showEnding(determineEndingRoute());
     return;
   }
 
-  if(S.finalTrial){
-    const passed = Math.max(0,S.day - S.finalTrial.startDay);
-    const remain = Math.max(0,S.finalTrial.endDay - S.day);
+  ensureFinalTrialRequirement();
+}
+
+function renderEndingGoal(){
+  const box = $("#endingGoalBox");
+
+  if(S.endless){
+    const route = S.endingRoute || "normal";
+    const title = route === "bad_merchant" ? "평범한 상인" : route === "normal" ? "전설의 대상인" : ROUTES[route]?.ending || "엔딩";
     box.innerHTML =
-      '<p><b>상단의 마지막 7일 진행 중</b></p>' +
+      '<p class="success-note">엔드리스 모드</p>' +
+      '<p class="mini"><b>' + title + '</b> 엔딩 이후에도 왕국 경제는 계속 움직입니다. 더 이상 엔딩 조건은 없습니다.</p>';
+    return;
+  }
+
+  if(S.ending){
+    box.innerHTML = '<p class="success-note">상단의 결말에 도달했습니다.</p>';
+    return;
+  }
+
+  if(S.finalTrial && !S.finalTrial.finished){
+    ensureFinalTrialRequirement();
+    const passed = Math.max(0,S.finalTrial.delivered || 0);
+    const remain = Math.max(0,ENDING_GOALS.trialDays - passed);
+    const req = S.finalTrial.requirement;
+    const have = req ? (S.inv[req.item] || 0) : 0;
+    const canDeliver = req && !req.delivered && have >= req.qty;
+    const daily = req
+      ? '<div class="final-delivery' + (req.delivered ? ' delivered' : '') + '">' +
+          '<span class="label">오늘의 최종심사 납품</span>' +
+          '<div class="final-delivery-main"><b>' + ITEMS[req.item].name + ' ' + req.qty + '개</b><span>보유 ' + have + '개</span></div>' +
+          (req.delivered
+            ? '<p class="final-delivered">✓ 오늘 납품 완료 · 이제 하루를 마감해도 됩니다.</p>'
+            : '<button id="trialDeliveryBtn" class="primary wide"' + (canDeliver ? '' : ' disabled') + '>오늘 물품 납품</button>') +
+        '</div>'
+      : '';
+
+    box.innerHTML =
+      '<p><b>마지막 7일 납품심사 진행 중</b></p>' +
       '<div class="ending-progress"><i style="width:' + Math.min(100,(passed/ENDING_GOALS.trialDays)*100) + '%"></i></div>' +
-      '<p class="mini muted">' + passed + ' / ' + ENDING_GOALS.trialDays + '일 통과 · 앞으로 ' + remain + '일</p>' +
-      '<p class="mini">이 7일 동안의 선택도 최종 성향에 반영됩니다. 유지비·결산·도적·시장 제한은 그대로 적용됩니다.</p>';
+      '<p class="mini muted">' + passed + ' / ' + ENDING_GOALS.trialDays + '일 납품 완료 · 앞으로 ' + remain + '회</p>' +
+      daily +
+      '<p class="mini final-warning">⚠ 오늘 물품을 납품하지 않은 채 하루를 마감하면 즉시 「평범한 상인」 배드엔딩입니다.</p>';
     return;
   }
 
@@ -703,8 +821,9 @@ function renderEndingGoal(){
     '<div class="ending-progress"><i style="width:' + wealthPct + '%"></i></div>' +
     '<div class="goal-row"><span>의뢰 성공</span><b>' + S.completedContracts + ' / ' + ENDING_GOALS.contracts + '회</b></div>' +
     '<div class="ending-progress"><i style="width:' + contractPct + '%"></i></div>' +
-    '<p class="mini muted">세 조건을 모두 달성하면 상단의 운명을 정할 마지막 7일이 시작됩니다.</p>';
+    '<p class="mini muted">세 조건을 모두 달성하면 매일 납품해야 하는 마지막 7일 심사가 시작됩니다.</p>';
 }
+
 function merchantTier(){
   const wealth = net();
   if(wealth >= 20000) return {name:"대형 상단",overhead:110,level:3};
@@ -997,6 +1116,7 @@ function normalizeSavedState(state){
   state.rankSaved ??= false;
   state.ending ??= false;
   state.endingRoute ??= "normal";
+  state.endless ??= false;
   state.routeScores ||= {royal:0,antihero:0,underworld:0,artisan:0};
   state.routeStory ||= {royal:0,antihero:0,underworld:0,artisan:0};
   for(const key of Object.keys(ROUTES)){
@@ -1004,6 +1124,11 @@ function normalizeSavedState(state){
     state.routeStory[key] ??= 0;
   }
   state.lastPhaseId ??= null;
+  if(state.finalTrial){
+    state.finalTrial.delivered ??= 0;
+    state.finalTrial.requirement ??= null;
+    state.finalTrial.finished ??= false;
+  }
   state.mercFriendship ??= 0;
   state.mercTotalHires ??= 0;
   state.mercCompleted ??= 0;
@@ -1061,15 +1186,19 @@ function restoreSavedGame(){
       $("#gameOverText").textContent = S.day + "일차 · " + (S.cause || "파산") + " · 최고 자산 " + fmt(S.peak || 0);
     }
     if(S.ending){
-      const data = endingData(S.endingRoute || "normal");
+      const route = S.endingRoute || "normal";
+      const data = endingData(route);
+      const bad = route === "bad_merchant";
+      $("#endingKicker").textContent = bad ? "최종 납품심사 실패 · BAD END" : "상단의 결말";
       $("#endingTitle").textContent = data.title;
       $("#endingText").textContent = data.text;
       $("#endingStats").innerHTML =
         "<b>" + S.day + "일 생존</b><span>최종 자산 " + fmt(net()) + "</span><span>완료 의뢰 " + S.completedContracts + "회</span><span>최고 자산 " + fmt(S.peak) + "</span>";
+      $(".ending-rank-form")?.classList.toggle("hidden",bad);
       $("#saveSharedRank").textContent = S.rankSaved ? "저장 완료" : "공용 랭킹에 저장";
-      $("#endingRankStatus").textContent = S.rankSaved
-        ? "이 클리어 기록은 이미 공용 랭킹에 저장되었습니다."
-        : "클리어 기록은 모든 플레이어가 보는 공용 랭킹에 등록할 수 있습니다.";
+      $("#endingRankStatus").textContent = bad
+        ? "평범한 상인 배드엔딩은 공용 클리어 랭킹에 등록되지 않습니다."
+        : (S.rankSaved ? "이 클리어 기록은 이미 공용 랭킹에 저장되었습니다." : "클리어 기록은 모든 플레이어가 보는 공용 랭킹에 등록할 수 있습니다.");
     }
 
     render();
@@ -1096,7 +1225,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -1120,6 +1249,8 @@ function init(){
   maybeGenerateChoiceEvent();
   $("#gameOver").classList.add("hidden");
   $("#endingPanel").classList.add("hidden");
+  $("#endingKicker").textContent = "상단의 결말";
+  $(".ending-rank-form")?.classList.remove("hidden");
   $("#endingRankName").value = "";
   $("#endingRankStatus").textContent = "클리어 기록은 모든 플레이어가 보는 공용 랭킹에 등록할 수 있습니다.";
   $("#saveSharedRank").textContent = "공용 랭킹에 저장";
@@ -1486,6 +1617,10 @@ function advanceDay(dest){
   const total = moveCost + fee();
   if(S.cash <= total){
     toast("이동/유지비 " + fmt(total) + "를 내면 파산합니다.");
+    return;
+  }
+  if(failFinalTrial()){
+    render();
     return;
   }
   S.cash -= total;
@@ -2062,12 +2197,13 @@ function render(){
 
   if(S.gameOver || S.ending){
     document.querySelectorAll("button").forEach(b => {
-      if(!["restart","endingRestart","saveSharedRank","rankRefresh","newGameBtn"].includes(b.id)) b.disabled = true;
+      if(!["restart","endingRestart","endingContinue","saveSharedRank","rankRefresh","newGameBtn"].includes(b.id)) b.disabled = true;
     });
     if(S.ending){
       $("#saveSharedRank").disabled = !!S.rankSaved;
       $("#rankRefresh").disabled = false;
       $("#endingRestart").disabled = false;
+      $("#endingContinue").disabled = false;
     }
   }else{
     $("#upgradeBtn").disabled = S.travelOpen;
@@ -2190,7 +2326,7 @@ async function loadSharedRanks(){
   renderRanks();
 }
 async function saveSharedRank(){
-  if(!S.ending || S.rankSaved) return;
+  if(!S.ending || S.rankSaved || S.endingRoute === "bad_merchant") return;
   const input = $("#endingRankName");
   const status = $("#endingRankStatus");
   const name = (input?.value || "").trim();
@@ -2286,6 +2422,9 @@ $("#choiceOptions").addEventListener("click",(e) => {
 $("#specialDealBox").addEventListener("click",(e) => {
   if(e.target.closest("#specialDealBtn")) useSpecialDeal();
 });
+$("#endingGoalBox").addEventListener("click",(e) => {
+  if(e.target.closest("#trialDeliveryBtn")) deliverFinalTrialGoods();
+});
 $("#endDayBtn").addEventListener("click",openTravel);
 $("#travelCancel").addEventListener("click",() => {
   if(!S.gameOver){
@@ -2298,6 +2437,7 @@ $("#upgradeBtn").addEventListener("click",upgrade);
 $("#insuranceBtn").addEventListener("click",() => oneDayService("insurance",40,"창고 보험"));
 $("#guardBtn").addEventListener("click",() => oneDayService("guard",50,"호위대"));
 $("#restart").addEventListener("click",() => startNewGame(false));
+$("#endingContinue").addEventListener("click",continueEndlessMode);
 $("#endingRestart").addEventListener("click",() => startNewGame(false));
 $("#newGameBtn").addEventListener("click",() => startNewGame(true));
 $("#saveSharedRank").addEventListener("click",saveSharedRank);
