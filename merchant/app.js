@@ -242,6 +242,66 @@ const EVENTS = [
   {id:"great_bridge_collapse",n:"철산 대교 붕괴",tag:"교통",blockedCities:["mine"],txt:"광산도시로 이어지는 대교가 무너졌습니다. 복구 전까지 철산 광산도시 출입이 금지됩니다.",p:{iron:1.25,sword:1.12,armor:1.12},d:{iron:1.35},days:2},
   {id:"port_quarantine",n:"청해 항구 검역 봉쇄",tag:"통제",blockedCities:["port"],txt:"정체불명의 열병 신고로 항구가 봉쇄됐습니다. 배도 마차도 들어오고 나갈 수 없습니다.",p:{spice:1.32,gem:1.2,potion:1.25},d:{spice:1.4,potion:1.4},days:2},
   {id:"arcane_lockdown",n:"마도도시 마력폭주 봉쇄",tag:"마법",blockedCities:["arcane"],txt:"도시 외곽 마법진이 폭주해 아르카나 출입이 전면 통제됐습니다. 교수들은 '예정된 실험'이라고 주장합니다.",p:{mana:1.35,potion:1.2},d:{mana:1.5,potion:1.3},days:2},
+  {id:"princess_bread_diet",n:"공주: '요즘 빵 먹으면 얼굴이 붓는 것 같아요'",tag:"공주 발언",princess:true,
+    txt:"공주의 아침 인터뷰 한마디에 귀족들이 빵을 식탁에서 치우기 시작했습니다. 제빵사들은 왕궁 방향을 바라보며 깊게 한숨 쉽니다.",
+    p:{bread:.55,wheat:.68,spice:1.16},d:{bread:.38,wheat:.55,spice:1.25},shock:{bread:.84,wheat:.90},days:1,
+    follow:{id:"princess_bread_reverse",chance:.92}},
+  {id:"princess_bread_reverse",n:"공주: '아, 크림빵은 매일 먹는데요?'",tag:"공주 정정",princess:true,chainOnly:true,
+    txt:"어제 빵을 던진 상인들이 오늘은 다시 빵을 사기 위해 줄을 섰습니다. 공주는 왜 시장이 시끄러운지 모르겠다는 표정입니다.",
+    p:{bread:1.82,wheat:1.42,spice:1.18},d:{bread:2.05,wheat:1.55,spice:1.3},shock:{bread:1.18,wheat:1.10},days:1},
+
+  {id:"princess_potion_skin",n:"공주: '피부 관리에는 포션 세 병이 기본이죠'",tag:"공주 발언",princess:true,
+    txt:"전국 귀족가에서 회복 포션을 화장수처럼 주문하기 시작했습니다. 약초상들은 의학적 근거를 묻지 않기로 했습니다.",
+    p:{potion:1.72,herb:1.38,holy:.92},d:{potion:2.1,herb:1.55,holy:.82},shock:{potion:1.16,herb:1.08},days:1,
+    follow:{id:"princess_potion_reverse",chance:.9}},
+  {id:"princess_potion_reverse",n:"공주: '포션 냄새가 싫어서 성수로 바꿨어요'",tag:"공주 정정",princess:true,chainOnly:true,
+    txt:"어제 포션을 사재기한 귀족들이 오늘 전부 성수를 찾습니다. 연금술사들은 공주의 피부가 아니라 자기 혈압을 걱정합니다.",
+    p:{potion:.54,herb:.78,holy:1.75},d:{potion:.35,herb:.7,holy:2.05},shock:{potion:.82,holy:1.16},days:1},
+
+  {id:"princess_gem_old",n:"공주: '보석은 좀... 어머니 세대 취향 아닌가요?'",tag:"공주 발언",princess:true,
+    txt:"귀족 영애들이 보석함을 급히 처분하고 마법석 장식을 찾기 시작했습니다. 보석상 조합장이 인터뷰 도중 말을 잃었습니다.",
+    p:{gem:.52,mana:1.68,spice:1.08},d:{gem:.32,mana:1.95,spice:1.15},shock:{gem:.82,mana:1.15},days:1,
+    follow:{id:"princess_gem_reverse",chance:.93}},
+  {id:"princess_gem_reverse",n:"공주: '근데 파란 보석은 정말 예쁘던데요?'",tag:"공주 정정",princess:true,chainOnly:true,
+    txt:"파란 보석만 찾는 손님이 몰렸지만 시장은 색상 구분 데이터가 없습니다. 결국 모든 보석 가격이 미쳐 날뛰고 있습니다.",
+    p:{gem:1.88,mana:.62},d:{gem:2.15,mana:.5},shock:{gem:1.18,mana:.86},days:1},
+
+  {id:"princess_weapon_scary",n:"공주: '검이랑 갑옷은 너무 무섭고 칙칙해요'",tag:"공주 발언",princess:true,
+    txt:"귀족 호위대가 체면 때문에 주문을 취소하기 시작했습니다. 전쟁터의 기사들은 인터뷰를 보고 한동안 아무 말도 하지 않았습니다.",
+    p:{sword:.56,armor:.60,gem:1.12},d:{sword:.38,armor:.4,gem:1.2},shock:{sword:.84,armor:.85},days:1,
+    follow:{id:"princess_weapon_reverse",chance:.88}},
+  {id:"princess_weapon_reverse",n:"공주, 갑옷 입고 화보 촬영",tag:"공주 정정",princess:true,chainOnly:true,
+    txt:"오늘 공개된 왕실 화보에서 공주가 갑옷과 장식검을 들었습니다. 어제 주문을 취소한 귀족들이 두 배 가격으로 다시 주문합니다.",
+    p:{sword:1.58,armor:1.86,gem:1.22},d:{sword:1.8,armor:2.1,gem:1.35},shock:{sword:1.12,armor:1.18},days:1},
+
+  {id:"princess_beer_smell",n:"공주: '맥주는 냄새 때문에 정말 싫어요'",tag:"공주 발언",princess:true,
+    txt:"왕도 선술집들이 갑자기 와인 흉내를 내기 시작했습니다. 맥주 재고는 창고를 가득 채우고 양조장 주인들의 표정도 같이 썩어갑니다.",
+    p:{beer:.48,wheat:.84,spice:1.16},d:{beer:.3,wheat:.72,spice:1.28},shock:{beer:.80},days:1,
+    follow:{id:"princess_beer_reverse",chance:.94}},
+  {id:"princess_beer_reverse",n:"공주: '과일맥주는 맛있던데요? 그건 맥주 아닌가요?'",tag:"공주 정정",princess:true,chainOnly:true,
+    txt:"어제 맥주를 버린 상인들이 오늘 빈 통까지 주워 담고 있습니다. 양조장들은 왕궁에 감사 편지 대신 청구서를 보내고 싶어합니다.",
+    p:{beer:1.92,wheat:1.28,spice:1.25},d:{beer:2.2,wheat:1.4,spice:1.38},shock:{beer:1.20,wheat:1.07},days:1},
+
+  {id:"princess_wyvern_pretty",n:"공주: '와이번 비늘은 반짝반짝해서 너무 예뻐요'",tag:"공주 발언",princess:true,
+    txt:"귀족 상단들이 와이번 비늘 장비를 장식품처럼 사들이기 시작했습니다. 용병 길드는 산을 향해 뛰어가는 상인들을 말리지 않습니다.",
+    p:{armor:1.12,gem:1.08},d:{armor:1.2,gem:1.15},
+    gearP:{monster_wyvern_armor:1.72,monster_ogre_horn:1.18,monster_hide_cover:1.12},days:1,
+    follow:{id:"princess_wyvern_reverse",chance:.9}},
+  {id:"princess_wyvern_reverse",n:"공주: '가까이서 보니까 비늘이 좀 징그러워요'",tag:"공주 정정",princess:true,chainOnly:true,
+    txt:"어제 와이번 갑옷을 웃돈 주고 산 귀족들이 오늘 중고 매물을 쏟아냅니다. 철산 장비공방에서 욕설이 들린다는 신고가 접수됐습니다.",
+    p:{armor:.88},d:{armor:.8},
+    gearP:{monster_wyvern_armor:.48,monster_ogre_horn:.82,monster_hide_cover:.9},days:1},
+
+  {id:"princess_magic_compass",n:"공주: '마족 나침반 하나 갖고 싶어요. 신기하잖아요?'",tag:"공주 발언",princess:true,
+    txt:"귀족 탐험대들이 마족 추적 나침반을 경쟁적으로 주문합니다. 아무도 실제로 마족을 추적할 생각은 없습니다.",
+    p:{mana:1.18,gem:1.12},d:{mana:1.28,gem:1.2},
+    gearP:{monster_demon_compass:1.85,monster_slime_cooler:1.18},days:1,
+    follow:{id:"princess_magic_reverse",chance:.86}},
+  {id:"princess_magic_reverse",n:"공주: '나침반 바늘이 계속 움직여서 무서워요'",tag:"공주 정정",princess:true,chainOnly:true,
+    txt:"왕실이 주문을 취소하자 귀족 탐험대도 일제히 따라 취소했습니다. 마족보다 공주의 취향 변화가 더 추적하기 어렵습니다.",
+    p:{mana:.9},d:{mana:.82},
+    gearP:{monster_demon_compass:.50,monster_slime_cooler:.84},days:1},
+
   {id:"prosperity_trade_fair",phases:["prosperity"],n:"왕국 대교역 박람회 개막",tag:"호황",txt:"전국 상인이 왕도로 몰려들었습니다. 보석과 향신료는 진열하자마자 팔립니다.",p:{gem:1.12,spice:1.14},d:{gem:1.45,spice:1.5},days:2},
   {id:"prosperity_tourism",phases:["prosperity"],n:"용사 성지순례 관광상품 대박",tag:"유행",txt:"아직 마왕도 안 나타났는데 용사 생가 관광상품이 먼저 대박 났습니다.",p:{beer:1.14,bread:1.08,gem:1.08},d:{beer:1.4,bread:1.25,gem:1.2},days:2},
   {id:"tension_tariff",phases:["tension"],n:"국경 통행세 임시 인상",tag:"국경",txt:"왕실이 국경 수비 비용을 이유로 통행세를 올렸습니다. 상인들은 '임시'라는 말을 믿지 않습니다.",p:{spice:1.12,gem:1.1,iron:1.08},d:{iron:1.18},days:2},
@@ -1091,6 +1151,17 @@ function marketRumor(){
   ];
   return pick(x.high ? high : low);
 }
+function applyEventMarketShock(event){
+  if(!event?.shock) return;
+  for(const [item,factor] of Object.entries(event.shock)){
+    if(!ITEMS[item] || ITEMS[item].craftOnly) continue;
+    const old = S.marketIndex[item] || 1;
+    const next = Math.max(.45,Math.min(1.95,old * factor));
+    S.marketIndex[item] = next;
+    S.marketMomentum[item] = Math.max(-.18,Math.min(.18,(S.marketMomentum[item] || 0) + (factor - 1) * .45));
+    S.marketChange[item] = (next / old - 1) * 100;
+  }
+}
 function newIntel(){
   let source = null;
   const phase = currentWorldPhase();
@@ -1110,6 +1181,14 @@ function newIntel(){
     source = EVENT_BY_ID[S.pendingFollow.id] || null;
   }
 
+  if(!source && !S.active.some(e => e.princess)){
+    const princessChance = phase.id === "merchant_age" ? .20 : S.day >= 50 ? .16 : .12;
+    if(Math.random() < princessChance){
+      const princessPool = EVENTS.filter(e => e.princess && !e.chainOnly && (!e.phases || e.phases.includes(phase.id)));
+      if(princessPool.length) source = pick(princessPool);
+    }
+  }
+
   if(!source){
     const pool = EVENTS.filter(e => {
       if(e.chainOnly) return false;
@@ -1124,6 +1203,10 @@ function newIntel(){
   e.remaining = e.days;
   S.today = e;
   S.active.push(e);
+  if(e.princess){
+    S.princessStatements = (S.princessStatements || 0) + 1;
+    applyEventMarketShock(e);
+  }
   S.pendingFollow = e.phaseIntro ? previousFollow : (e.follow || null);
   S.extra = null;
 }
@@ -1207,6 +1290,7 @@ function normalizeSavedState(state){
     state.mercEquipment = {};
     state.mercGearMigrationV2 = true;
   }
+  state.princessStatements ??= 0;
   state.lastMercEventDay ??= 0;
   state.banditSuppressionUntil ??= 0;
   state.gameOver ??= false;
@@ -1296,7 +1380,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -1508,10 +1592,17 @@ function mercGearPhaseRate(item){
   if(phase === "merchant_age") return 1.08;
   return 1;
 }
+function mercGearEventRate(item){
+  let rate = 1;
+  for(const e of S.active){
+    if(e.gearP?.[item] != null) rate *= e.gearP[item];
+  }
+  return rate;
+}
 function mercGearSalePrice(item){
   const it = ITEMS[item];
   if(!it?.monsterGear) return 0;
-  return Math.max(1,Math.round(it.base * mercGearCityRate(S.city) * mercGearPhaseRate(item)));
+  return Math.max(1,Math.round(it.base * mercGearCityRate(S.city) * mercGearPhaseRate(item) * mercGearEventRate(item)));
 }
 function craftMercGear(id){
   if(checkBlocked()) return;
@@ -2268,7 +2359,10 @@ function render(){
   $("#worldPhaseBox").innerHTML =
     '<div><b>' + worldPhase.name + '</b><span>' + worldPhase.start + (worldPhase.end >= 99999 ? '일차 이후' : ' ~ ' + worldPhase.end + '일차') + '</span></div>' +
     '<p>' + worldPhase.desc + '</p>' +
-    '<div class="phase-effects"><span>이동 추가비 ' + fmt(worldPhase.travel) + '</span><span>위험도 ' + (worldPhase.risk ? '+' + Math.round(worldPhase.risk*100) + '%' : '기본') + '</span><span>시장 변동성 ×' + worldPhase.volatility.toFixed(2) + '</span></div>';
+    '<div class="phase-effects"><span>이동 추가비 ' + fmt(worldPhase.travel) + '</span><span>위험도 ' + (worldPhase.risk ? '+' + Math.round(worldPhase.risk*100) + '%' : '기본') + '</span><span>시장 변동성 ×' + worldPhase.volatility.toFixed(2) + '</span>' +
+      (S.active.some(e => e.princess) ? '<span class="princess-alert">👑 공주 발언 충격 진행 중</span>' : '') +
+      (S.princessStatements ? '<span>공주 발언 누적 ' + S.princessStatements + '회</span>' : '') +
+    '</div>';
   $("#capBar").style.width = Math.min(100,used()/S.capacity*100) + "%";
 
   const inv = Object.keys(ITEMS).filter(k => S.inv[k] > 0).map(k => ITEMS[k].name + " " + S.inv[k] + "개");
@@ -2371,10 +2465,11 @@ function renderMarket(){
   }
 
   const marketAvg = avgGlobal / Math.max(1,keys.length);
-  $("#marketMood").textContent =
-    marketAvg > 2.5 ? "왕국 전체 강세" :
-    marketAvg < -2.5 ? "왕국 전체 약세" :
-    avgDemand / Math.max(1,keys.length) > 1.15 ? "수요 과열" : "왕국 시장 혼조";
+  $("#marketMood").textContent = S.active.some(e => e.princess)
+    ? "👑 공주 발언으로 시장 패닉"
+    : marketAvg > 2.5 ? "왕국 전체 강세"
+    : marketAvg < -2.5 ? "왕국 전체 약세"
+    : avgDemand / Math.max(1,keys.length) > 1.15 ? "수요 과열" : "왕국 시장 혼조";
 }
 function renderOrders(){
   const box = $("#orders");
