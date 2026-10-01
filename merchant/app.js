@@ -1549,38 +1549,20 @@ function normalizeSavedState(state){
   state.mercExpeditions = Array.isArray(state.mercExpeditions) ? state.mercExpeditions : [];
   state.mercRoster = Array.isArray(state.mercRoster) ? state.mercRoster : [];
 
-  if(!state.mercRoster.length && (state.mercCompleted > 0 || state.mercTotalHires > 0 || state.mercExpeditions.length)){
-    const legacyJobs = state.mercExpeditions.slice(0,MERC_MAX_ROSTER);
-    if(legacyJobs.length){
-      legacyJobs.forEach((job,i) => {
-        const def = MERC_EXPEDITIONS.find(x => x.id === job.id);
-        const gradeIndex = Math.max(def?.minGrade || 0,
-          state.mercCompleted >= 12 ? 3 : state.mercCompleted >= 7 ? 2 : state.mercCompleted >= 3 ? 1 : 0);
-        state.mercRoster.push({
-          id:"legacy_" + i + "_" + (state.day || 1),
-          name:["구면 용병대","오래된 동료","베테랑 용병"][i] || "구면 용병",
-          gradeIndex,
-          xp:gradeIndex === 0 ? Math.min(5,state.mercCompleted) : MERC_GRADES[Math.max(0,gradeIndex-1)].promoteXp || 0,
-          missions:Math.max(0,Math.floor(state.mercCompleted / legacyJobs.length)),
-          busyUntil:job.returnDay || 0,
-          expeditionId:job.id || null,
-          hiredDay:Math.max(1,(state.day || 1)-10)
-        });
-      });
-    }else{
-      const gradeIndex = state.mercCompleted >= 12 ? 3 : state.mercCompleted >= 7 ? 2 : state.mercCompleted >= 3 ? 1 : 0;
-      state.mercRoster.push({
-        id:"legacy_veteran_" + (state.day || 1),
-        name:"구면 용병대",
-        gradeIndex,
-        xp:gradeIndex === 0 ? Math.min(5,state.mercCompleted) : MERC_GRADES[Math.max(0,gradeIndex-1)].promoteXp || 0,
-        missions:state.mercCompleted,
-        busyUntil:0,
-        expeditionId:null,
-        hiredDay:1
-      });
-    }
+  // 구버전 일회성 용병단은 새 육성 시스템에서 자동 용병으로 생성하지 않습니다.
+  // 새 시스템은 반드시 플레이어가 직접 첫 E급 용병을 고용하면서 시작합니다.
+  if(!state.mercRosterMigrationV3){
+    state.mercRoster = state.mercRoster.filter(m => {
+      const legacyId = String(m?.id || "").startsWith("legacy_");
+      const legacyName = ["구면 용병대","오래된 동료","베테랑 용병","구면 용병"].some(n =>
+        String(m?.name || "").startsWith(n)
+      );
+      return !(legacyId || legacyName);
+    });
+    state.mercExpeditions = [];
+    state.mercRosterMigrationV3 = true;
   }
+
   for(const m of state.mercRoster){
     m.gradeIndex = Math.max(0,Math.min(MERC_GRADES.length-1,Number(m.gradeIndex || 0)));
     m.xp = Math.max(0,Number(m.xp || 0));
@@ -1698,7 +1680,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
