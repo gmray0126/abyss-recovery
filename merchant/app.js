@@ -992,13 +992,13 @@ function holdingCost(){
   return Math.round(carriedMarketValue() * .003 + listedMarketValue() * .006);
 }
 function fee(){
-  const t = (S.capacity - 20) / 5;
+  const t = Math.max(0,(S.capacity - 20) / 10);
   const caravan = Math.round(10 + t * 8 + t * t * 2);
   return caravan + merchantTier().overhead + holdingCost();
 }
 function upgradeCost(){
-  const t = (S.capacity - 20) / 5;
-  return Math.round(240 * Math.pow(1.48, t));
+  const t = Math.max(0,(S.capacity - 20) / 10);
+  return Math.round(220 * Math.pow(1.42, t));
 }
 function used(){
   return Object.keys(ITEMS).reduce((a,k) => a + S.inv[k] * ITEMS[k].w, 0);
@@ -1971,8 +1971,8 @@ function upgrade(){
   const cost = upgradeCost();
   if(S.cash <= cost){ toast("확장하면 바로 파산합니다."); return; }
   S.cash -= cost;
-  S.capacity += 5;
-  toast("상단을 확장했습니다. 운송 한도 " + S.capacity + ".");
+  S.capacity += 10;
+  toast("마차를 확장했습니다. 운송 한도 +10 · 현재 " + S.capacity + ".");
   render();
 }
 function oneDayService(key,cost,label){
@@ -2463,9 +2463,9 @@ function render(){
   const inv = Object.keys(ITEMS).filter(k => S.inv[k] > 0).map(k => ITEMS[k].name + " " + S.inv[k] + "개");
   $("#inventoryText").textContent = inv.length ? inv.join(" · ") : "재고 없음";
 
-  $("#upgradeBtn").textContent = "운송 한도 +5 · " + fmt(upgradeCost());
+  $("#upgradeBtn").textContent = "운송 한도 +10 · " + fmt(upgradeCost());
   const old = S.capacity;
-  S.capacity += 5;
+  S.capacity += 10;
   $("#upgradeHint").textContent = "확장 후 유지비 " + fmt(fee()) + "/일";
   S.capacity = old;
   const tier = merchantTier();
