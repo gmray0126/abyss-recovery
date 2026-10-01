@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>오픈톡 RPG 일반 던전 프로토타입</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0a0d12;color:#eef2f7;font-family:system-ui,"Noto Sans KR",sans-serif}.wrap{max-width:1040px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;gap:16px;align-items:end}h1{margin:0;font-size:38px}.muted{color:#94a0b2}.card{background:#141922;border:1px solid #293342;border-radius:16px;padding:16px;margin-top:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row{display:flex;justify-content:space-between;gap:12px;align-items:center}.bar{height:11px;background:#090c10;border:1px solid #303a48;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#64b8ff}.hp i{background:#e56758}.energy{display:flex;gap:5px}.energy i{width:13px;height:13px;border-radius:50%;background:#303a48}.energy i.on{background:#67baff;box-shadow:0 0 8px #4ca7ff}.enemies{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-top:12px}.enemy{border:1px solid #303b4a;background:#0f141c;border-radius:12px;padding:12px;cursor:pointer}.enemy.target{outline:2px solid #f3b35d}.enemy.dead{opacity:.35;cursor:default}.actions{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.actions button,.camp button,.start,.nav{border:1px solid #354255;background:#101720;color:#eef2f7;border-radius:11px;padding:11px 8px;cursor:pointer}.actions button:disabled,.camp button:disabled{opacity:.35;cursor:not-allowed}.start{width:100%;background:#f0a64b;color:#1a1208;border:0;font-weight:900}.camp{display:none}.camp.show{display:block}.camp .buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.loot{font-family:monospace;background:#0b0f15;border-radius:10px;padding:10px}.log{height:240px;overflow:auto;background:#090d12;border:1px solid #252e39;border-radius:10px;padding:10px;font-family:monospace;font-size:12px}.log p{margin:0;padding:5px;border-bottom:1px solid #171d25}.pill{display:inline-block;border:1px solid #394759;border-radius:999px;padding:4px 8px;font-size:12px;margin-right:5px}.big{font-size:25px;font-weight:900}.danger{color:#ff9f8b}.good{color:#84df9b}@media(max-width:760px){.grid{grid-template-columns:1fr}.actions{grid-template-columns:repeat(2,1fr)}.camp .buttons{grid-template-columns:1fr}.top{display:block}h1{font-size:32px}}
+</style>
+</head>
+<body><main class="wrap">
+<div class="top"><div><div class="muted">KAKAO OPENCHAT RPG · DUNGEON V0.1</div><h1>일반 던전</h1><p class="muted">전투 결과가 다음 전투로 이어집니다. 죽으면 이번 원정에서 얻은 전리품은 전부 잃습니다.</p></div><a class="nav" href="./index.html">레이드로</a></div>
+
+<section class="card">
+<div class="row"><div><b>잊힌 숲</b> <span class="pill" id="depth">깊이 1</span></div><span id="state">준비</span></div>
+<div class="grid">
+<div><div class="row"><small>HP</small><span id="hptext">-</span></div><div class="bar hp"><i id="hp"></i></div><p>속도 <b id="spd">120</b> · 방어력 <b id="def">22</b></p><div class="energy" id="energy"></div></div>
+<div><div class="row"><small>원정 전리품</small><span id="lootValue">0G</span></div><div class="loot" id="loot">없음</div><p class="muted">후퇴하면 저장 / 사망하면 전부 소실</p></div>
+</div>
+<button class="start" id="start">던전 입장</button>
+</section>
+
+<section class="card" id="battleCard">
+<div class="row"><b>조우</b><span id="turnInfo">-</span></div>
+<div class="enemies" id="enemies"></div>
+<div class="actions" style="margin-top:12px">
+<button data-a="basic"><b>기본공격</b><br><small>에너지 +1</small></button>
+<button data-a="skill" data-s="0"><b>강베기</b><br><small>에너지 2</small></button>
+<button data-a="skill" data-s="1"><b>연속베기</b><br><small>에너지 3</small></button>
+<button data-a="skill" data-s="2"><b>분쇄</b><br><small>에너지 3</small></button>
+<button data-a="evade"><b>회피</b><br><small>실패 시 에너지 -1</small></button>
+<button data-a="defend"><b>방어</b><br><small>에너지 1 / 방어력만큼 차단</small></button>
+</div>
+</section>
+
+<section class="card camp" id="camp">
+<div class="row"><div><b>전투 종료</b><p class="muted" id="campText"></p></div><span class="pill" id="scoutText">다음 조우 미확인</span></div>
+<div class="buttons">
+<button id="advance"><b>계속 전진</b><br><small>현재 HP·에너지 유지</small></button>
+<button id="scout"><b>탐사</b><br><small>에너지 2 → 다음 몬스터 공개</small></button>
+<button id="retreat"><b>후퇴</b><br><small>전리품 전부 확보</small></button>
+</div>
+</section>
+
+<section class="grid">
+<div class="card"><b>보관함</b><div class="loot" id="bank" style="margin-top:10px">0G</div></div>
+<div class="card"><b>전투 로그</b><div class="log" id="log" style="margin-top:10px"></div></div>
+</section>
+</main>
+<script>
+const pool=[
+{id:"slime",name:"푸른 슬라임",hp:72,atk:18,def:5,spd:78,gold:[16,28],mat:"점액"},
+{id:"goblin",name:"고블린",hp:96,atk:24,def:9,spd:104,gold:[24,38],mat:"고블린 가죽"},
+{id:"wolf",name:"굶주린 늑대",hp:82,atk:22,def:6,spd:132,gold:[20,34],mat:"늑대 이빨"},
+{id:"orc",name:"오크 전사",hp:148,atk:34,def:17,spd:76,gold:[38,58],mat:"오크 철편"},
+{id:"shaman",name:"숲 주술사",hp:92,atk:29,def:8,spd:96,gold:[34,52],mat:"주술 가루"}
+];
+const skills=[
+{name:"강베기",cost:2,mul:1.9,hits:1,pen:0},
+{name:"연속베기",cost:3,mul:.72,hits:3,pen:0},
+{name:"분쇄",cost:3,mul:1.55,hits:1,pen:.35}
+];
+let G=null;
+const $=q=>document.querySelector(q);
+const logBox=$("#log");
+function rng(){G.seed=(G.seed*1664525+1013904223)>>>0;return G.seed/4294967296}
+function ri(a,b){return Math.floor(a+rng()*(b-a+1))}
+function log(t){G.logs.push(t);if(G.logs.length>80)G.logs.shift()}
+function encounterFor(depth){
+ let max=depth<3?2:depth<6?3:4, min=depth<4?1:2, count=ri(min,max), arr=[];
+ for(let i=0;i<count;i++){let base=pool[ri(0,Math.min(pool.length-1,1+Math.floor(depth/2)))];let scale=1+(depth-1)*.07;arr.push({...base,uid:i,hp:Math.round(base.hp*scale),maxhp:Math.round(base.hp*scale),atk:Math.round(base.atk*scale),def:Math.round(base.def*scale),spd:Math.round(base.spd*(1+Math.min(.25,(depth-1)*.015))),g:0})}
+ return arr;
+}
+function begin(){G={depth:1,hp:360,maxhp:360,e:2,em:6,atk:52,def:22,spd:120,pg:0,enemies:[],target:0,wait:false,guard:false,evade:false,nextMul:1,loot:{gold:0,mats:{}},bank:loadBank(),pending:null,scouted:false,seed:(Date.now()>>>0),logs:[],dead:false};startEncounter(encounterFor(1));log("🌲 잊힌 숲에 입장했습니다.");render()}
+function startEncounter(arr){G.enemies=arr;G.pg=0;G.guard=false;G.evade=false;G.wait=false;G.target=arr.findIndex(e=>e.hp>0);G.pending=null;G.scouted=false;log("⚠ 몬스터 "+arr.length+"마리 조우!");advanceTime()}
+function living(){return G.enemies.filter(e=>e.hp>0)}
+function nextTarget(){let i=G.enemies.findIndex(e=>e.hp>0);G.target=i>=0?i:0}
+function ready(){G.pg=100;G.e=Math.min(G.em,G.e+1);G.wait=true;log("⚡ 행동게이지 100 → 에너지 +1 ("+G.e+"/"+G.em+")")}
+function advanceTime(){
+ while(!G.dead && !G.wait){
+   if(living().length===0){victory();return}
+   if(G.pg>=100-1e-9){ready();return}
+   let times=[(100-G.pg)/G.spd];
+   for(const e of living())times.push((100-e.g)/e.spd);
+   let dt=Math.min(...times);
+   G.pg+=G.spd*dt; for(const e of living())e.g+=e.spd*dt;
+   const acting=living().filter(e=>e.g>=100-1e-9).sort((a,b)=>b.spd-a.spd);
+   if(G.pg>=100-1e-9){ready();return}
+   if(acting.length){for(const e of acting){if(G.dead)break;e.g-=100;enemyAct(e)}}
+ }
+}
+function enemyAct(e){
+ let raw=e.atk;
+ if(G.evade){let ok=rng()<.56;if(ok){G.nextMul=2;log("🌪 "+e.name+" 공격 회피 성공! 다음 공격 ×2")}else{G.e=Math.max(0,G.e-1);G.hp-=raw;log("💥 회피 실패: "+e.name+"에게 "+raw+" 피해 / 에너지 -1")}G.evade=false}
+ else if(G.guard){let d=Math.max(0,raw-G.def);G.hp-=d;log("🛡 "+e.name+" 공격 "+G.def+" 차단 → "+d+" 피해");G.guard=false}
+ else{G.hp-=raw;log("👹 "+e.name+" 공격 → "+raw+" 피해")}
+ if(G.hp<=0)die();
+}
+function damageTarget(mul,hits,pen){
+ let e=G.enemies[G.target];if(!e||e.hp<=0){nextTarget();e=G.enemies[G.target]}if(!e)return 0;
+ let total=0;for(let i=0;i<hits;i++){let d=G.atk*mul*(100/(100+e.def*(1-pen)*4))*(.93+rng()*.14);if(rng()<.08)d*=1.55;total+=Math.max(1,Math.round(d))}
+ total=Math.round(total*G.nextMul);G.nextMul=1;e.hp-=total;if(e.hp<0)e.hp=0;
+ log("⚔ "+e.name+"에게 "+total+" 피해"+(e.hp<=0?" — 처치!":""));
+ if(e.hp<=0){reward(e);nextTarget()}
+ return total;
+}
+function reward(e){let g=ri(e.gold[0],e.gold[1]);G.loot.gold+=g;G.loot.mats[e.mat]=(G.loot.mats[e.mat]||0)+1;log("🎒 "+g+"G, "+e.mat+" 획득 (원정 가방)")}
+function act(a,s){
+ if(!G||!G.wait||G.dead)return;
+ if(a==="defend"&&G.e<1)return;
+ if(a==="evade"&&G.e<1)return;
+ if(a==="skill"&&G.e<skills[s].cost)return;
+ G.wait=false;G.pg=Math.max(0,G.pg-100);
+ if(a==="basic"){damageTarget(1,1,0);G.e=Math.min(G.em,G.e+1)}
+ else if(a==="skill"){let sk=skills[s];G.e-=sk.cost;damageTarget(sk.mul,sk.hits,sk.pen)}
+ else if(a==="defend"){G.e-=1;G.guard=true;log("🛡 방어 자세 / 에너지 -1")}
+ else if(a==="evade"){G.evade=true;log("🌪 회피 준비 / 실패 시 에너지 -1")}
+ advanceTime();render();
+}
+function victory(){
+ let defeated=G.enemies.length;log("✅ 조우 승리. HP "+G.hp+"/"+G.maxhp+", 에너지 "+G.e+"/"+G.em+" 유지");
+ G.pending=encounterFor(G.depth+1);G.scouted=false;G.wait=false;$("#camp").classList.add("show");$("#campText").textContent=defeated+"마리 처치. 더 깊이 갈수록 몬스터 수와 보상이 증가합니다.";render();
+}
+function scout(){
+ if(!G||!G.pending||G.e<2)return;G.e-=2;G.scouted=true;
+ $("#scoutText").textContent=G.pending.length+"마리 · "+G.pending.map(e=>e.name).join(", ");
+ log("🔎 탐사 성공: 다음 조우 "+G.pending.length+"마리 확인 / 에너지 -2");render();
+}
+function goNext(){if(!G||!G.pending)return;G.depth++;let n=G.pending;$("#camp").classList.remove("show");startEncounter(n);render()}
+function retreat(){
+ if(!G)return;G.bank.gold+=G.loot.gold;for(const [k,v] of Object.entries(G.loot.mats))G.bank.mats[k]=(G.bank.mats[k]||0)+v;saveBank();
+ log("🏕 후퇴 성공! 이번 원정 전리품을 모두 보관했습니다.");G.loot={gold:0,mats:{}};G.dead=true;G.wait=false;$("#camp").classList.remove("show");render()
+}
+function die(){
+ G.hp=0;G.dead=true;G.wait=false;let lost=G.loot.gold;G.loot={gold:0,mats:{}};$("#camp").classList.remove("show");log("☠ 전투 불능! 이번 던전에서 얻은 전리품 전부 소실 ("+lost+"G 포함)");render()
+}
+function loadBank(){try{return JSON.parse(localStorage.getItem("kakaoRpgDungeonBank"))||{gold:0,mats:{}}}catch{return{gold:0,mats:{}}}}
+function saveBank(){localStorage.setItem("kakaoRpgDungeonBank",JSON.stringify(G.bank))}
+function fmtLoot(x){let parts=[x.gold+"G"];for(const [k,v] of Object.entries(x.mats))parts.push(k+" x"+v);return parts.join(" · ")}
+function render(){
+ if(!G){document.querySelectorAll(".actions button").forEach(b=>b.disabled=true);return}
+ $("#depth").textContent="깊이 "+G.depth;$("#hp").style.width=Math.max(0,G.hp/G.maxhp*100)+"%";$("#hptext").textContent=G.hp+" / "+G.maxhp;$("#energy").innerHTML=Array.from({length:G.em},(_,i)=>'<i class="'+(i<G.e?'on':'')+'"></i>').join("");$("#loot").textContent=fmtLoot(G.loot);$("#lootValue").textContent=G.loot.gold+"G";$("#bank").textContent=fmtLoot(G.bank);$("#state").textContent=G.dead?"원정 종료":G.wait?"내 턴":"진행";$("#turnInfo").textContent=G.wait?"행동 선택":"행동게이지 진행";
+ $("#enemies").innerHTML=G.enemies.map((e,i)=>'<div class="enemy '+(i===G.target?'target ':'')+(e.hp<=0?'dead':'')+'" data-i="'+i+'"><b>'+e.name+'</b><div class="row"><small>HP</small><span>'+e.hp+' / '+e.maxhp+'</span></div><div class="bar hp"><i style="width:'+Math.max(0,e.hp/e.maxhp*100)+'%"></i></div><p class="muted">SPD '+e.spd+' · DEF '+e.def+'</p></div>').join("");
+ document.querySelectorAll(".enemy").forEach(el=>el.onclick=()=>{let i=+el.dataset.i;if(G.enemies[i].hp>0){G.target=i;render()}});
+ document.querySelectorAll(".actions button").forEach(b=>{b.disabled=!G.wait||G.dead;let a=b.dataset.a;if(a==="skill"&&G.wait&&G.e<skills[+b.dataset.s].cost)b.disabled=true;if((a==="defend"||a==="evade")&&G.wait&&G.e<1)b.disabled=true});
+ $("#scout").disabled=!G.pending||G.e<2||G.scouted;$("#advance").disabled=!G.pending;$("#scoutText").textContent=G.scouted?(G.pending.length+"마리 · "+G.pending.map(e=>e.name).join(", ")):"다음 조우 미확인";
+ logBox.innerHTML=G.logs.map(x=>"<p>"+x+"</p>").join("");logBox.scrollTop=logBox.scrollHeight;
+}
+document.querySelectorAll(".actions button").forEach(b=>b.onclick=()=>act(b.dataset.a,+b.dataset.s));
+$("#start").onclick=begin;$("#scout").onclick=scout;$("#advance").onclick=goNext;$("#retreat").onclick=retreat;render();
+</script></body></html>
