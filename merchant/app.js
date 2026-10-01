@@ -650,37 +650,77 @@ function renderRoutes(){
 
 function finalTrialRequirement(){
   const pool = ["bread","wheat","iron","sword","armor","herb","potion","gem","spice","mana","beer","holy"];
-  const item = pick(pool);
-  const base = ITEMS[item].base;
-  const qty = base >= 150
-    ? 1 + Math.floor(Math.random()*2)
-    : base >= 90
-      ? 2 + Math.floor(Math.random()*2)
-      : base >= 40
-        ? 2 + Math.floor(Math.random()*3)
-        : 3 + Math.floor(Math.random()*4);
-  return {day:S.day,item,qty,delivered:false};
+  const stage = Math.max(0,Math.min(ENDING_GOALS.trialDays-1,S.day - S.finalTrial.startDay));
+  const targetWeights = [20,24,28,32,36,40,44];
+  const targetWeight = targetWeights[stage] || 44;
+  const count = stage < 2 ? 2 : 3;
+  const shuffled = [...pool].sort(() => Math.random() - .5);
+  const selected = shuffled.slice(0,count);
+  const lines = [];
+  let remainingWeight = targetWeight;
+
+  selected.forEach((item,i) => {
+    const w = ITEMS[item].w;
+    const slots = count - i;
+    let qty;
+    if(i === count - 1){
+      qty = Math.max(1,Math.ceil(remainingWeight / w));
+    }else{
+      const idealShare = remainingWeight / slots;
+      const jitter = .88 + Math.random() * .24;
+      qty = Math.max(1,Math.round((idealShare * jitter) / w));
+    }
+    const weight = qty * w;
+    lines.push({item,qty});
+    remainingWeight = Math.max(1,remainingWeight - weight);
+  });
+
+  const totalWeight = lines.reduce((a,x) => a + ITEMS[x.item].w * x.qty,0);
+  return {
+    day:S.day,
+    stage:stage + 1,
+    targetWeight,
+    totalWeight,
+    lines,
+    delivered:false
+  };
+}
+function normalizeFinalTrialRequirement(req){
+  if(!req) return req;
+  if(!Array.isArray(req.lines) && req.item){
+    req.lines = [{item:req.item,qty:req.qty || 1}];
+  }
+  if(Array.isArray(req.lines)){
+    req.totalWeight = req.lines.reduce((a,x) => a + (ITEMS[x.item]?.w || 0) * x.qty,0);
+  }
+  return req;
 }
 function ensureFinalTrialRequirement(){
   if(!S.finalTrial || S.finalTrial.finished || S.day >= S.finalTrial.endDay) return;
   if(!S.finalTrial.requirement || S.finalTrial.requirement.day !== S.day){
     S.finalTrial.requirement = finalTrialRequirement();
+  }else{
+    normalizeFinalTrialRequirement(S.finalTrial.requirement);
   }
 }
 function deliverFinalTrialGoods(){
   if(checkBlocked()) return;
   if(!S.finalTrial || S.finalTrial.finished || S.day >= S.finalTrial.endDay) return;
   ensureFinalTrialRequirement();
-  const req = S.finalTrial.requirement;
+  const req = normalizeFinalTrialRequirement(S.finalTrial.requirement);
   if(req.delivered){ toast("오늘의 최종심사 납품은 이미 완료했습니다."); return; }
-  if((S.inv[req.item] || 0) < req.qty){
-    toast(ITEMS[req.item].name + " " + req.qty + "개가 필요합니다.");
+
+  const missing = req.lines.filter(x => (S.inv[x.item] || 0) < x.qty);
+  if(missing.length){
+    toast("납품 부족: " + missing.map(x => ITEMS[x.item].name + " " + x.qty + "개 필요").join(", "));
     return;
   }
-  S.inv[req.item] -= req.qty;
+
+  for(const x of req.lines) S.inv[x.item] -= x.qty;
   req.delivered = true;
   S.finalTrial.delivered = (S.finalTrial.delivered || 0) + 1;
-  toast("최종심사 납품 완료: " + ITEMS[req.item].name + " " + req.qty + "개 · " + S.finalTrial.delivered + " / " + ENDING_GOALS.trialDays);
+  const deliveredText = req.lines.map(x => ITEMS[x.item].name + " " + x.qty + "개").join(" · ");
+  toast("대량 납품 완료: " + deliveredText + " · " + S.finalTrial.delivered + " / " + ENDING_GOALS.trialDays);
   render();
 }
 function showEnding(route){
@@ -788,16 +828,26 @@ function renderEndingGoal(){
     ensureFinalTrialRequirement();
     const passed = Math.max(0,S.finalTrial.delivered || 0);
     const remain = Math.max(0,ENDING_GOALS.trialDays - passed);
-    const req = S.finalTrial.requirement;
-    const have = req ? (S.inv[req.item] || 0) : 0;
-    const canDeliver = req && !req.delivered && have >= req.qty;
+    const req = normalizeFinalTrialRequirement(S.finalTrial.requirement);
+    const canDeliver = req && !req.delivered && req.lines.every(x => (S.inv[x.item] || 0) >= x.qty);
     const daily = req
       ? '<div class="final-delivery' + (req.delivered ? ' delivered' : '') + '">' +
-          '<span class="label">오늘의 최종심사 납품</span>' +
-          '<div class="final-delivery-main"><b>' + ITEMS[req.item].name + ' ' + req.qty + '개</b><span>보유 ' + have + '개</span></div>' +
+          '<div class="final-trial-title"><span class="label">오늘의 최종심사 대량 납품</span><b>' + req.stage + '일차 시험</b></div>' +
+          '<div class="final-load-summary"><span>요구 화물중량 <b>' + req.totalWeight + '</b></span><span>현재 마차 <b>' + S.capacity + '</b></span>' +
+            '<span class="' + (S.capacity >= req.totalWeight ? 'load-ok' : 'load-danger') + '">' +
+            (S.capacity >= req.totalWeight ? '운송 가능' : '마차 확장 권장') + '</span></div>' +
+          '<div class="final-delivery-list">' +
+            req.lines.map(x => {
+              const have = S.inv[x.item] || 0;
+              const enough = have >= x.qty;
+              return '<div class="final-delivery-row"><div><b>' + ITEMS[x.item].name + ' ' + x.qty + '개</b>' +
+                '<span>무게 ' + (ITEMS[x.item].w * x.qty) + '</span></div>' +
+                '<span class="' + (enough ? 'enough' : 'short') + '">보유 ' + have + '개</span></div>';
+            }).join("") +
+          '</div>' +
           (req.delivered
-            ? '<p class="final-delivered">✓ 오늘 납품 완료 · 이제 하루를 마감해도 됩니다.</p>'
-            : '<button id="trialDeliveryBtn" class="primary wide"' + (canDeliver ? '' : ' disabled') + '>오늘 물품 납품</button>') +
+            ? '<p class="final-delivered">✓ 오늘 대량 납품 완료 · 이제 하루를 마감해도 됩니다.</p>'
+            : '<button id="trialDeliveryBtn" class="primary wide"' + (canDeliver ? '' : ' disabled') + '>오늘 물품 전부 납품</button>') +
         '</div>'
       : '';
 
@@ -806,7 +856,7 @@ function renderEndingGoal(){
       '<div class="ending-progress"><i style="width:' + Math.min(100,(passed/ENDING_GOALS.trialDays)*100) + '%"></i></div>' +
       '<p class="mini muted">' + passed + ' / ' + ENDING_GOALS.trialDays + '일 납품 완료 · 앞으로 ' + remain + '회</p>' +
       daily +
-      '<p class="mini final-warning">⚠ 오늘 물품을 납품하지 않은 채 하루를 마감하면 즉시 「평범한 상인」 배드엔딩입니다.</p>';
+      '<p class="mini final-warning">⚠ 최종심사는 날이 갈수록 요구 화물량이 커집니다. 마차를 충분히 확장해두지 않았다면 후반 납품이 매우 어려워집니다. 오늘 물품을 납품하지 않은 채 하루를 마감하면 즉시 「평범한 상인」 배드엔딩입니다.</p>';
     return;
   }
 
@@ -821,7 +871,7 @@ function renderEndingGoal(){
     '<div class="ending-progress"><i style="width:' + wealthPct + '%"></i></div>' +
     '<div class="goal-row"><span>의뢰 성공</span><b>' + S.completedContracts + ' / ' + ENDING_GOALS.contracts + '회</b></div>' +
     '<div class="ending-progress"><i style="width:' + contractPct + '%"></i></div>' +
-    '<p class="mini muted">세 조건을 모두 달성하면 매일 납품해야 하는 마지막 7일 심사가 시작됩니다.</p>';
+    '<p class="mini muted">세 조건을 모두 달성하면 대량 납품 7일 심사가 시작됩니다. 후반에는 화물중량 40 이상을 요구하므로 마차 확장이 중요합니다.</p>';
 }
 
 function merchantTier(){
@@ -1131,6 +1181,12 @@ function normalizeSavedState(state){
       state.finalTrial.delivered = Math.min(ENDING_GOALS.trialDays,elapsed);
     }
     state.finalTrial.requirement ??= null;
+    if(state.finalTrial.requirement?.item && !Array.isArray(state.finalTrial.requirement.lines)){
+      state.finalTrial.requirement.lines = [{
+        item:state.finalTrial.requirement.item,
+        qty:state.finalTrial.requirement.qty || 1
+      }];
+    }
     state.finalTrial.finished ??= false;
   }
   state.mercFriendship ??= 0;
