@@ -543,3 +543,21 @@ body.modal-open{overflow:hidden}
   .merc-dispatch-row{grid-template-columns:1fr}
   .merc-expedition-head span{text-align:left}
 }
+
+.faction-head{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid #dfd1bd;margin-top:12px;padding-top:11px}
+.faction-head>b{font-size:13px}
+.faction-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:8px}
+.faction-card{border:1px solid #ded0bb;background:#fffaf2;border-radius:10px;padding:8px}
+.faction-card>div:first-child{display:flex;justify-content:space-between;gap:8px;font-size:11px}
+.faction-card strong{color:#7b5832}
+.faction-meter{height:5px;background:#eadfce;border-radius:999px;overflow:hidden;margin:5px 0}
+.faction-meter i{display:block;height:100%;background:#9b7449}
+.faction-card p{font-size:10px;font-weight:900;color:#315f49;margin:4px 0}
+.faction-card>span{display:block;font-size:9px;line-height:1.35;color:#77685a}
+.rumor-trust{display:inline-block;font-size:9px;border:1px solid #d9c8ae;background:#fff8ec;border-radius:999px;padding:3px 7px;color:#705d49;margin-bottom:4px}
+.rumor-trust b{color:#315f49}
+.craft-meta s,.gear-recipe s{opacity:.55;margin-left:2px}
+@media(max-width:680px){
+  .faction-head{align-items:flex-start;flex-direction:column}
+  .faction-grid{grid-template-columns:1fr}
+}
