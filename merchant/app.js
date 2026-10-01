@@ -1507,7 +1507,10 @@ function normalizeSavedState(state){
   state.marketChange ||= {};
   state.tradePressure ||= {};
 
-  state.craftUsed ??= 0;
+  state.craftUsed = (state.craftUsed && typeof state.craftUsed === "object" && !Array.isArray(state.craftUsed))
+    ? state.craftUsed
+    : {};
+  for(const recipe of CRAFT_RECIPES) state.craftUsed[recipe.id] ??= 0;
   state.completedContracts ??= 0;
   state.contractDoneDay ??= 0;
   state.choiceResolvedDay ??= 0;
@@ -1680,7 +1683,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:0,marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -1690,6 +1693,7 @@ function init(){
     S.marketMomentum[k] = 0;
     S.marketChange[k] = 0;
   }
+  for(const recipe of CRAFT_RECIPES) S.craftUsed[recipe.id] = 0;
   for(const c of Object.keys(CITIES)){
     S.tradePressure[c] = {};
     for(const k of Object.keys(ITEMS)) S.tradePressure[c][k] = 0;
@@ -2304,7 +2308,8 @@ function advanceDay(dest){
   S.insurance = false;
   S.guard = false;
   S.informant = false;
-  S.craftUsed = 0;
+  S.craftUsed = {};
+  for(const recipe of CRAFT_RECIPES) S.craftUsed[recipe.id] = 0;
   S.travelOpen = false;
 
   updateTradePressure();
@@ -2652,7 +2657,8 @@ function craftRecipe(id,qty=1){
   const r = CRAFT_RECIPES.find(x => x.id === id);
   if(!r || r.city !== S.city){ toast("이 도시에서는 해당 물품을 제작할 수 없습니다."); return; }
 
-  const left = Math.max(0,CRAFT_LIMIT - S.craftUsed);
+  const usedToday = S.craftUsed?.[r.id] || 0;
+  const left = Math.max(0,CRAFT_LIMIT - usedToday);
   const inputMax = Object.entries(r.inputs).reduce((m,[k,n]) => Math.min(m,Math.floor(S.inv[k]/n)),Infinity);
   const cashMax = r.fee > 0 ? Math.floor((S.cash - 1)/r.fee) : 999;
   const inputWeight = Object.entries(r.inputs).reduce((a,[k,n]) => a + ITEMS[k].w*n,0);
@@ -2671,7 +2677,7 @@ function craftRecipe(id,qty=1){
   for(const [k,n] of Object.entries(r.inputs)) S.inv[k] -= n*qty;
   for(const [k,n] of Object.entries(r.output)) S.inv[k] += n*qty;
   S.cash -= r.fee*qty;
-  S.craftUsed += qty;
+  S.craftUsed[r.id] = (S.craftUsed[r.id] || 0) + qty;
   addRoute("artisan",r.stage === 2 ? 1 : .2);
 
   const made = Object.entries(r.output).map(([k,n]) => ITEMS[k].name + " " + (n*qty) + "개").join(", ");
@@ -2681,7 +2687,7 @@ function craftRecipe(id,qty=1){
 function renderCrafting(){
   const box = $("#craftBox");
   const badge = $("#craftUsesBadge");
-  badge.textContent = "제작 " + S.craftUsed + " / " + CRAFT_LIMIT;
+  badge.textContent = "품목별 하루 최대 " + CRAFT_LIMIT + "회";
 
   const recipes = CRAFT_RECIPES.filter(r => r.city === S.city);
   if(!recipes.length){
@@ -2689,8 +2695,9 @@ function renderCrafting(){
     return;
   }
 
-  const left = Math.max(0,CRAFT_LIMIT - S.craftUsed);
   box.innerHTML = '<div class="craft-grid">' + recipes.map(r => {
+    const usedToday = S.craftUsed?.[r.id] || 0;
+    const left = Math.max(0,CRAFT_LIMIT - usedToday);
     const inputText = Object.entries(r.inputs).map(([k,n]) => ITEMS[k].name + " " + n + "개").join(" + ");
     const outputText = Object.entries(r.output).map(([k,n]) => ITEMS[k].name + " " + n + "개").join(" + ");
     const materialMarket = Object.entries(r.inputs).reduce((a,[k,n]) => a + S.prices[k]*n,0);
@@ -2698,12 +2705,12 @@ function renderCrafting(){
     const canMaterial = Object.entries(r.inputs).every(([k,n]) => S.inv[k] >= n);
     const can = left > 0 && canMaterial && S.cash > r.fee;
     return '<article class="craft-card">' +
-      '<div class="craft-titleline"><span class="craft-shop">' + r.shop + '</span><span class="craft-stage">' + r.stage + '단계</span></div>' +
+      '<div class="craft-titleline"><span class="craft-shop">' + r.shop + '</span><span class="craft-stage">' + r.stage + '단계 · ' + usedToday + ' / ' + CRAFT_LIMIT + '회</span></div>' +
       '<h3>' + r.name + '</h3>' +
       '<p><b>' + inputText + '</b> → <b>' + outputText + '</b></p>' +
-      '<div class="craft-meta"><span>공임 ' + fmt(r.fee) + '</span><span>재료 시세 ' + fmt(materialMarket) + '</span><span>완제품 시세 ' + fmt(outputMarket) + '</span></div>' +
+      '<div class="craft-meta"><span>공임 ' + fmt(r.fee) + '</span><span>재료 시세 ' + fmt(materialMarket) + '</span><span>완제품 시세 ' + fmt(outputMarket) + '</span><span>오늘 남은 제작 ' + left + '회</span></div>' +
       '<div class="craft-actions"><button data-craft="' + r.id + '" data-q="1"' + (can ? "" : " disabled") + '>1회 제작</button>' +
-      '<button data-craft="' + r.id + '" data-q="999"' + (can ? "" : " disabled") + '>가능한 만큼</button></div>' +
+      '<button data-craft="' + r.id + '" data-q="999"' + (can ? "" : " disabled") + '>이 품목 가능한 만큼</button></div>' +
       '</article>';
   }).join("") + '</div>';
 }
