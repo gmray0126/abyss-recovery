@@ -445,3 +445,5 @@ body.modal-open{overflow:hidden}
   .gear-sell-row>div:last-child{width:100%}
   .gear-sell-row button{flex:1}
 }
+
+.princess-alert{color:#922b55!important;border-color:#d8a2b9!important;background:#fff0f6!important;font-weight:900}
