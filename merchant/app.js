@@ -1696,6 +1696,7 @@ function normalizeSavedState(state){
     m.missions = Math.max(0,Number(m.missions || 0));
     m.busyUntil = Math.max(0,Number(m.busyUntil || 0));
     m.expeditionId ??= null;
+    m.assignment = ["warehouse","escort"].includes(m.assignment) ? m.assignment : null;
     m.hiredDay ??= 1;
   }
   state.mercRoster = state.mercRoster.slice(0,MERC_MAX_ROSTER);
@@ -1961,6 +1962,47 @@ function mercGrade(merc){
 function mercIsBusy(merc){
   return !!(merc?.expeditionId && merc.busyUntil > S.day);
 }
+function mercIsAssigned(merc){
+  return ["warehouse","escort"].includes(merc?.assignment);
+}
+function mercIsAvailable(merc){
+  return !!merc && !mercIsBusy(merc) && !mercIsAssigned(merc);
+}
+function assignedMerc(role){
+  return (S.mercRoster || []).find(m => m.assignment === role && !mercIsBusy(m)) || null;
+}
+function mercProtectionChance(merc,role){
+  if(!merc) return 0;
+  const warehouse = [.25,.40,.55,.70,.85,.97];
+  const escort = [.20,.35,.50,.65,.82,.95];
+  const table = role === "warehouse" ? warehouse : escort;
+  return table[Math.max(0,Math.min(table.length-1,merc.gradeIndex || 0))] || 0;
+}
+function assignMercenary(id,role){
+  if(checkBlocked()) return;
+  const merc = mercById(id);
+  if(!merc || !["warehouse","escort"].includes(role)) return;
+  if(mercIsBusy(merc)){ toast("원정 중인 용병은 배치할 수 없습니다."); return; }
+
+  const current = assignedMerc(role);
+  if(current && current.id !== merc.id){
+    current.assignment = null;
+  }
+  merc.assignment = role;
+  addMercLog(merc.name + " 배치 · " + (role === "warehouse" ? "창고 경비" : "상단 호위"));
+  toast(merc.name + "을 " + (role === "warehouse" ? "창고 경비" : "상단 호위") + "에 배치했습니다.");
+  render();
+}
+function unassignMercenary(id){
+  if(checkBlocked()) return;
+  const merc = mercById(id);
+  if(!merc || !merc.assignment) return;
+  const old = merc.assignment;
+  merc.assignment = null;
+  addMercLog(merc.name + " 배치 해제");
+  toast(merc.name + "의 " + (old === "warehouse" ? "창고 경비" : "상단 호위") + " 배치를 해제했습니다.");
+  render();
+}
 function mercRecruitCost(){
   return Math.round(MERC_RECRUIT_COST * (1 - mercDiscountRate()));
 }
@@ -2001,6 +2043,7 @@ function recruitMercenary(){
     missions:0,
     busyUntil:0,
     expeditionId:null,
+    assignment:null,
     hiredDay:S.day
   };
   S.cash -= cost;
@@ -2016,6 +2059,7 @@ function investMercenary(id){
   const merc = mercById(id);
   if(!merc) return;
   if(mercIsBusy(merc)){ toast("원정 중인 용병은 훈련시킬 수 없습니다."); return; }
+  if(mercIsAssigned(merc)){ toast("경비 임무 중인 용병은 먼저 배치를 해제해야 합니다."); return; }
   const cost = mercTrainingCost(merc);
   if(S.cash <= cost){ toast("훈련 투자비 " + fmt(cost) + "가 부족합니다."); return; }
 
@@ -2032,6 +2076,7 @@ function promoteMercenary(id){
   const merc = mercById(id);
   if(!merc) return;
   if(mercIsBusy(merc)){ toast("원정 중에는 승급 심사를 받을 수 없습니다."); return; }
+  if(mercIsAssigned(merc)){ toast("경비 임무 중에는 승급 심사를 받을 수 없습니다."); return; }
   const grade = mercGrade(merc);
   if(merc.gradeIndex >= MERC_GRADES.length-1){ toast("이미 S급 최고 등급입니다."); return; }
   if(merc.xp < grade.promoteXp){
@@ -2054,6 +2099,7 @@ function dispatchMercenary(mercId,expeditionId){
   const def = MERC_EXPEDITIONS.find(x => x.id === expeditionId);
   if(!merc || !def) return;
   if(mercIsBusy(merc)){ toast("이미 원정 중인 용병입니다."); return; }
+  if(mercIsAssigned(merc)){ toast("경비 임무 중인 용병은 먼저 배치를 해제해야 합니다."); return; }
   if(S.day < def.unlockDay){ toast(def.unlockDay + "일차부터 가능한 원정입니다."); return; }
   if(merc.gradeIndex < def.minGrade){
     toast(def.name + "은 " + MERC_GRADES[def.minGrade].name + " 이상이 필요합니다.");
@@ -2222,7 +2268,7 @@ function renderMercenaries(){
   const materials = ["beast_hide","slime_core","ogre_horn","wyvern_scale","demon_claw"];
   const roster = S.mercRoster || [];
   const active = roster.filter(mercIsBusy);
-  const idle = roster.filter(m => !mercIsBusy(m));
+  const idle = roster.filter(mercIsAvailable);
   const discount = Math.round(mercDiscountRate() * 100);
 
   $("#mercFriendBadge").textContent = "길드 우호도 " + S.mercFriendship + (discount ? " · 비용 -" + discount + "%" : "");
@@ -2247,6 +2293,7 @@ function renderMercenaries(){
     ? '<div class="merc-roster-grid">' + roster.map(merc => {
         const grade = mercGrade(merc);
         const busy = mercIsBusy(merc);
+        const assigned = mercIsAssigned(merc);
         const def = busy ? MERC_EXPEDITIONS.find(x => x.id === merc.expeditionId) : null;
         const nextXp = grade.promoteXp;
         const xpPct = nextXp ? Math.min(100,(merc.xp / nextXp)*100) : 100;
@@ -2259,15 +2306,25 @@ function renderMercenaries(){
             : '승급 ' + merc.xp + ' / ' + nextXp + ' XP';
         return '<article class="merc-unit-card grade-' + grade.id + '">' +
           '<div class="merc-unit-head"><div><span class="merc-grade">' + grade.name + '</span><h3>' + merc.name + '</h3></div>' +
-            '<span class="' + (busy ? 'merc-busy' : 'merc-idle') + '">' + (busy ? '원정 중' : '대기') + '</span></div>' +
+            '<span class="' + (busy ? 'merc-busy' : assigned ? 'merc-assigned' : 'merc-idle') + '">' +
+              (busy ? '원정 중' : assigned ? (merc.assignment === 'warehouse' ? '창고 경비' : '상단 호위') : '대기') +
+            '</span></div>' +
           '<div class="merc-xp-row"><span>경험 ' + merc.xp + (nextXp ? ' / ' + nextXp : '') + '</span><span>완료 원정 ' + merc.missions + '회</span></div>' +
           '<div class="merc-xp-bar"><i style="width:' + xpPct + '%"></i></div>' +
           (busy
             ? '<div class="merc-mission-now"><b>' + (def?.name || '원정') + '</b><span>' + Math.max(0,merc.busyUntil-S.day) + '일 남음 · ' + merc.busyUntil + '일차 귀환</span></div>'
-            : '<p class="merc-grade-bonus">소재 획득 ×' + grade.loot.toFixed(2) + (grade.rare ? ' · 희귀확률 +' + Math.round(grade.rare*100) + '%' : '') + (grade.dayCut ? ' · 원정 -' + grade.dayCut + '일' : '') + '</p>') +
+            : assigned
+              ? '<div class="merc-defense-now"><b>' + (merc.assignment === 'warehouse' ? '창고 경비 배치' : '상단 호위 배치') + '</b><span>방어 성공률 ' + Math.round(mercProtectionChance(merc,merc.assignment)*100) + '%</span></div>'
+              : '<p class="merc-grade-bonus">소재 획득 ×' + grade.loot.toFixed(2) + (grade.rare ? ' · 희귀확률 +' + Math.round(grade.rare*100) + '%' : '') + (grade.dayCut ? ' · 원정 -' + grade.dayCut + '일' : '') + '</p>') +
           '<div class="merc-unit-actions">' +
-            '<button data-merc-invest="' + merc.id + '"' + (busy || S.cash <= trainCost ? ' disabled' : '') + '>훈련 투자 ' + fmt(trainCost) + '</button>' +
-            '<button data-merc-promote="' + merc.id + '"' + (busy || !promoteReady || nextXp == null || S.cash <= (grade.promoteCost || 0) ? ' disabled' : '') + '>' + promoteText + '</button>' +
+            '<button data-merc-invest="' + merc.id + '"' + (busy || assigned || S.cash <= trainCost ? ' disabled' : '') + '>훈련 투자 ' + fmt(trainCost) + '</button>' +
+            '<button data-merc-promote="' + merc.id + '"' + (busy || assigned || !promoteReady || nextXp == null || S.cash <= (grade.promoteCost || 0) ? ' disabled' : '') + '>' + promoteText + '</button>' +
+          '</div>' +
+          '<div class="merc-defense-actions">' +
+            (assigned
+              ? '<button data-merc-unassign="' + merc.id + '">경비 배치 해제</button>'
+              : '<button data-merc-assign="' + merc.id + '" data-role="warehouse"' + (busy ? ' disabled' : '') + '>창고 경비 ' + Math.round(mercProtectionChance(merc,"warehouse")*100) + '%</button>' +
+                '<button data-merc-assign="' + merc.id + '" data-role="escort"' + (busy ? ' disabled' : '') + '>상단 호위 ' + Math.round(mercProtectionChance(merc,"escort")*100) + '%</button>') +
           '</div>' +
         '</article>';
       }).join("") + '</div>'
@@ -2344,10 +2401,14 @@ function trouble(){
       toast("용병단이 미리 소탕한 덕분에 이 지역에서는 도적이 모습을 보이지 않습니다.");
       return;
     }
-    if(S.guard){
-      toast(isWarActive() && S.city === "capital"
-        ? "전시 혼란을 틈탄 도적을 호위대가 막았습니다."
-        : "도적이 나타났지만 호위대가 막았습니다.");
+    const escort = assignedMerc("escort");
+    const escortChance = mercProtectionChance(escort,"escort");
+    if(escort && Math.random() < escortChance){
+      escort.xp += 1;
+      changeMercFriendship(1);
+      addMercLog(escort.name + " 호위 성공 · 도적 습격 차단 · 경험 +1");
+      toast(escort.name + "이 상단을 호위하다 도적 습격을 막았습니다! (" + Math.round(escortChance*100) + "%)");
+      return;
     }else{
       const patrolChance = S.mercFriendship >= 75 ? .45 : S.mercFriendship >= 50 ? .25 : 0;
       if(patrolChance && Math.random() < patrolChance){
@@ -2364,8 +2425,14 @@ function trouble(){
       }
     }
   }else{
-    if(S.insurance){
-      toast("쥐떼가 창고를 습격했지만 보험사가 보상했습니다.");
+    const warehouse = assignedMerc("warehouse");
+    const warehouseChance = mercProtectionChance(warehouse,"warehouse");
+    if(warehouse && Math.random() < warehouseChance){
+      warehouse.xp += 1;
+      changeMercFriendship(1);
+      addMercLog(warehouse.name + " 창고 방어 성공 · 재고 피해 차단 · 경험 +1");
+      toast(warehouse.name + "이 창고 습격을 막아 재고 피해를 막았습니다! (" + Math.round(warehouseChance*100) + "%)");
+      return;
     }else{
       const candidates = Object.keys(ITEMS).filter(k => S.inv[k] > 0);
       if(candidates.length){
@@ -2433,8 +2500,6 @@ function advanceDay(dest){
   S.city = dest;
   S.active.forEach(e => e.remaining--);
   S.active = S.active.filter(e => e.remaining > 0);
-  S.insurance = false;
-  S.guard = false;
   S.informant = false;
   S.craftUsed = {};
   for(const recipe of CRAFT_RECIPES) S.craftUsed[recipe.id] = 0;
@@ -3036,11 +3101,19 @@ function render(){
     " · 재고 보관비 " + fmt(holdingCost()) + "/일" +
     " · 다음 길드 결산 " + nextSettlementDay() + "일차 (현재 예상 " + fmt(projectedSettlement()) + ")";
 
-  $("#insuranceBtn").textContent = S.insurance ? "창고 보험 활성" : "창고 보험 40G";
-  $("#guardBtn").textContent = S.guard ? "호위대 활성" : "호위대 50G";
+  const warehouseGuard = assignedMerc("warehouse");
+  const escortGuard = assignedMerc("escort");
+  $("#warehouseGuardStatus").innerHTML = warehouseGuard
+    ? '<b>창고 경비</b><span>' + warehouseGuard.name + ' · ' + mercGrade(warehouseGuard).name + ' · 방어 ' + Math.round(mercProtectionChance(warehouseGuard,"warehouse")*100) + '%</span>'
+    : '<b>창고 경비</b><span>미배치</span>';
+  $("#escortGuardStatus").innerHTML = escortGuard
+    ? '<b>상단 호위</b><span>' + escortGuard.name + ' · ' + mercGrade(escortGuard).name + ' · 방어 ' + Math.round(mercProtectionChance(escortGuard,"escort")*100) + '%</span>'
+    : '<b>상단 호위</b><span>미배치</span>';
   $("#serviceText").textContent = capitalIsSafe()
-    ? "왕도 평시: 도적·쥐 피해 없음 · 대신 판매 수수료 " + Math.round(CITIES.capital.fee * 100) + "%"
-    : ([S.insurance && "보험",S.guard && "호위대"].filter(Boolean).join(" · ") || (isWarActive() && S.city === "capital" ? "전시 중: 왕도 안전 효과 해제" : "오늘은 무방비입니다."));
+    ? "왕도 평시에는 기본적으로 안전하지만, 배치한 용병은 그대로 경비 임무를 유지합니다."
+    : (!warehouseGuard && !escortGuard
+      ? "현재 무방비입니다. 용병대에서 대기 용병을 경비에 배치하세요."
+      : "경비 배치는 유지되며 원정·훈련·승급 전에는 배치를 해제해야 합니다.");
 
   const newsList = (Array.isArray(S.todayNews) && S.todayNews.length)
     ? S.todayNews
@@ -3086,8 +3159,7 @@ function render(){
     }
   }else{
     $("#upgradeBtn").disabled = S.travelOpen;
-    $("#insuranceBtn").disabled = S.insurance || S.travelOpen || capitalIsSafe();
-    $("#guardBtn").disabled = S.guard || S.travelOpen || capitalIsSafe();
+
   }
   saveGame();
 }
@@ -3282,6 +3354,12 @@ $("#mercenaryBox").addEventListener("click",(e) => {
   const promote = e.target.closest("[data-merc-promote]");
   if(promote){ promoteMercenary(promote.dataset.mercPromote); return; }
 
+  const assign = e.target.closest("[data-merc-assign]");
+  if(assign){ assignMercenary(assign.dataset.mercAssign,assign.dataset.role); return; }
+
+  const unassign = e.target.closest("[data-merc-unassign]");
+  if(unassign){ unassignMercenary(unassign.dataset.mercUnassign); return; }
+
   const dispatch = e.target.closest("[data-merc-dispatch]");
   if(dispatch){
     const expeditionId = dispatch.dataset.mercDispatch;
@@ -3335,8 +3413,6 @@ $("#travelCancel").addEventListener("click",() => {
 });
 $("#informantBtn").addEventListener("click",useInformant);
 $("#upgradeBtn").addEventListener("click",upgrade);
-$("#insuranceBtn").addEventListener("click",() => oneDayService("insurance",40,"창고 보험"));
-$("#guardBtn").addEventListener("click",() => oneDayService("guard",50,"호위대"));
 $("#restart").addEventListener("click",() => startNewGame(false));
 $("#endingContinue").addEventListener("click",continueEndlessMode);
 $("#endingRestart").addEventListener("click",() => startNewGame(false));
