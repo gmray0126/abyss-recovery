@@ -577,4 +577,9 @@ body.modal-open{overflow:hidden}
 .promotion-panel .panel-head{margin-bottom:7px}
 .promotion-panel .panel-head h2{margin-bottom:2px}
 .promotion-panel .panel-head p{font-size:10px;color:#6b5c4f;margin:0;line-height:1.4}
-.promotion-panel #promotionBtn:not(:disabled){border-color:#c9a96d;background:#fff3d8}
+
+.merc-defense-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+.merc-promotion-now{border-color:#d9bd7d;background:#fff7df}
+.merc-promotion-now b{color:#7a5a1f}
+.merc-upkeep-line{display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#77685a;margin-top:6px;padding-top:5px;border-top:1px dashed #e5d8c6}
+.merc-upkeep-line b{color:#8a4f2d}
