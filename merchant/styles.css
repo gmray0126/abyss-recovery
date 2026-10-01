@@ -427,3 +427,21 @@ body.modal-open{overflow:hidden}
 .final-delivery-row>div span{font-size:9px;color:#77695b}
 .final-delivery-row>.enough{font-size:10px;color:#28623d;font-weight:900}
 .final-delivery-row>.short{font-size:10px;color:#a12f27;font-weight:900}
+
+.gear-value{font-size:10px;color:#765326;margin-top:6px}
+.gear-value b{font-size:11px}
+.gear-buyer{border-top:1px solid #dfd1bd;margin-top:12px;padding-top:11px}
+.gear-buyer-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}
+.gear-buyer-head>b{font-size:13px}
+.gear-buyer-head>span{font-size:10px;color:#786a5c}
+.gear-sell-row{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid #ddceb9;background:#fffaf1;border-radius:10px;padding:8px;margin-top:6px}
+.gear-sell-row>div:first-child{display:flex;flex-direction:column;gap:2px}
+.gear-sell-row>div:first-child b{font-size:12px}
+.gear-sell-row>div:first-child span{font-size:10px;color:#756658}
+.gear-sell-row>div:last-child{display:flex;gap:5px}
+.gear-sell-row button{padding:6px 8px;font-size:10px}
+@media(max-width:680px){
+  .gear-buyer-head,.gear-sell-row{align-items:flex-start;flex-direction:column}
+  .gear-sell-row>div:last-child{width:100%}
+  .gear-sell-row button{flex:1}
+}
