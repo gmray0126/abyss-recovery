@@ -689,9 +689,98 @@ function checkContractDeadline(){
   return true;
 }
 
+const FACTIONS = {
+  merchant:{name:"상인조합",desc:"정규 거래와 길드 의뢰를 통해 신뢰를 쌓습니다."},
+  kingdom:{name:"왕국",desc:"왕실·경비대·제도권과 협력하면 올라갑니다."},
+  antihero:{name:"반용사 연합",desc:"용사와 공주의 시장교란에 맞서는 상인들의 연합입니다."},
+  underworld:{name:"지하 유통망",desc:"암시장·밀수조직과 거래할수록 깊게 연결됩니다."},
+  artisan:{name:"장인조합",desc:"공방을 이용하고 장인 편을 들수록 인정받습니다."},
+  mercenary:{name:"용병 길드",desc:"용병 고용·훈련·원정과 지원 이벤트로 우호도가 올라갑니다."}
+};
+function factionRep(key){
+  if(key === "mercenary") return Math.max(0,Math.min(100,S.mercFriendship || 0));
+  return Math.max(0,Math.min(100,S.factionRep?.[key] || 0));
+}
+function changeFactionRep(key,amount){
+  if(key === "mercenary"){
+    changeMercFriendship(amount);
+    return;
+  }
+  S.factionRep ||= {merchant:0,kingdom:0,antihero:0,underworld:0,artisan:0};
+  S.factionRep[key] = Math.max(0,Math.min(100,(S.factionRep[key] || 0) + Number(amount || 0)));
+}
+function repTierValue(rep,low,mid,high){
+  if(rep >= 80) return high;
+  if(rep >= 50) return mid;
+  if(rep >= 20) return low;
+  return 0;
+}
+function merchantRumorAccuracy(){
+  const rep = factionRep("merchant");
+  if(rep >= 100) return 1;
+  if(rep >= 80) return .97;
+  if(rep >= 50) return .85;
+  if(rep >= 20) return .70;
+  return .55;
+}
+function kingdomCommissionDiscount(){
+  return repTierValue(factionRep("kingdom"),.01,.02,.03);
+}
+function effectiveCityFee(city){
+  return Math.max(.01,(CITIES[city]?.fee || 0) - kingdomCommissionDiscount());
+}
+function antiheroShockProtection(){
+  return repTierValue(factionRep("antihero"),.12,.25,.40);
+}
+function protectPublicShock(factor,event){
+  if(factor >= 1) return factor;
+  const publicShock = !!(event?.princess || String(event?.id || "").startsWith("hero_") || event?.tag === "용사 발언");
+  if(!publicShock) return factor;
+  const protect = antiheroShockProtection();
+  return 1 - (1 - factor) * (1 - protect);
+}
+function underworldPayoutRate(banned=false){
+  const bonus = repTierValue(factionRep("underworld"),.02,.05,.08);
+  return Math.min(banned ? .99 : .92,(banned ? .95 : .80) + bonus);
+}
+function underworldCatchChance(banned=false){
+  const rep = factionRep("underworld");
+  if(banned){
+    if(rep >= 80) return .12;
+    if(rep >= 50) return .16;
+    if(rep >= 20) return .19;
+    return .22;
+  }
+  if(rep >= 80) return .02;
+  if(rep >= 50) return .03;
+  if(rep >= 20) return .04;
+  return .05;
+}
+function artisanFeeDiscount(){
+  return repTierValue(factionRep("artisan"),.05,.10,.20);
+}
+function artisanFee(base){
+  return Math.max(0,Math.round(base * (1 - artisanFeeDiscount())));
+}
+function craftLimitForRecipe(){
+  return CRAFT_LIMIT + (factionRep("artisan") >= 80 ? 1 : 0);
+}
+function factionBenefitText(key){
+  const rep = factionRep(key);
+  if(key === "merchant") return "상인 소문 정확도 " + Math.round(merchantRumorAccuracy()*100) + "%";
+  if(key === "kingdom") return "정규시장 판매 수수료 -" + Math.round(kingdomCommissionDiscount()*100) + "%p";
+  if(key === "antihero") return "공주·용사발 가격 하락 " + Math.round(antiheroShockProtection()*100) + "% 완충";
+  if(key === "underworld") return "암시장 매입 " + Math.round(underworldPayoutRate(false)*100) + "% · 단속 " + Math.round(underworldCatchChance(false)*100) + "%";
+  if(key === "artisan") return "제작 공임 -" + Math.round(artisanFeeDiscount()*100) + "% · 품목당 " + craftLimitForRecipe() + "회";
+  if(key === "mercenary") return "용병 비용 -" + Math.round(mercDiscountRate()*100) + "% · 고우호 지원 이벤트";
+  return "";
+}
 function addRoute(route,amount){
   if(!S.routeScores || !ROUTES[route]) return;
   S.routeScores[route] = Math.max(0,(S.routeScores[route] || 0) + amount);
+  const factionMap = {royal:"kingdom",antihero:"antihero",underworld:"underworld",artisan:"artisan"};
+  const repScale = route === "artisan" ? 1.8 : route === "underworld" ? 3 : 3.5;
+  if(factionMap[route]) changeFactionRep(factionMap[route],amount * repScale);
 }
 function routeScoreText(v){
   return Number.isInteger(v) ? String(v) : v.toFixed(1);
@@ -751,7 +840,17 @@ function renderRoutes(){
         '<div class="route-story-progress">스토리 ' + story + ' / 4 · ' + nextText + '</div>' +
         '<p>' + r.desc + '</p></article>';
     }).join("") + '</div>' +
-    '<p class="mini muted route-note">점수만 올려서는 특수 엔딩이 열리지 않습니다. 해당 세력의 전용 스토리 4장을 끝까지 겪어야 하며, 조건이 애매하면 노멀 엔딩으로 진행됩니다.</p>';
+    '<p class="mini muted route-note">점수만 올려서는 특수 엔딩이 열리지 않습니다. 해당 세력의 전용 스토리 4장을 끝까지 겪어야 하며, 조건이 애매하면 노멀 엔딩으로 진행됩니다.</p>' +
+    '<div class="faction-head"><b>세력 우호도 & 실질 혜택</b><span class="mini muted">20 · 50 · 80에서 혜택이 크게 강화됩니다.</span></div>' +
+    '<div class="faction-grid">' +
+      Object.keys(FACTIONS).map(key => {
+        const f = FACTIONS[key];
+        const rep = factionRep(key);
+        return '<article class="faction-card"><div><b>' + f.name + '</b><strong>' + Math.round(rep) + ' / 100</strong></div>' +
+          '<div class="faction-meter"><i style="width:' + rep + '%"></i></div>' +
+          '<p>' + factionBenefitText(key) + '</p><span>' + f.desc + '</span></article>';
+      }).join("") +
+    '</div>';
 }
 
 function finalTrialRequirement(){
@@ -1049,12 +1148,12 @@ function effectMult(city,item,key){
     if(e.cities && !e.cities.includes(city)) continue;
     const direct = (e[key] || {})[item];
     if(direct != null){
-      m *= direct;
+      m *= protectPublicShock(direct,e);
       continue;
     }
     const links = CRAFT_LINKS[item];
     if(links){
-      const vals = links.map(k => ((e[key] || {})[k] || 1));
+      const vals = links.map(k => protectPublicShock(((e[key] || {})[k] || 1),e));
       m *= Math.sqrt(vals[0] * vals[1]);
     }
   }
@@ -1279,7 +1378,7 @@ function checkBlocked(){
   if(S.travelOpen){ toast("내일 이동지를 먼저 골라주세요."); return true; }
   return false;
 }
-function marketRumor(){
+function marketRumor(forceAccurate=false){
   const choices = [];
   for(const c of Object.keys(CITIES)){
     for(const k of tradableKeys()){
@@ -1289,7 +1388,18 @@ function marketRumor(){
     }
   }
   if(!choices.length) return "오늘은 딱히 미친 가격이 없다는군.";
-  const x = pick(choices);
+
+  const accurate = forceAccurate || Math.random() < merchantRumorAccuracy();
+  let x;
+  if(accurate){
+    x = pick(choices);
+  }else{
+    const c = pick(Object.keys(CITIES));
+    const k = pick(tradableKeys());
+    const actual = S.world[c][k] / ITEMS[k].base;
+    x = {c,k,high:actual < 1,ratio:actual,falseRumor:true};
+  }
+
   const city = CITIES[x.c].name;
   const item = ITEMS[x.k].name;
   const high = [
@@ -1304,11 +1414,13 @@ function marketRumor(){
   ];
   return pick(x.high ? high : low);
 }
+
 function applyEventMarketShock(event){
   if(!event?.shock) return;
   for(const [item,factor] of Object.entries(event.shock)){
     if(!ITEMS[item] || ITEMS[item].craftOnly) continue;
     const old = S.marketIndex[item] || 1;
+    factor = protectPublicShock(factor,event);
     const next = Math.max(.45,Math.min(1.95,old * factor));
     S.marketIndex[item] = next;
     S.marketMomentum[item] = Math.max(-.18,Math.min(.18,(S.marketMomentum[item] || 0) + (factor - 1) * .45));
@@ -1530,6 +1642,18 @@ function normalizeSavedState(state){
     state.routeScores[key] ??= 0;
     state.routeStory[key] ??= 0;
   }
+  if(!state.factionRep){
+    state.factionRep = {
+      merchant:Math.min(100,(state.completedContracts || 0) * 3),
+      kingdom:Math.min(100,(state.routeScores.royal || 0) * 3.5),
+      antihero:Math.min(100,(state.routeScores.antihero || 0) * 3.5),
+      underworld:Math.min(100,(state.routeScores.underworld || 0) * 3),
+      artisan:Math.min(100,(state.routeScores.artisan || 0) * 1.8)
+    };
+  }
+  for(const key of ["merchant","kingdom","antihero","underworld","artisan"]){
+    state.factionRep[key] = Math.max(0,Math.min(100,Number(state.factionRep[key] || 0)));
+  }
   state.lastPhaseId ??= null;
   if(state.finalTrial){
     // 이전 버전에서 이미 진행한 최종심사 일수는 납품 완료로 인정해 저장 호환성을 유지합니다.
@@ -1683,7 +1807,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},factionRep:{merchant:0,kingdom:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -1803,11 +1927,12 @@ function processOrders(){
 
     if(sold > 0){
       const gross = sold * o.ask;
-      const rate = CITIES[o.city].fee || 0;
+      const rate = effectiveCityFee(o.city);
       const commission = Math.round(gross * rate);
       const payout = gross - commission;
       S.cash += payout;
       recordDaySale(o.item,sold,payout,"정규 시장");
+      changeFactionRep("merchant",Math.min(1.5,.25 * sold));
       updateSaleContract(o.item,o.city,sold);
       soldText.push(ITEMS[o.item].name + " " + sold + "개 " + fmt(payout) + (commission ? " (수수료 -" + fmt(commission) + ")" : ""));
     }
@@ -2024,7 +2149,8 @@ function craftMercGear(id){
   if(!gear) return;
   if(S.day < gear.unlockDay){ toast(gear.unlockDay + "일차부터 제작할 수 있습니다."); return; }
   if(S.city !== "mine"){ toast("몬스터 장비 상품은 철산 광산도시 장비공방에서 제작할 수 있습니다."); return; }
-  if(S.cash <= gear.fee){ toast("공임 " + fmt(gear.fee) + "를 내면 파산합니다."); return; }
+  const gearFee = artisanFee(gear.fee);
+  if(S.cash <= gearFee){ toast("공임 " + fmt(gearFee) + "를 내면 파산합니다."); return; }
   for(const [k,q] of Object.entries(gear.inputs)){
     if((S.inv[k] || 0) < q){ toast(ITEMS[k].name + " " + q + "개가 필요합니다."); return; }
   }
@@ -2037,7 +2163,7 @@ function craftMercGear(id){
   }
 
   for(const [k,q] of Object.entries(gear.inputs)) S.inv[k] -= q;
-  S.cash -= gear.fee;
+  S.cash -= gearFee;
   S.inv[gear.item] = (S.inv[gear.item] || 0) + 1;
   addRoute("artisan",.7);
   addMercLog("장비 상품 제작 · " + gear.name);
@@ -2174,12 +2300,13 @@ function renderMercenaries(){
       const locked = S.day < gear.unlockDay;
       const inputs = Object.entries(gear.inputs).map(([k,q]) => ITEMS[k].name + " " + q + "개").join(" + ");
       const enough = Object.entries(gear.inputs).every(([k,q]) => (S.inv[k] || 0) >= q);
-      const disabled = locked || S.city !== "mine" || !enough || S.cash <= gear.fee;
+      const gearFee = artisanFee(gear.fee);
+      const disabled = locked || S.city !== "mine" || !enough || S.cash <= gearFee;
       const held = S.inv[gear.item] || 0;
       return '<article class="gear-card">' +
         '<div class="gear-head"><h4>' + gear.name + '</h4><span>보유 ' + held + '개</span></div>' +
         '<p>' + gear.desc + '</p>' +
-        '<div class="gear-recipe">' + inputs + ' · 공임 ' + fmt(gear.fee) + ' · 무게 ' + ITEMS[gear.item].w + '</div>' +
+        '<div class="gear-recipe">' + inputs + ' · 공임 ' + fmt(gearFee) + (gearFee < gear.fee ? ' <s>' + fmt(gear.fee) + '</s>' : '') + ' · 무게 ' + ITEMS[gear.item].w + '</div>' +
         '<div class="gear-value">현재 ' + CITIES[S.city].name + ' 매입가 <b>' + fmt(mercGearSalePrice(gear.item)) + '</b></div>' +
         '<button data-merc-gear="' + gear.id + '"' + (disabled ? " disabled" : "") + '>' +
           (locked ? gear.unlockDay + "일차 해금" : S.city !== "mine" ? "철산에서 제작" : "1개 제작") +
@@ -2263,6 +2390,7 @@ function applyWeeklySettlement(){
   const due = Math.max(80,Math.round(net() * rate));
   S.cash -= due;
   S.lastSettlement = {day:S.day,due,rate};
+  changeFactionRep("merchant",1);
   toast("상인 길드 주간 결산: 자산의 " + Math.round(rate * 1000) / 10 + "% · " + fmt(due) + " 납부.");
   if(S.cash <= 0){
     bankrupt("주간 결산금을 감당하지 못함");
@@ -2376,7 +2504,7 @@ function useInformant(){
         ? "현재 그 지역에 있습니다. 오늘 떠나지 않으면 통제기간 동안 밖으로 나갈 수 없습니다."
         : "내일 이후에는 해당 지역으로 들어갈 수 없습니다.");
   }else if(Math.random() < .78){
-    S.extra = "[그럴듯함] " + marketRumor();
+    S.extra = "[확인된 정보] " + marketRumor(true);
   }else{
     const c = pick(Object.keys(CITIES));
     const k = pick(tradableKeys());
@@ -2422,6 +2550,7 @@ function completeContract(message="의뢰 완료!"){
   S.cash += reward;
   recordDayIncome(reward,"길드 의뢰 보상");
   S.completedContracts += 1;
+  changeFactionRep("merchant",3);
   addRoute("royal",.4);
   S.contractDoneDay = S.day;
   S.contractActive = null;
@@ -2658,9 +2787,11 @@ function craftRecipe(id,qty=1){
   if(!r || r.city !== S.city){ toast("이 도시에서는 해당 물품을 제작할 수 없습니다."); return; }
 
   const usedToday = S.craftUsed?.[r.id] || 0;
-  const left = Math.max(0,CRAFT_LIMIT - usedToday);
+  const craftLimit = craftLimitForRecipe();
+  const feeNow = artisanFee(r.fee);
+  const left = Math.max(0,craftLimit - usedToday);
   const inputMax = Object.entries(r.inputs).reduce((m,[k,n]) => Math.min(m,Math.floor(S.inv[k]/n)),Infinity);
-  const cashMax = r.fee > 0 ? Math.floor((S.cash - 1)/r.fee) : 999;
+  const cashMax = feeNow > 0 ? Math.floor((S.cash - 1)/feeNow) : 999;
   const inputWeight = Object.entries(r.inputs).reduce((a,[k,n]) => a + ITEMS[k].w*n,0);
   const outputWeight = Object.entries(r.output).reduce((a,[k,n]) => a + ITEMS[k].w*n,0);
   const deltaWeight = outputWeight - inputWeight;
@@ -2676,18 +2807,18 @@ function craftRecipe(id,qty=1){
 
   for(const [k,n] of Object.entries(r.inputs)) S.inv[k] -= n*qty;
   for(const [k,n] of Object.entries(r.output)) S.inv[k] += n*qty;
-  S.cash -= r.fee*qty;
+  S.cash -= feeNow*qty;
   S.craftUsed[r.id] = (S.craftUsed[r.id] || 0) + qty;
   addRoute("artisan",r.stage === 2 ? 1 : .2);
 
   const made = Object.entries(r.output).map(([k,n]) => ITEMS[k].name + " " + (n*qty) + "개").join(", ");
-  toast(r.shop + " 제작 완료: " + made + " · 공임 " + fmt(r.fee*qty));
+  toast(r.shop + " 제작 완료: " + made + " · 공임 " + fmt(feeNow*qty));
   render();
 }
 function renderCrafting(){
   const box = $("#craftBox");
   const badge = $("#craftUsesBadge");
-  badge.textContent = "품목별 하루 최대 " + CRAFT_LIMIT + "회";
+  badge.textContent = "품목별 하루 최대 " + craftLimitForRecipe() + "회" + (artisanFeeDiscount() ? " · 장인 공임 -" + Math.round(artisanFeeDiscount()*100) + "%" : "");
 
   const recipes = CRAFT_RECIPES.filter(r => r.city === S.city);
   if(!recipes.length){
@@ -2697,18 +2828,20 @@ function renderCrafting(){
 
   box.innerHTML = '<div class="craft-grid">' + recipes.map(r => {
     const usedToday = S.craftUsed?.[r.id] || 0;
-    const left = Math.max(0,CRAFT_LIMIT - usedToday);
+    const craftLimit = craftLimitForRecipe();
+    const feeNow = artisanFee(r.fee);
+    const left = Math.max(0,craftLimit - usedToday);
     const inputText = Object.entries(r.inputs).map(([k,n]) => ITEMS[k].name + " " + n + "개").join(" + ");
     const outputText = Object.entries(r.output).map(([k,n]) => ITEMS[k].name + " " + n + "개").join(" + ");
     const materialMarket = Object.entries(r.inputs).reduce((a,[k,n]) => a + S.prices[k]*n,0);
     const outputMarket = Object.entries(r.output).reduce((a,[k,n]) => a + S.prices[k]*n,0);
     const canMaterial = Object.entries(r.inputs).every(([k,n]) => S.inv[k] >= n);
-    const can = left > 0 && canMaterial && S.cash > r.fee;
+    const can = left > 0 && canMaterial && S.cash > feeNow;
     return '<article class="craft-card">' +
-      '<div class="craft-titleline"><span class="craft-shop">' + r.shop + '</span><span class="craft-stage">' + r.stage + '단계 · ' + usedToday + ' / ' + CRAFT_LIMIT + '회</span></div>' +
+      '<div class="craft-titleline"><span class="craft-shop">' + r.shop + '</span><span class="craft-stage">' + r.stage + '단계 · ' + usedToday + ' / ' + craftLimit + '회</span></div>' +
       '<h3>' + r.name + '</h3>' +
       '<p><b>' + inputText + '</b> → <b>' + outputText + '</b></p>' +
-      '<div class="craft-meta"><span>공임 ' + fmt(r.fee) + '</span><span>재료 시세 ' + fmt(materialMarket) + '</span><span>완제품 시세 ' + fmt(outputMarket) + '</span><span>오늘 남은 제작 ' + left + '회</span></div>' +
+      '<div class="craft-meta"><span>공임 ' + fmt(feeNow) + (feeNow < r.fee ? ' <s>' + fmt(r.fee) + '</s>' : '') + '</span><span>재료 시세 ' + fmt(materialMarket) + '</span><span>완제품 시세 ' + fmt(outputMarket) + '</span><span>오늘 남은 제작 ' + left + '회</span></div>' +
       '<div class="craft-actions"><button data-craft="' + r.id + '" data-q="1"' + (can ? "" : " disabled") + '>1회 제작</button>' +
       '<button data-craft="' + r.id + '" data-q="999"' + (can ? "" : " disabled") + '>이 품목 가능한 만큼</button></div>' +
       '</article>';
@@ -2729,14 +2862,14 @@ function sellBlackMarket(item,qty){
   }
 
   const ban = saleBanEvent(item,S.city);
-  const each = Math.max(1,Math.round(S.prices[item] * (ban ? .95 : .8)));
+  const each = Math.max(1,Math.round(S.prices[item] * underworldPayoutRate(!!ban)));
   const gross = each * qty;
   S.inv[item] -= qty;
   S.cash += gross;
   recordDaySale(item,qty,gross,ban ? "금지품 암시장" : "암시장");
   addRoute("underworld",.6);
 
-  const catchChance = ban ? .22 : .05;
+  const catchChance = underworldCatchChance(!!ban);
   if(Math.random() < catchChance){
     const fine = Math.max(ban ? 150 : 60,Math.round(gross * (ban ? .65 : .35)));
     S.cash -= fine;
@@ -2763,20 +2896,21 @@ function renderBlackMarket(){
   panel.classList.remove("black-market-capital");
   const held = tradableKeys().filter(k => S.inv[k] > 0);
   if(!held.length){
-    box.innerHTML = '<div class="black-market-locked"><b>팔 물건이 없습니다.</b><p>재고를 들고 오면 시세의 80%로 바로 현금화할 수 있습니다.</p></div>';
+    box.innerHTML = '<div class="black-market-locked"><b>팔 물건이 없습니다.</b><p>현재 지하 유통망 우호도로 정상 시세의 ' + Math.round(underworldPayoutRate(false)*100) + '%에 즉시 현금화할 수 있습니다.</p></div>';
     return;
   }
 
-  box.innerHTML = '<div class="black-market-risk">⚠ 거래 1회마다 5% 확률로 단속 · 벌금은 거래액의 35%, 최소 60G</div><div class="black-market-list"></div>';
+  box.innerHTML = '<div class="black-market-risk">⚠ 일반 거래 단속 ' + Math.round(underworldCatchChance(false)*100) + '% · 금지품 단속 ' + Math.round(underworldCatchChance(true)*100) + '% · 일반 매입률 ' + Math.round(underworldPayoutRate(false)*100) + '%</div><div class="black-market-list"></div>';
   const list = box.querySelector(".black-market-list");
 
   for(const k of held){
-    const each = Math.max(1,Math.round(S.prices[k] * .8));
+    const banned = !!saleBanEvent(k,S.city);
+    const each = Math.max(1,Math.round(S.prices[k] * underworldPayoutRate(banned)));
     const row = document.createElement("article");
     row.className = "black-market-item";
     row.innerHTML =
       '<div class="bm-head"><div><h3>' + ITEMS[k].name + '</h3><div class="black-market-meta">보유 ' + S.inv[k] + '개 · 정상 시세 ' + fmt(S.prices[k]) + '</div></div><div class="black-market-price">' + fmt(each) + '/개</div></div>' +
-      (saleBanEvent(k,S.city) ? '<div class="black-ban-warning">⛔ 금지품 밀매 · 매입가 상승 / 적발 확률 22%</div>' : '') +
+      (banned ? '<div class="black-ban-warning">⛔ 금지품 밀매 · 매입률 ' + Math.round(underworldPayoutRate(true)*100) + '% / 적발 ' + Math.round(underworldCatchChance(true)*100) + '%</div>' : '') +
       '<div class="black-market-actions"><button data-black="' + k + '" data-q="1">1개 즉시 매각</button><button data-black="' + k + '" data-q="999">전부 매각</button></div>';
     list.appendChild(row);
   }
@@ -2872,7 +3006,8 @@ function render(){
   $("#feeStat").textContent = fmt(fee());
   $("#capStat").textContent = used() + " / " + S.capacity;
   $("#marketTitle").textContent = CITIES[S.city].name + " 시장";
-  $("#feeBadge").textContent = "판매 수수료 " + Math.round((CITIES[S.city].fee || 0) * 100) + "%";
+  $("#feeBadge").textContent = "판매 수수료 " + Math.round(effectiveCityFee(S.city) * 100) + "%" +
+    (kingdomCommissionDiscount() ? " · 왕국 우호도 -" + Math.round(kingdomCommissionDiscount()*100) + "%p" : "");
   const worldPhase = currentWorldPhase();
   $("#worldPhaseBadge").textContent = worldPhase.name;
   $("#worldPhaseBox").innerHTML =
@@ -2922,7 +3057,7 @@ function render(){
         '</article>';
       }).join("") +
     '</div>';
-  $("#rumorBox").innerHTML = "<p>" + S.rumor + "</p>";
+  $("#rumorBox").innerHTML = '<div class="rumor-trust">상인조합 정보 신뢰도 <b>' + Math.round(merchantRumorAccuracy()*100) + '%</b></div><p>' + S.rumor + '</p>';
   $("#extraBox").textContent = S.extra || "아직 돈을 주지 않았습니다.";
   $("#informantBtn").disabled = S.informant || S.gameOver || S.travelOpen;
   $("#endDayBtn").disabled = S.gameOver || S.travelOpen;
@@ -3021,7 +3156,7 @@ function renderOrders(){
     const ban = saleBanEvent(o.item,o.city);
     row.innerHTML =
       "<div><b>" + ITEMS[o.item].name + " " + o.qty + "개</b><p>" +
-      CITIES[o.city].name + " · 희망가 " + fmt(o.ask) + " · 수수료 " + Math.round((CITIES[o.city].fee || 0) * 100) + "% · " + (S.day-o.listed) +
+      CITIES[o.city].name + " · 희망가 " + fmt(o.ask) + " · 수수료 " + Math.round(effectiveCityFee(o.city) * 100) + "% · " + (S.day-o.listed) +
       '일째' + (ban ? ' · <span class="sale-ban-inline">⛔ 판매금지로 체결 중지</span>' : '') +
       '</p></div><button data-cancel="' + i + '">회수</button>';
     box.appendChild(row);
