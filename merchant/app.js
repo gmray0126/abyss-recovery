@@ -3367,6 +3367,63 @@ function escapeHtml(s){
   return s.replace(/[&<>"']/g,m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 }
 
+function mobileSectionTitle(panel){
+  return panel.querySelector("h2,h3")?.textContent?.trim() || "섹션";
+}
+function setupSafeMobileSections(){
+  if(!isMobileLayout()) return;
+
+  document.body.classList.add("mobile-enhanced");
+
+  const panels=[...document.querySelectorAll("[data-mobile-tab]")];
+  for(const panel of panels){
+    if(panel.dataset.mobileAccordionReady) continue;
+    panel.dataset.mobileAccordionReady="1";
+
+    const title=mobileSectionTitle(panel);
+    const key=(panel.dataset.mobileTab||"section")+"-"+title;
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.className="mobile-section-toggle";
+    btn.innerHTML='<span>'+title+'</span><b>접기</b>';
+    panel.insertBefore(btn,panel.firstChild);
+
+    let collapsed=false;
+    try{
+      collapsed=localStorage.getItem("fm-collapse:"+key)==="1";
+    }catch{}
+
+    // 핵심 섹션은 처음엔 펼쳐 둡니다.
+    if(["왕도 시장","시장","오늘의 정보"].some(x=>title.includes(x))) collapsed=false;
+
+    panel.classList.toggle("mobile-collapsed",collapsed);
+    btn.querySelector("b").textContent=collapsed?"펼치기":"접기";
+
+    btn.addEventListener("click",()=>{
+      const next=!panel.classList.contains("mobile-collapsed");
+      panel.classList.toggle("mobile-collapsed",next);
+      btn.querySelector("b").textContent=next?"펼치기":"접기";
+      try{ localStorage.setItem("fm-collapse:"+key,next?"1":"0"); }catch{}
+    });
+  }
+
+  const jumpMap={
+    market:'[data-mobile-tab="market"]',
+    info:'[data-mobile-tab="info"]',
+    craft:'[data-mobile-tab="craft"]',
+    merc:'[data-mobile-tab="merc"]',
+    caravan:'[data-mobile-tab="caravan"]'
+  };
+  $("#mobileQuickNav")?.addEventListener("click",e=>{
+    const b=e.target.closest("[data-jump-target]");
+    if(!b) return;
+    const panel=document.querySelector(jumpMap[b.dataset.jumpTarget]||"");
+    if(!panel) return;
+    panel.classList.remove("mobile-collapsed");
+    panel.querySelector(".mobile-section-toggle b")?.replaceChildren("접기");
+    panel.scrollIntoView({behavior:"smooth",block:"start"});
+  });
+}
 function isMobileLayout(){
   return window.matchMedia("(max-width: 680px)").matches;
 }
@@ -3497,3 +3554,4 @@ document.addEventListener("visibilitychange",() => {
 
 if(!restoreSavedGame()) init();
 initMobileTabs();
+setupSafeMobileSections();
