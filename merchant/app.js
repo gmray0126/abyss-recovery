@@ -131,6 +131,107 @@ const CITY_NPCS = {
   }
 };
 
+const NPC_QUESTS = {
+  capital:[
+    {rep:20,title:"사라진 왕실 조달장부",text:"엘레노아가 누군가 일부러 숨긴 조달장부를 찾고 있습니다. 왕실에 조용히 돌려놓을지 상인조합과 내용을 공유할지 결정해야 합니다.",options:[
+      {label:"왕실 서기관을 고용해 복구한다 · 70G",cost:70,npcRep:6,factions:{kingdom:3},message:"장부가 조용히 복구됐고 엘레노아는 당신을 믿을 수 있는 실무자로 기억합니다."},
+      {label:"상인조합과 가격 자료를 공유한다",npcRep:5,factions:{merchant:3,kingdom:-1},message:"상인들이 조달가 폭주를 미리 막았습니다. 엘레노아는 못마땅했지만 결과는 인정했습니다."}
+    ]},
+    {rep:50,title:"공주의 사치예산",text:"공주의 취향 한마디마다 조달 예산이 출렁입니다. 엘레노아가 시장을 덜 흔드는 새 구매 규칙을 만들고 싶어 합니다.",options:[
+      {label:"시장 평균가 기준을 제안한다 · 향신료 1개",item:"spice",qty:1,npcRep:7,factions:{merchant:3,kingdom:2},message:"왕실 구매가 조금 덜 즉흥적으로 변했습니다."},
+      {label:"왕실 재량을 남기되 상인 보상조항을 넣는다",npcRep:6,factions:{merchant:4},message:"상인조합이 크게 환영했고 왕실도 체면은 지켰습니다."}
+    ]},
+    {rep:80,title:"독립 조달권",text:"엘레노아가 당신 상단에 왕실과 직접 거래하는 독립 조달권을 제안합니다. 서류 비용은 비싸지만 영구적인 거래 혜택이 생깁니다.",options:[
+      {label:"조달권을 인수한다 · 180G",cost:180,npcRep:10,factions:{kingdom:4,merchant:2},legacy:true,message:"왕실 직거래 인장이 발급됐습니다. 왕도 거래 수수료 혜택이 영구 강화됩니다."},
+      {label:"상인조합 공동명의로 받는다 · 120G",cost:120,npcRep:8,factions:{merchant:5,kingdom:1},legacy:true,message:"조달권이 상인조합과 공동 명의가 됐습니다. 독립성을 지키면서 혜택을 확보했습니다."}
+    ]}
+  ],
+  farm:[
+    {rep:20,title:"무너진 관개수로",text:"마르타의 밭을 먹여 살리는 수로가 무너졌습니다. 항구에서 수입할 자재를 기다리면 늦습니다.",options:[
+      {label:"철괴 1개를 내어 보강한다",item:"iron",qty:1,npcRep:7,factions:{merchant:1},message:"수로가 복구됐고 올해 첫 수확분을 당신 상단에 먼저 보여주기로 했습니다."},
+      {label:"수리 인부를 고용한다 · 65G",cost:65,npcRep:6,factions:{merchant:1},message:"인부들이 밤새 수로를 살렸습니다."}
+    ]},
+    {rep:50,title:"곡물 운임 전쟁",text:"청해 항구가 곡물 운임을 올리자 평원 농장주들이 출하 중단을 검토합니다. 마르타가 당신의 중재를 요구합니다.",options:[
+      {label:"평원 편을 들어 운임 인하를 압박한다",npcRep:8,rival:-4,factions:{merchant:2},message:"항구 선주들은 화가 났지만 평원에서는 당신 이름이 크게 올랐습니다."},
+      {label:"항구와 절충안을 만든다",npcRep:6,rival:2,factions:{merchant:3},message:"양쪽 모두 불평했지만 화물은 다시 움직이기 시작했습니다."}
+    ]},
+    {rep:80,title:"농장연합 전용 창고",text:"마르타가 상단 전용 곡물창고를 내주겠다고 합니다. 초기 시설비만 부담하면 됩니다.",options:[
+      {label:"창고를 정비한다 · 160G",cost:160,npcRep:10,factions:{merchant:3},legacy:true,message:"전용 창고가 생겼습니다. 평원 특산품 현지가 혜택이 영구 강화됩니다."},
+      {label:"농민 공동창고로 운영한다 · 밀 3개",item:"wheat",qty:3,npcRep:9,factions:{merchant:4},legacy:true,message:"공동창고가 완성됐고 농민들이 당신 상단을 우선 거래처로 삼았습니다."}
+    ]}
+  ],
+  mine:[
+    {rep:20,title:"꺼져가는 대용광로",text:"브루노의 대용광로가 연료 조절 실패로 멈출 위기입니다. 드워프들은 이런 날엔 맥주가 기술보다 중요하다고 주장합니다.",options:[
+      {label:"맥주 2개를 작업반에 돌린다",item:"beer",qty:2,npcRep:7,factions:{artisan:2},message:"작업반 사기가 올라 용광로가 다시 돌아가기 시작했습니다."},
+      {label:"긴급 부품비를 낸다 · 80G",cost:80,npcRep:6,factions:{artisan:2},message:"브루노가 직접 새 밸브를 깎아냈습니다."}
+    ]},
+    {rep:50,title:"엘프 목재 검사 분쟁",text:"카르둠이 실바렌산 목재 검사를 강화하자 엘프 상단이 거래 중단을 경고했습니다.",options:[
+      {label:"드워프 안전기준을 지지한다",npcRep:8,rival:-4,factions:{artisan:3},message:"브루노는 만족했지만 실바렌 상단은 당신을 경계합니다."},
+      {label:"공동 검사단을 제안한다",npcRep:6,rival:2,factions:{merchant:2,artisan:2},message:"드워프와 엘프가 같은 책상에 앉았습니다. 기적에 가깝습니다."}
+    ]},
+    {rep:80,title:"룬대장간 명예열쇠",text:"브루노가 카르둠 최고의 공방을 자유롭게 이용할 수 있는 명예열쇠를 내밉니다.",options:[
+      {label:"장인기금 200G를 후원한다",cost:200,npcRep:10,factions:{artisan:5},legacy:true,message:"명예열쇠를 받았습니다. 카르둠 제작 공임 혜택이 영구 강화됩니다."},
+      {label:"오우거 뿔 1개를 전시품으로 기증한다",item:"ogre_horn",qty:1,npcRep:10,factions:{artisan:4,mercenary:1},legacy:true,message:"오우거 뿔이 대장간 입구에 걸렸고 당신 이름도 그 아래 새겨졌습니다."}
+    ]}
+  ],
+  port:[
+    {rep:20,title:"폭풍에 부러진 돛대",text:"세일라의 상선 한 척이 폭풍을 맞아 출항하지 못하고 있습니다.",options:[
+      {label:"철괴 1개를 수리부품으로 제공한다",item:"iron",qty:1,npcRep:7,factions:{merchant:1},message:"상선이 출항했고 세일라는 다음 화물을 먼저 보여주겠다고 합니다."},
+      {label:"조선소 비용을 댄다 · 70G",cost:70,npcRep:6,factions:{merchant:1},message:"부두의 망치 소리가 밤새 이어졌습니다."}
+    ]},
+    {rep:50,title:"항구세와 곡물상",text:"평원 상인들이 항구세를 이유로 청해 항구를 우회하려 합니다. 세일라는 강경 대응을 원합니다.",options:[
+      {label:"항구의 입장을 대변한다",npcRep:8,rival:-4,factions:{merchant:2},message:"항구 조합은 환호했지만 풍요 평원에서는 당신 이야기가 좋지 않게 돌기 시작했습니다."},
+      {label:"곡물 전용 부두를 제안한다",npcRep:6,rival:2,factions:{merchant:3},message:"전용 부두가 절충안이 되어 양쪽의 물류가 다시 움직입니다."}
+    ]},
+    {rep:80,title:"상단 전용 부두",text:"세일라가 당신 상단만 쓰는 작은 부두와 창고를 내어주려 합니다.",options:[
+      {label:"부두 사용권을 산다 · 190G",cost:190,npcRep:10,factions:{merchant:4},legacy:true,message:"전용 부두가 생겼습니다. 청해 항구로 오가는 이동비가 영구 감소합니다."},
+      {label:"선원 복지기금으로 전환한다 · 140G",cost:140,npcRep:9,factions:{merchant:5},legacy:true,message:"선원들이 먼저 당신 상단의 화물을 실어주기 시작했습니다."}
+    ]}
+  ],
+  arcane:[
+    {rep:20,title:"마족 견습생의 입학서류",text:"네르 교수의 교화 마족 제자가 종족 때문에 입학 서류 심사에서 막혔습니다.",options:[
+      {label:"약초 2개를 실험재료로 후원한다",item:"herb",qty:2,npcRep:7,factions:{merchant:2,church:-1},message:"견습생이 실험시험을 통과했습니다. 루미에르 쪽에서는 곱지 않은 시선이 옵니다."},
+      {label:"왕국 행정절차로 재심을 청구한다 · 60G",cost:60,npcRep:6,factions:{kingdom:2},message:"왕국의 공식 재심으로 입학이 승인됐습니다."}
+    ]},
+    {rep:50,title:"루미에르 교단의 감사단",text:"교단 감사단이 아르카나의 교화 마족 연구실을 조사하겠다고 왔습니다.",options:[
+      {label:"연구실을 숨겨 시간을 번다",npcRep:8,rival:-5,factions:{merchant:2,church:-3},message:"감사단은 빈 방만 보고 돌아갔습니다. 네르는 크게 고마워했습니다."},
+      {label:"공개 검증을 제안한다",npcRep:6,rival:2,factions:{church:2,merchant:2},message:"긴 논쟁 끝에 일부 연구가 공식 승인을 받았습니다."}
+    ]},
+    {rep:80,title:"공존 연구헌장",text:"네르가 인간과 교화 마족이 함께 운영하는 연구조합의 첫 상단 후원자가 되어달라고 합니다.",options:[
+      {label:"연구기금 180G를 낸다",cost:180,npcRep:10,factions:{merchant:4,church:-1},legacy:true,message:"공존 연구조합이 출범했습니다. 아르카나 특산품 혜택이 영구 강화됩니다."},
+      {label:"마법석 2개를 설립자산으로 낸다",item:"mana",qty:2,npcRep:10,factions:{merchant:3},legacy:true,message:"마법석이 조합의 첫 공동자산이 됐습니다."}
+    ]}
+  ],
+  forest:[
+    {rep:20,title:"시들어가는 정령숲",text:"리시엘이 숲 일부가 갑자기 시들고 있다며 마력 보충에 쓸 마법석을 구합니다.",options:[
+      {label:"마법석 1개를 건넨다",item:"mana",qty:1,npcRep:7,factions:{merchant:1},message:"정령목의 잎이 다시 빛나기 시작했습니다."},
+      {label:"치유사들을 부른다 · 75G",cost:75,npcRep:6,factions:{merchant:1},message:"치유사들이 숲의 병든 뿌리를 정리했습니다."}
+    ]},
+    {rep:50,title:"카르둠 광산 확장",text:"실바렌 경계 근처에서 카르둠이 새 광맥을 찾았습니다. 리시엘은 채굴 중단을 원합니다.",options:[
+      {label:"엘프 측 채굴중단 요구를 지지한다",npcRep:8,rival:-4,factions:{merchant:2},message:"숲은 지켰지만 드워프 장인들이 당신 상단을 기억했습니다."},
+      {label:"채굴구역과 보호림 경계를 다시 긋는다",npcRep:6,rival:2,factions:{merchant:3,artisan:1},message:"양쪽 모두 완벽히 만족하진 않았지만 싸움은 멈췄습니다."}
+    ]},
+    {rep:80,title:"정령 교역서약",text:"리시엘이 외부 상인에게 거의 내주지 않는 정령 교역서약을 제안합니다.",options:[
+      {label:"숲 보전기금 170G를 낸다",cost:170,npcRep:10,factions:{merchant:4},legacy:true,message:"정령 교역서약이 맺어졌습니다. 실바렌 특산품 혜택이 영구 강화됩니다."},
+      {label:"엘프 비단 1개를 공동기금에 돌린다",item:"elf_silk",qty:1,npcRep:9,factions:{merchant:4},legacy:true,message:"상인들이 판매품을 되돌려놓는 장면에 리시엘이 드물게 웃었습니다."}
+    ]}
+  ],
+  holycity:[
+    {rep:20,title:"성녀의 무료 진료소",text:"아리아가 빈민가 무료 진료소를 열었지만 식량과 약이 모자랍니다.",options:[
+      {label:"빵 2개를 기부한다",item:"bread",qty:2,npcRep:7,factions:{church:3},message:"진료소 앞에서 당신 상단의 이름을 기억하는 사람이 늘었습니다."},
+      {label:"치료비 70G를 지원한다",cost:70,npcRep:6,factions:{church:3},message:"아리아가 직접 감사인사를 전했습니다."}
+    ]},
+    {rep:50,title:"교화 마족 논쟁",text:"아리아에게 아르카나의 교화 마족을 시민으로 인정해야 하느냐는 압박이 쏟아집니다.",options:[
+      {label:"아르카나와 공개 대화를 제안한다",npcRep:7,rival:3,factions:{church:2,merchant:2},message:"성녀와 네르 교수 사이에 처음으로 공식 대화 채널이 열렸습니다."},
+      {label:"교단의 엄격한 검증을 지지한다",npcRep:8,rival:-4,factions:{church:4},message:"교단 보수파가 당신을 신뢰하기 시작했지만 아르카나와의 거리는 더 멀어졌습니다."}
+    ]},
+    {rep:80,title:"성물 유통서약",text:"아리아가 당신 상단에 대성당 공인 성물 유통권을 제안합니다.",options:[
+      {label:"구휼기금 180G를 기부한다",cost:180,npcRep:10,factions:{church:5},legacy:true,message:"성물 유통서약이 체결됐습니다. 신성상품과 제작 혜택이 영구 강화됩니다."},
+      {label:"성수 2개를 순례소에 기부한다",item:"holy",qty:2,npcRep:9,factions:{church:5},legacy:true,message:"순례소에 성수가 채워졌고 아리아가 직접 유통증서를 건넸습니다."}
+    ]}
+  ]
+};
+
 function cityNpcRep(city=S.city){
   return Math.max(0,Math.min(100,Number(S?.npcRep?.[city] || 0)));
 }
@@ -149,26 +250,30 @@ function cityNpcPriceFactor(city,item){
     forest:["herb","elf_silk","starlight_wine"],
     holycity:["holy","holy_oil","blessed_incense"]
   };
-  return specialties[city]?.includes(item) ? rates[tier] : 1;
+  let factor=specialties[city]?.includes(item) ? rates[tier] : 1;
+  if(S?.npcLegacy?.[city] && specialties[city]?.includes(item)) factor*=.95;
+  return factor;
 }
 function cityNpcFeeDiscount(city){
   if(city!=="capital") return 0;
-  return [0,.005,.01,.015][cityNpcTier(city)] || 0;
+  return ([0,.005,.01,.015][cityNpcTier(city)] || 0) + (S?.npcLegacy?.[city] ? .005 : 0);
 }
 function cityNpcCraftDiscount(city){
   if(!["mine","holycity"].includes(city)) return 0;
-  return [0,.05,.10,.15][cityNpcTier(city)] || 0;
+  return Math.min(.30,([0,.05,.10,.15][cityNpcTier(city)] || 0) + (S?.npcLegacy?.[city] ? .10 : 0));
 }
 function cityNpcBenefitText(city){
   const tier=cityNpcTier(city);
   const npc=CITY_NPCS[city];
   if(!npc) return "";
   if(!tier) return npc.perk + " · 우호도 20부터 시작";
+  const legacy=S?.npcLegacy?.[city] ? " · ★ 개인 스토리 완결 보너스" : "";
   const pct=tier===1?2:tier===2?5:8;
-  if(city==="capital") return "왕도 수수료 추가 -" + [0,.5,1,1.5][tier] + "%p";
-  if(city==="mine") return "카르둠 제작 공임 -" + [0,5,10,15][tier] + "%";
-  if(city==="holycity") return "신성상품 현지가 약 -" + pct + "% · 제작 공임 -" + [0,5,10,15][tier] + "%";
-  return npc.perk + " · 현지가 약 -" + pct + "%";
+  if(city==="capital") return "왕도 수수료 추가 -" + ([0,.5,1,1.5][tier] + (S?.npcLegacy?.[city]?.5:0)) + "%p" + legacy;
+  if(city==="mine") return "카르둠 제작 공임 -" + Math.round(cityNpcCraftDiscount(city)*100) + "%" + legacy;
+  if(city==="holycity") return "신성상품 현지가 약 -" + pct + "% · 제작 공임 -" + Math.round(cityNpcCraftDiscount(city)*100) + "%" + legacy;
+  if(city==="port" && S?.npcLegacy?.port) return npc.perk + " · 현지가 약 -" + pct + "% · 항구 이동비 -4G · ★ 개인 스토리 완결";
+  return npc.perk + " · 현지가 약 -" + pct + "%" + legacy;
 }
 function changeCityNpcRep(city,amount,{rival=true}={}){
   if(!CITY_NPCS[city]) return;
@@ -209,6 +314,60 @@ function helpCityNpc(){
   toast(npc.name+"의 부탁을 해결했습니다. 개인 우호도 +5"+(CITY_RIVALS[city]?" · 라이벌 도시 인맥 -1":"")+".");
   render();
 }
+function npcQuestState(city=S.city){
+  S.npcQuestStage ||= {};
+  return Math.max(0,Math.min(3,Number(S.npcQuestStage[city]||0)));
+}
+function nextNpcQuest(city=S.city){
+  const stage=npcQuestState(city);
+  return NPC_QUESTS[city]?.[stage] || null;
+}
+function canPayQuestOption(opt){
+  if(opt.cost && S.cash<=opt.cost) return false;
+  if(opt.item && (S.inv[opt.item]||0)<(opt.qty||1)) return false;
+  return true;
+}
+function resolveNpcQuest(city,index){
+  if(checkBlocked() || city!==S.city) return;
+  const stage=npcQuestState(city);
+  const quest=NPC_QUESTS[city]?.[stage];
+  if(!quest || cityNpcRep(city)<quest.rep) return;
+  const opt=quest.options?.[index];
+  if(!opt) return;
+  if(opt.cost && S.cash<=opt.cost){ toast(fmt(opt.cost)+"가 필요합니다."); return; }
+  if(opt.item && (S.inv[opt.item]||0)<(opt.qty||1)){ toast(ITEMS[opt.item].name+" "+(opt.qty||1)+"개가 필요합니다."); return; }
+
+  if(opt.cost) S.cash-=opt.cost;
+  if(opt.item) S.inv[opt.item]-=(opt.qty||1);
+  if(opt.cashReward){ S.cash+=opt.cashReward; recordDayIncome(opt.cashReward,"NPC 개인 퀘스트"); }
+  if(opt.npcRep) changeCityNpcRep(city,opt.npcRep,{rival:false});
+  if(opt.rival && CITY_RIVALS[city]){
+    const r=CITY_RIVALS[city];
+    S.npcRep[r]=Math.max(0,Math.min(100,(S.npcRep[r]||0)+opt.rival));
+  }
+  for(const [f,v] of Object.entries(opt.factions||{})) changeFactionRep(f,v);
+  S.npcQuestStage[city]=stage+1;
+  if(opt.legacy || stage+1>=3){
+    S.npcLegacy ||= {};
+    S.npcLegacy[city]=true;
+  }
+  toast(opt.message || CITY_NPCS[city].name+"의 개인 퀘스트를 완료했습니다.");
+  render();
+}
+function npcQuestHtml(city){
+  const stage=npcQuestState(city);
+  const quest=NPC_QUESTS[city]?.[stage];
+  if(!quest) return '<div class="npc-story-complete"><b>개인 스토리 완료</b><span>'+CITY_NPCS[city].name+'과의 특별한 인연이 완성됐습니다.</span></div>';
+  const unlocked=cityNpcRep(city)>=quest.rep;
+  return '<div class="npc-quest-card '+(unlocked?'available':'locked')+'">'+
+    '<div class="npc-quest-head"><span>개인 퀘스트 '+(stage+1)+' / 3</span><b>'+quest.title+'</b></div>'+
+    '<p>'+quest.text+'</p>'+
+    (unlocked
+      ? '<div class="npc-quest-options">'+quest.options.map((o,i)=>'<button data-npc-quest="'+city+'" data-option="'+i+'"'+(canPayQuestOption(o)?'':' disabled')+'>'+o.label+'</button>').join("")+'</div>'
+      : '<div class="npc-quest-lock">우호도 '+quest.rep+'에서 해금 · 현재 '+Math.round(cityNpcRep(city))+'</div>')+
+  '</div>';
+}
+
 function renderCityNpc(){
   const box=$("#cityNpcBox");
   if(!box) return;
@@ -226,7 +385,8 @@ function renderCityNpc(){
     '<div class="npc-benefit"><b>현재 혜택</b><span>'+cityNpcBenefitText(city)+'</span></div>'+
     (rival?'<div class="npc-rival">⚡ 라이벌: '+CITIES[rival].name+' · 큰 부탁을 들어주면 상대 인맥이 조금 나빠집니다.</div>':'')+
     '<div class="npc-actions"><button id="npcTalkBtn"'+(talked?' disabled':'')+'>'+(talked?'오늘 대화 완료':'대화하기 · 우호도 +1')+'</button>'+
-    '<button id="npcFavorBtn"'+(helped || (S.inv[npc.favorite]||0)<1?' disabled':'')+'>'+(helped?'오늘 부탁 완료':favorite+' 1개 건네기 · 우호도 +5')+'</button></div></article>';
+    '<button id="npcFavorBtn"'+(helped || (S.inv[npc.favorite]||0)<1?' disabled':'')+'>'+(helped?'오늘 부탁 완료':favorite+' 1개 건네기 · 우호도 +5')+'</button></div>'+
+    npcQuestHtml(city)+'</article>';
 }
 
 
@@ -261,6 +421,81 @@ const NAMED_MERCS = [
   {id:"aelrin",name:"수림 추적자 아엘린",city:"forest",unlockDay:22,gradeIndex:2,cost:860,trait:"rare",
     traitName:"정령의 눈",desc:"실바렌 추적자. 희귀 몬스터 소재 획득 확률이 조금 더 높습니다."}
 ];
+
+const NAMED_MERC_STORIES = {
+  liana:[
+    {bond:10,missions:1,title:"버려진 왕실 휘장",text:"리아나가 오래된 왕실 휘장을 꺼냅니다. 예전 호위대에서 쫓겨난 날 버리지 못한 물건입니다.",options:[
+      {label:"왕궁에 명예회복을 요청한다",bond:5,xp:2,factions:{kingdom:3},message:"왕궁은 공식 복직 대신 명예기록을 복구했습니다. 리아나는 그걸로 충분하다고 말합니다."},
+      {label:"과거보다 지금 상단이 중요하다고 말한다",bond:7,xp:1,factions:{merchant:2},message:"리아나는 휘장을 접어 상자 깊숙이 넣었습니다."}
+    ]},
+    {bond:28,missions:3,title:"옛 호위대의 추적",text:"리아나의 옛 동료들이 그녀가 왕실 기밀을 들고 달아났다고 의심하며 찾아왔습니다.",options:[
+      {label:"기록보관소 조사비를 낸다 · 100G",cost:100,bond:7,xp:4,factions:{kingdom:2},message:"누명이었음을 증명하는 기록을 찾았습니다."},
+      {label:"리아나와 직접 대면시킨다",bond:8,xp:5,factions:{merchant:1},message:"긴 대화 끝에 옛 동료들이 검을 거뒀습니다."}
+    ]},
+    {bond:50,missions:5,minGrade:3,title:"호위할 사람",text:"리아나는 왕실을 지키던 시절보다 지금의 상단을 지키는 이유가 더 분명해졌다고 말합니다.",options:[
+      {label:"상단의 검으로 남아달라고 한다",bond:12,xp:6,awaken:true,message:"리아나가 새 맹세를 세웠습니다. 「회색 맹세」가 각성했습니다."},
+      {label:"언젠가 다시 왕실로 돌아가도 좋다고 말한다",bond:10,xp:6,awaken:true,factions:{kingdom:2},message:"리아나는 선택권을 준 당신을 위해 당분간 검을 들겠다고 답했습니다."}
+    ]}
+  ],
+  bron:[
+    {bond:10,missions:1,title:"오우거에게 남은 빚",text:"브론이 첫 사냥에서 동료를 잃은 오우거 부족의 문양을 발견했습니다.",options:[
+      {label:"추적 준비를 돕는다 · 오우거 뿔 1개",item:"ogre_horn",qty:1,bond:7,xp:3,message:"브론은 뿔의 상처를 보며 놈들의 이동경로를 읽어냈습니다."},
+      {label:"복수보다 살아남는 게 먼저라고 말한다",bond:5,xp:2,message:"브론은 한참 침묵하다 고개를 끄덕였습니다."}
+    ]},
+    {bond:28,missions:3,title:"카르둠 사냥대",text:"브론의 옛 사냥대가 그를 겁쟁이라 부르며 공개 사냥 승부를 걸어왔습니다.",options:[
+      {label:"장비비 90G를 지원한다",cost:90,bond:7,xp:5,factions:{mercenary:2},message:"브론이 사냥 승부에서 압도적으로 이겼습니다."},
+      {label:"상단 원정 실적으로 증명하라 한다",bond:6,xp:4,factions:{merchant:1},message:"브론은 말 대신 다음 전리품을 보여주겠다고 합니다."}
+    ]},
+    {bond:50,missions:5,minGrade:3,title:"오우거 왕의 뿔",text:"브론이 마침내 원수의 흔적을 찾았습니다. 이번 사냥이 끝나면 과거와 결별할 수 있습니다.",options:[
+      {label:"상단 이름으로 마지막 사냥을 지원한다 · 140G",cost:140,bond:12,xp:7,awaken:true,message:"브론이 돌아왔습니다. 「왕사냥꾼」 특성이 각성했습니다."},
+      {label:"혼자가 아니라 동료들과 가게 한다",bond:14,xp:6,awaken:true,factions:{mercenary:2},message:"브론은 처음으로 복수가 아니라 동료를 먼저 챙겼습니다. 「왕사냥꾼」이 각성했습니다."}
+    ]}
+  ],
+  miel:[
+    {bond:10,missions:1,title:"노래값은 누가 내나요?",text:"미엘이 상단 홍보 노래를 만들었다며 연주자들에게 줄 선금을 요구합니다.",options:[
+      {label:"선금 60G를 준다",cost:60,bond:7,xp:2,factions:{merchant:2},message:"며칠 만에 시장 사람들이 상단 이름을 흥얼거리기 시작했습니다."},
+      {label:"맥주 2개로 먼저 설득해본다",item:"beer",qty:2,bond:6,xp:2,message:"연주자들은 돈보다 술을 더 좋아했습니다."}
+    ]},
+    {bond:28,missions:3,title:"악명도 명성이다",text:"미엘이 경쟁 상단을 놀리는 노래를 만들자 예상보다 훨씬 크게 유행했습니다.",options:[
+      {label:"노래를 그대로 퍼뜨린다",bond:7,xp:4,factions:{merchant:2,underworld:1},message:"평판은 시끄러워졌지만 상단 이름은 확실히 퍼졌습니다."},
+      {label:"가사를 순화해 정식 광고로 바꾼다 · 70G",cost:70,bond:6,xp:4,factions:{merchant:3},message:"문제의 가사가 훌륭한 광고문구로 바뀌었습니다."}
+    ]},
+    {bond:50,missions:5,minGrade:3,title:"상단의 노래",text:"미엘이 당신 상단의 여정을 한 곡으로 완성했습니다. 마지막 구절에 무엇을 넣을지 묻습니다.",options:[
+      {label:"돈보다 사람을 남긴 상단",bond:14,xp:6,awaken:true,factions:{merchant:3},message:"노래가 왕국 전역으로 퍼집니다. 「전설의 입소문」이 각성했습니다."},
+      {label:"결국 제일 돈을 많이 번 상단",bond:11,xp:6,awaken:true,cashReward:100,message:"상인들이 웃으며 따라 부릅니다. 광고수익 100G와 「전설의 입소문」을 얻었습니다."}
+    ]}
+  ],
+  kasha:[
+    {bond:10,missions:1,title:"마족이라는 이유",text:"카샤가 선술집에서 마족이라는 이유로 출입을 거부당했습니다.",options:[
+      {label:"상단 손님이라며 정면으로 항의한다",bond:8,xp:2,factions:{merchant:2,church:-1},message:"카샤는 아무 말 없이 다음 술잔을 당신 쪽으로 밀었습니다."},
+      {label:"다른 가게로 조용히 자리를 옮긴다",bond:5,xp:2,message:"싸움은 없었지만 카샤는 이 일을 오래 기억할 것 같습니다."}
+    ]},
+    {bond:28,missions:3,title:"루미에르 관문",text:"루미에르 성기사들이 카샤의 출입을 막았습니다. 상단 계약서를 보여줘도 분위기가 험악합니다.",options:[
+      {label:"성녀 아리아에게 직접 보증을 요청한다",bond:7,xp:4,factions:{church:2,merchant:2},cityRep:{holycity:3},message:"아리아의 보증으로 관문이 열렸습니다. 작은 선례가 생겼습니다."},
+      {label:"검문을 포기하고 우회한다",bond:6,xp:4,factions:{church:-1},message:"카샤는 익숙한 일이라며 웃었지만 그 웃음이 밝지는 않았습니다."}
+    ]},
+    {bond:50,missions:5,minGrade:3,title:"두 번째 고향",text:"카샤가 마계로 돌아갈 길과 아르카나에 남을 길 사이에서 고민합니다.",options:[
+      {label:"여기가 네가 선택한 고향이라고 말한다",bond:14,xp:7,awaken:true,factions:{merchant:3},cityRep:{arcane:4},message:"카샤가 상단 문장을 창에 새겼습니다. 「경계 너머의 길」이 각성했습니다."},
+      {label:"어디로 가든 동료라는 약속을 한다",bond:12,xp:7,awaken:true,factions:{church:1,merchant:2},message:"카샤는 처음으로 종족보다 자신의 선택을 이야기했습니다. 특성이 각성했습니다."}
+    ]}
+  ],
+  aelrin:[
+    {bond:10,missions:1,title:"잘려나간 정령목",text:"아엘린이 불법 벌목된 정령목 조각을 발견했습니다. 흔적은 카르둠 방향으로 이어집니다.",options:[
+      {label:"함께 범인을 추적한다",bond:7,xp:3,cityRep:{forest:2,mine:-1},message:"범인은 카르둠 공식 광부가 아닌 밀렵꾼이었습니다."},
+      {label:"드워프 조합에도 조사 협조를 요청한다",bond:6,xp:3,cityRep:{forest:2,mine:2},message:"양 도시가 드물게 같은 범인을 쫓기 시작했습니다."}
+    ]},
+    {bond:28,missions:3,title:"숲과 쇠",text:"아엘린의 동료들이 카르둠과 거래하는 상단을 믿을 수 없다며 그녀에게 돌아오라고 합니다.",options:[
+      {label:"상단이 두 도시를 연결할 수 있다고 설득한다",bond:8,xp:4,cityRep:{forest:2,mine:2},factions:{merchant:2},message:"아엘린은 적어도 당신 상단에서는 공존을 시험해보겠다고 합니다."},
+      {label:"실바렌의 입장을 우선하겠다고 약속한다",bond:7,xp:4,cityRep:{forest:4,mine:-2},message:"엘프 추적자들이 경계를 조금 풀었습니다."}
+    ]},
+    {bond:50,missions:5,minGrade:3,title:"별을 읽는 눈",text:"아엘린이 대정령의 흔적을 발견했습니다. 숲의 길을 읽는 마지막 시험이 시작됩니다.",options:[
+      {label:"원정 준비비 130G를 지원한다",cost:130,bond:12,xp:7,awaken:true,message:"아엘린이 대정령의 표식을 받아왔습니다. 「대정령의 시야」가 각성했습니다."},
+      {label:"혼자 가지 말고 상단과 함께하라 한다",bond:14,xp:6,awaken:true,factions:{merchant:2},message:"아엘린이 혼자 사라지는 대신 돌아올 장소를 선택했습니다. 특성이 각성했습니다."}
+    ]}
+  ]
+};
+
+
 
 const MERC_GRADES = [
   {id:"E",name:"E급",promoteXp:6,promoteCost:180,trainCost:70,loot:1.00,rare:0.00,dayCut:0,upkeep:5},
@@ -1425,7 +1660,9 @@ function phaseItemMult(item,key){
 }
 function travelCostTo(dest){
   if(dest === S.city) return 0;
-  return CITIES[dest].travel + currentWorldPhase().travel;
+  let cost=CITIES[dest].travel + currentWorldPhase().travel;
+  if(S?.npcLegacy?.port && (dest==="port" || S.city==="port")) cost-=4;
+  return Math.max(0,cost);
 }
 function effectMult(city,item,key){
   let m = 1;
@@ -1969,7 +2206,13 @@ function normalizeSavedState(state){
   state.npcRep ||= {};
   state.npcTalkDay ||= {};
   state.npcFavorDay ||= {};
-  for(const city of Object.keys(CITY_NPCS)) state.npcRep[city]=Math.max(0,Math.min(100,Number(state.npcRep[city]||0)));
+  state.npcQuestStage ||= {};
+  state.npcLegacy ||= {};
+  for(const city of Object.keys(CITY_NPCS)){
+    state.npcRep[city]=Math.max(0,Math.min(100,Number(state.npcRep[city]||0)));
+    state.npcQuestStage[city]=Math.max(0,Math.min(3,Number(state.npcQuestStage[city]||0)));
+    state.npcLegacy[city]=!!state.npcLegacy[city];
+  }
   state.lastPhaseId ??= null;
   if(state.finalTrial){
     // 이전 버전에서 이미 진행한 최종심사 일수는 납품 완료로 인정해 저장 호환성을 유지합니다.
@@ -2017,6 +2260,10 @@ function normalizeSavedState(state){
     if(m.namedId){
       const def=NAMED_MERCS.find(n=>n.id===m.namedId);
       if(def){ m.trait ??= def.trait; m.traitName ??= def.traitName; }
+      m.bond=Math.max(0,Math.min(100,Number(m.bond||5)));
+      m.storyStage=Math.max(0,Math.min(3,Number(m.storyStage||0)));
+      m.awakened=!!m.awakened;
+      m.talkDay=Number(m.talkDay||0);
     }
   }
   state.mercRoster = state.mercRoster.slice(0,MERC_MAX_ROSTER);
@@ -2130,7 +2377,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},factionRep:{merchant:0,kingdom:0,church:0,underworld:0,artisan:0},factionMergeV2:true,npcRep:{capital:0,farm:0,mine:0,port:0,arcane:0,forest:0,holycity:0},npcTalkDay:{},npcFavorDay:{},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,saintDeclarations:0,lastSaintDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},factionRep:{merchant:0,kingdom:0,church:0,underworld:0,artisan:0},factionMergeV2:true,npcRep:{capital:0,farm:0,mine:0,port:0,arcane:0,forest:0,holycity:0},npcTalkDay:{},npcFavorDay:{},npcQuestStage:{capital:0,farm:0,mine:0,port:0,arcane:0,forest:0,holycity:0},npcLegacy:{},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,saintDeclarations:0,lastSaintDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -2275,6 +2522,7 @@ function processOrders(){
   S.orders = keep;
   if(promoter && promotedSold > 0){
     promoter.xp += 1;
+    if(promoter.namedId) changeNamedMercBond(promoter,1);
     addMercLog(promoter.name + " 홍보 성과 · 판매 " + promotedSold + "개 지원 · 경험 +1");
   }
   if(soldText.length) toast("판매 체결: " + soldText.join(", "));
@@ -2312,7 +2560,7 @@ function mercProtectionChance(merc,role){
   const escort = [.20,.35,.50,.65,.82,.95];
   const table = role === "warehouse" ? warehouse : escort;
   let chance = table[Math.max(0,Math.min(table.length-1,merc.gradeIndex || 0))] || 0;
-  if(role==="escort" && merc.trait==="escort") chance += .12;
+  if(role==="escort" && merc.trait==="escort") chance += merc.awakened ? .20 : .12;
   return Math.min(.99,chance);
 }
 function mercPromotionEffect(merc){
@@ -2321,7 +2569,7 @@ function mercPromotionEffect(merc){
   const capacity = [1.10,1.15,1.20,1.28,1.35,1.45];
   const i = Math.max(0,Math.min(5,merc.gradeIndex || 0));
   let chanceMult=chance[i], capacityMult=capacity[i];
-  if(merc.trait==="promoter"){ chanceMult*=1.12; capacityMult*=1.12; }
+  if(merc.trait==="promoter"){ const b=merc.awakened?1.22:1.12; chanceMult*=b; capacityMult*=b; }
   return {chance:chanceMult,capacity:capacityMult};
 }
 function mercenaryUpkeep(){
@@ -2365,7 +2613,7 @@ function mercExpeditionCost(def){
   return Math.max(1,Math.round(def.cost * (1 - mercDiscountRate())));
 }
 function mercExpeditionDays(merc,def){
-  const traitCut = merc?.trait==="pathfinder" ? 1 : 0;
+  const traitCut = merc?.trait==="pathfinder" ? (merc.awakened?2:1) : 0;
   return Math.max(1,def.days - mercGrade(merc).dayCut - traitCut);
 }
 function addMercLog(text){
@@ -2373,6 +2621,97 @@ function addMercLog(text){
   S.mercLog.unshift(S.day + "일차 · " + text);
   S.mercLog = S.mercLog.slice(0,8);
 }
+function namedMercBond(merc){
+  return Math.max(0,Math.min(100,Number(merc?.bond||0)));
+}
+function changeNamedMercBond(merc,amount){
+  if(!merc?.namedId) return;
+  merc.bond=Math.max(0,Math.min(100,namedMercBond(merc)+Number(amount||0)));
+}
+function namedMercStory(merc){
+  if(!merc?.namedId) return null;
+  merc.storyStage=Math.max(0,Math.min(3,Number(merc.storyStage||0)));
+  return NAMED_MERC_STORIES[merc.namedId]?.[merc.storyStage] || null;
+}
+function namedMercStoryReady(merc,story){
+  if(!story) return false;
+  if(namedMercBond(merc)<(story.bond||0)) return false;
+  if((merc.missions||0)<(story.missions||0)) return false;
+  if(merc.gradeIndex<(story.minGrade||0)) return false;
+  return !mercIsBusy(merc);
+}
+function namedMercStoryRequirement(story){
+  const parts=[];
+  if(story.bond) parts.push("유대 "+story.bond);
+  if(story.missions) parts.push("원정 "+story.missions+"회");
+  if(story.minGrade!=null) parts.push(MERC_GRADES[story.minGrade].name);
+  return parts.join(" · ");
+}
+function talkNamedMercenary(id){
+  if(checkBlocked()) return;
+  const merc=mercById(id);
+  if(!merc?.namedId || mercIsBusy(merc)) return;
+  merc.talkDay ??= 0;
+  if(merc.talkDay===S.day){ toast(merc.name+"과는 오늘 이미 이야기를 나눴습니다."); return; }
+  merc.talkDay=S.day;
+  changeNamedMercBond(merc,2);
+  changeMercFriendship(1);
+  addMercLog(merc.name+"과 대화 · 유대 +2");
+  toast(merc.name+"과 이야기를 나눴습니다. 유대도 +2.");
+  render();
+}
+function resolveNamedMercStory(id,index){
+  if(checkBlocked()) return;
+  const merc=mercById(id);
+  const story=namedMercStory(merc);
+  if(!merc || !story || !namedMercStoryReady(merc,story)) return;
+  const opt=story.options?.[index];
+  if(!opt) return;
+  if(opt.cost && S.cash<=opt.cost){ toast(fmt(opt.cost)+"가 필요합니다."); return; }
+  if(opt.item && (S.inv[opt.item]||0)<(opt.qty||1)){ toast(ITEMS[opt.item].name+" "+(opt.qty||1)+"개가 필요합니다."); return; }
+
+  if(opt.cost) S.cash-=opt.cost;
+  if(opt.item) S.inv[opt.item]-=(opt.qty||1);
+  if(opt.cashReward){ S.cash+=opt.cashReward; recordDayIncome(opt.cashReward,"네임드 용병 스토리"); }
+  if(opt.bond) changeNamedMercBond(merc,opt.bond);
+  if(opt.xp) merc.xp+=opt.xp;
+  for(const [f,v] of Object.entries(opt.factions||{})) changeFactionRep(f,v);
+  for(const [city,v] of Object.entries(opt.cityRep||{})){
+    S.npcRep[city]=Math.max(0,Math.min(100,(S.npcRep[city]||0)+v));
+  }
+  merc.storyStage=(merc.storyStage||0)+1;
+  if(opt.awaken || merc.storyStage>=3){
+    merc.awakened=true;
+    merc.traitName = merc.namedId==="liana" ? "회색 맹세" :
+      merc.namedId==="bron" ? "왕사냥꾼" :
+      merc.namedId==="miel" ? "전설의 입소문" :
+      merc.namedId==="kasha" ? "경계 너머의 길" :
+      merc.namedId==="aelrin" ? "대정령의 시야" : merc.traitName;
+  }
+  changeMercFriendship(2);
+  addMercLog(merc.name+" 전용 스토리 "+merc.storyStage+"/3 완료");
+  toast(opt.message || merc.name+"의 이야기가 한 장 진행됐습니다.");
+  render();
+}
+function namedMercStoryHtml(merc){
+  if(!merc?.namedId) return "";
+  const story=namedMercStory(merc);
+  const bond=namedMercBond(merc);
+  const talked=merc.talkDay===S.day;
+  if(!story){
+    return '<div class="named-story complete"><div><b>★ 전용 스토리 완료</b><span>유대 '+bond+' / 100 · '+merc.traitName+' 각성</span></div><button data-named-talk="'+merc.id+'"'+(talked || mercIsBusy(merc)?' disabled':'')+'>'+(talked?'오늘 대화 완료':'대화하기 +2')+'</button></div>';
+  }
+  const ready=namedMercStoryReady(merc,story);
+  return '<div class="named-story '+(ready?'ready':'locked')+'">'+
+    '<div class="named-story-head"><span>전용 스토리 '+((merc.storyStage||0)+1)+' / 3</span><b>'+story.title+'</b></div>'+
+    '<p>'+story.text+'</p>'+
+    '<div class="named-bond-row"><span>유대 '+bond+' / 100</span><button data-named-talk="'+merc.id+'"'+(talked || mercIsBusy(merc)?' disabled':'')+'>'+(talked?'오늘 대화 완료':'대화하기 · 유대 +2')+'</button></div>'+
+    (ready
+      ? '<div class="named-story-options">'+story.options.map((o,i)=>'<button data-named-story="'+merc.id+'" data-option="'+i+'"'+((o.cost&&S.cash<=o.cost)||(o.item&&(S.inv[o.item]||0)<(o.qty||1))?' disabled':'')+'>'+o.label+'</button>').join("")+'</div>'
+      : '<div class="named-story-lock">해금 조건: '+namedMercStoryRequirement(story)+'</div>')+
+    '</div>';
+}
+
 function namedMercOffer(){
   return NAMED_MERCS.find(n =>
     n.city===S.city &&
@@ -2396,7 +2735,7 @@ function hireNamedMercenary(id){
     gradeIndex:def.gradeIndex,
     xp:Math.max(0,(MERC_GRADES[def.gradeIndex-1]?.promoteXp||0)-2),
     missions:0,busyUntil:0,expeditionId:null,assignment:null,hiredDay:S.day,
-    trait:def.trait,traitName:def.traitName
+    trait:def.trait,traitName:def.traitName,bond:5,storyStage:0,awakened:false,talkDay:0
   };
   S.mercRoster.push(merc);
   S.mercTotalHires+=1;
@@ -2451,6 +2790,7 @@ function investMercenary(id){
   const gain = 2 + Math.floor(Math.random()*3);
   S.cash -= cost;
   merc.xp += gain;
+  if(merc.namedId) changeNamedMercBond(merc,1);
   changeMercFriendship(1);
   addMercLog(merc.name + " 훈련 투자 · 경험 +" + gain);
   toast(merc.name + "에게 " + fmt(cost) + "를 투자했습니다. 경험 +" + gain + ".");
@@ -2472,6 +2812,7 @@ function promoteMercenary(id){
 
   S.cash -= grade.promoteCost;
   merc.gradeIndex += 1;
+  if(merc.namedId) changeNamedMercBond(merc,2);
   changeMercFriendship(3);
   const next = mercGrade(merc);
   addMercLog(merc.name + " 승급 · " + next.name);
@@ -2520,13 +2861,18 @@ function rollMercenaryLoot(def,merc){
     loot[y.item] = Math.max(1,Math.round(y.min * mult));
   }
   if(merc?.trait==="hunter"){
-    if(loot.beast_hide) loot.beast_hide=Math.max(1,Math.round(loot.beast_hide*1.30));
-    if(loot.ogre_horn) loot.ogre_horn=Math.max(1,Math.round(loot.ogre_horn*1.40));
+    const hideMult=merc.awakened?1.55:1.30;
+    const hornMult=merc.awakened?1.75:1.40;
+    if(loot.beast_hide) loot.beast_hide=Math.max(1,Math.round(loot.beast_hide*hideMult));
+    if(loot.ogre_horn) loot.ogre_horn=Math.max(1,Math.round(loot.ogre_horn*hornMult));
   }
   if(merc?.trait==="rare"){
     for(const y of def.yields.filter(x=>x.rare)){
-      if(!loot[y.item] && Math.random()<.18) loot[y.item]=1;
+      if(!loot[y.item] && Math.random()<(merc.awakened?.32:.18)) loot[y.item]=1;
     }
+  }
+  if(merc?.trait==="pathfinder" && merc.awakened && def.yields.some(y=>y.item==="demon_claw") && !loot.demon_claw && Math.random()<.22){
+    loot.demon_claw=1;
   }
   return loot;
 }
@@ -2547,6 +2893,7 @@ function processMercenaryExpeditions(){
     const xpGain = def.xp + Math.floor(Math.random()*3);
     merc.xp += xpGain;
     merc.missions += 1;
+    if(merc.namedId) changeNamedMercBond(merc,3);
     merc.expeditionId = null;
     merc.busyUntil = 0;
     S.mercCompleted += 1;
@@ -2717,7 +3064,8 @@ function renderMercenaries(){
                   ? '<div class="merc-defense-now merc-promotion-now"><b>홍보 활동 배치</b><span>판매확률 ×' + mercPromotionEffect(merc).chance.toFixed(2) + ' · 판매물량 ×' + mercPromotionEffect(merc).capacity.toFixed(2) + '</span></div>'
                   : '<div class="merc-defense-now"><b>' + mercAssignmentName(merc.assignment) + ' 배치</b><span>방어 성공률 ' + Math.round(mercProtectionChance(merc,merc.assignment)*100) + '%</span></div>')
               : '<p class="merc-grade-bonus">소재 획득 ×' + grade.loot.toFixed(2) + (grade.rare ? ' · 희귀확률 +' + Math.round(grade.rare*100) + '%' : '') + (grade.dayCut ? ' · 원정 -' + grade.dayCut + '일' : '') + '</p>') +
-          (merc.traitName ? '<div class="merc-trait"><b>'+merc.traitName+'</b><span>'+((NAMED_MERCS.find(n=>n.id===merc.namedId)||{}).desc||"고유 특성")+'</span></div>' : '') +
+          (merc.traitName ? '<div class="merc-trait"><b>'+merc.traitName+(merc.awakened?' · 각성':'')+'</b><span>'+((NAMED_MERCS.find(n=>n.id===merc.namedId)||{}).desc||"고유 특성")+'</span></div>' : '') +
+          namedMercStoryHtml(merc) +
           '<div class="merc-upkeep-line">일일 유지비 <b>' + fmt(grade.upkeep) + '</b></div>' +
           '<div class="merc-unit-actions">' +
             '<button data-merc-invest="' + merc.id + '"' + (busy || assigned || S.cash <= trainCost ? ' disabled' : '') + '>훈련 투자 ' + fmt(trainCost) + '</button>' +
@@ -2809,6 +3157,7 @@ function trouble(){
     const escortChance = mercProtectionChance(escort,"escort");
     if(escort && Math.random() < escortChance){
       escort.xp += 1;
+      if(escort.namedId) changeNamedMercBond(escort,1);
       changeMercFriendship(1);
       addMercLog(escort.name + " 호위 성공 · 도적 습격 차단 · 경험 +1");
       toast(escort.name + "이 상단을 호위하다 도적 습격을 막았습니다! (" + Math.round(escortChance*100) + "%)");
@@ -2833,6 +3182,7 @@ function trouble(){
     const warehouseChance = mercProtectionChance(warehouse,"warehouse");
     if(warehouse && Math.random() < warehouseChance){
       warehouse.xp += 1;
+      if(warehouse.namedId) changeNamedMercBond(warehouse,1);
       changeMercFriendship(1);
       addMercLog(warehouse.name + " 창고 방어 성공 · 재고 피해 차단 · 경험 +1");
       toast(warehouse.name + "이 창고 습격을 막아 재고 피해를 막았습니다! (" + Math.round(warehouseChance*100) + "%)");
@@ -3905,6 +4255,12 @@ $("#mercenaryBox").addEventListener("click",(e) => {
   const named=e.target.closest("[data-named-merc]");
   if(named){ hireNamedMercenary(named.dataset.namedMerc); return; }
 
+  const namedTalk=e.target.closest("[data-named-talk]");
+  if(namedTalk){ talkNamedMercenary(namedTalk.dataset.namedTalk); return; }
+
+  const namedStory=e.target.closest("[data-named-story]");
+  if(namedStory){ resolveNamedMercStory(namedStory.dataset.namedStory,Number(namedStory.dataset.option)); return; }
+
   const invest = e.target.closest("[data-merc-invest]");
   if(invest){ investMercenary(invest.dataset.mercInvest); return; }
 
@@ -3969,8 +4325,10 @@ $("#travelCancel").addEventListener("click",() => {
   }
 });
 $("#cityNpcBox")?.addEventListener("click",(e)=>{
-  if(e.target.closest("#npcTalkBtn")) talkCityNpc();
-  if(e.target.closest("#npcFavorBtn")) helpCityNpc();
+  if(e.target.closest("#npcTalkBtn")){ talkCityNpc(); return; }
+  if(e.target.closest("#npcFavorBtn")){ helpCityNpc(); return; }
+  const q=e.target.closest("[data-npc-quest]");
+  if(q) resolveNpcQuest(q.dataset.npcQuest,Number(q.dataset.option));
 });
 $("#informantBtn").addEventListener("click",useInformant);
 $("#upgradeBtn").addEventListener("click",upgrade);
