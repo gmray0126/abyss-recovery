@@ -3387,11 +3387,23 @@ function setMobileTab(tab,scroll=true){
 function initMobileTabs(){
   let saved = "market";
   try{ saved = localStorage.getItem("fantasyMerchantMobileTab") || "market"; }catch{}
+  const allowed = ["market","info","craft","merc","caravan"];
+  if(!allowed.includes(saved)) saved = "market";
   setMobileTab(saved,false);
+
   $("#mobileNav")?.addEventListener("click",e => {
     const btn = e.target.closest("[data-mobile-nav]");
     if(btn) setMobileTab(btn.dataset.mobileNav,true);
   });
+
+  if(isMobileLayout()){
+    requestAnimationFrame(() => {
+      const maxY = Math.max(0,document.documentElement.scrollHeight - window.innerHeight);
+      if(window.scrollY > maxY - 4 || window.scrollY > 900){
+        window.scrollTo(0,0);
+      }
+    });
+  }
 }
 $("#marketCards").addEventListener("click",(e) => {
   const b = e.target.closest("button");
