@@ -2288,7 +2288,7 @@ function processMercenaryExpeditions(){
   }
 }
 function mercGearCityRate(city){
-  return ({capital:1.18,farm:.88,mine:1.00,port:1.10,arcane:1.14})[city] || 1;
+  return ({capital:1.18,farm:.88,mine:1.00,port:1.10,arcane:1.14,forest:1.06,holycity:1.12})[city] || 1;
 }
 function mercGearPhaseRate(item){
   const phase = currentWorldPhase().id;
@@ -2318,7 +2318,7 @@ function craftMercGear(id){
   const gear = MERC_GEAR.find(x => x.id === id);
   if(!gear) return;
   if(S.day < gear.unlockDay){ toast(gear.unlockDay + "일차부터 제작할 수 있습니다."); return; }
-  if(S.city !== "mine"){ toast("몬스터 장비 상품은 철산 광산도시 장비공방에서 제작할 수 있습니다."); return; }
+  if(S.city !== "mine"){ toast("몬스터 장비 상품은 철산 카르둠 장비공방에서 제작할 수 있습니다."); return; }
   const gearFee = artisanFee(gear.fee);
   if(S.cash <= gearFee){ toast("공임 " + fmt(gearFee) + "를 내면 파산합니다."); return; }
   for(const [k,q] of Object.entries(gear.inputs)){
