@@ -1068,3 +1068,173 @@ body.app-tabs-ready [data-mobile-tab]{scroll-margin-top:90px}
     scroll-margin-top:112px!important
   }
 }
+
+/* DESKTOP TAB COMPACTION 2026-10-02 */
+@media(min-width:981px){
+  body.app-tabs-ready .layout{
+    display:grid!important;
+    width:min(1280px,100%)!important;
+    margin:0 auto!important;
+    gap:10px!important;
+    align-items:start!important;
+  }
+
+  /* MARKET: 3-column goods grid; secondary panels sit side-by-side below. */
+  body.app-tabs-ready[data-app-tab="market"] .layout{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  }
+  body.app-tabs-ready[data-app-tab="market"] #marketPanel{
+    grid-column:1/-1!important;
+    width:100%!important;
+  }
+  body.app-tabs-ready[data-app-tab="market"] #blackMarketPanel,
+  body.app-tabs-ready[data-app-tab="market"] #ordersPanel{
+    width:100%!important;
+    min-width:0!important;
+  }
+  body.app-tabs-ready[data-app-tab="market"] .market-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:7px!important;
+    margin-top:7px!important;
+  }
+  body.app-tabs-ready[data-app-tab="market"] .market-card{
+    padding:9px!important;
+    border-radius:10px!important;
+  }
+  body.app-tabs-ready[data-app-tab="market"] .market-card h3{
+    font-size:14px!important;
+  }
+  body.app-tabs-ready[data-app-tab="market"] .market-meta{
+    margin-top:4px!important;
+    gap:4px!important;
+    font-size:10px!important;
+  }
+  body.app-tabs-ready[data-app-tab="market"] .market-actions{
+    gap:4px!important;
+    margin-top:6px!important;
+  }
+  body.app-tabs-ready[data-app-tab="market"] .market-actions .qty{gap:4px!important}
+  body.app-tabs-ready[data-app-tab="market"] .market-actions button{
+    min-height:32px!important;
+    padding:5px 4px!important;
+    font-size:10px!important;
+  }
+
+  /* INFO: news/rumor left, city NPC in the unused right column. */
+  body.app-tabs-ready[data-app-tab="info"] .layout{
+    grid-template-columns:minmax(0,1.7fr) minmax(300px,.8fr)!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #infoNewsPanel{
+    grid-column:1!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #cityNpcPanel{
+    grid-column:2!important;
+    grid-row:1!important;
+    width:100%!important;
+    min-width:0!important;
+    padding:11px!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #infoGuildPanel{
+    grid-column:1/-1!important;
+    width:100%!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #infoNewsPanel .intel-grid{
+    grid-template-columns:1.35fr 1fr!important;
+    gap:7px!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #infoNewsPanel .intel-grid article:nth-child(3){
+    grid-column:1/-1!important;
+    padding:8px 10px!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #cityNpcPanel .panel-head p{
+    display:none!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #cityNpcPanel .city-npc-card{
+    padding:9px!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #cityNpcPanel .city-npc-card>p{
+    font-size:10px!important;
+    line-height:1.35!important;
+    margin:5px 0!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #cityNpcPanel .npc-benefit,
+  body.app-tabs-ready[data-app-tab="info"] #cityNpcPanel .npc-rival{
+    padding:5px 6px!important;
+    margin-top:5px!important;
+    font-size:9px!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #cityNpcPanel .npc-actions{
+    gap:4px!important;
+    margin-top:5px!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #cityNpcPanel .npc-actions button{
+    min-height:32px!important;
+    padding:5px!important;
+    font-size:9px!important;
+  }
+  body.app-tabs-ready[data-app-tab="info"] #cityNpcPanel .npc-quest-card{
+    margin-top:6px!important;
+    padding:7px!important;
+  }
+
+  /* MERC: roster/expeditions on left, activity assignment on right. */
+  body.app-tabs-ready[data-app-tab="merc"] .layout{
+    grid-template-columns:minmax(0,2.4fr) minmax(280px,.75fr)!important;
+  }
+  body.app-tabs-ready[data-app-tab="merc"] #mercenaryPanel{
+    grid-column:1!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  body.app-tabs-ready[data-app-tab="merc"] #mercActivityPanel{
+    grid-column:2!important;
+    grid-row:1!important;
+    width:100%!important;
+    min-width:0!important;
+    position:sticky!important;
+    top:76px!important;
+  }
+
+  /* CARAVAN: three compact columns instead of a long vertical stack. */
+  body.app-tabs-ready[data-app-tab="caravan"] .layout{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  body.app-tabs-ready[data-app-tab="caravan"] #caravanPanel,
+  body.app-tabs-ready[data-app-tab="caravan"] #goalPanel,
+  body.app-tabs-ready[data-app-tab="caravan"] #rankingPanel{
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  /* CRAFT: use more horizontal space on desktop. */
+  body.app-tabs-ready[data-app-tab="craft"] .layout{
+    grid-template-columns:1fr!important;
+  }
+  body.app-tabs-ready[data-app-tab="craft"] #craftPanel{
+    width:min(1180px,100%)!important;
+    margin:0 auto!important;
+  }
+
+  body.app-tabs-ready .panel{
+    padding:11px!important;
+    border-radius:13px!important;
+  }
+  body.app-tabs-ready .panel h2{
+    font-size:16px!important;
+    margin-bottom:4px!important;
+  }
+  body.app-tabs-ready .panel-head>div>p{
+    margin:2px 0!important;
+    font-size:10px!important;
+    line-height:1.35!important;
+  }
+}
+
+/* Medium desktop/laptop: keep market readable at narrower widths. */
+@media(min-width:681px) and (max-width:980px){
+  body.app-tabs-ready[data-app-tab="market"] .market-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
