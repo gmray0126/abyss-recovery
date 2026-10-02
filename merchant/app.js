@@ -269,7 +269,7 @@ function cityNpcBenefitText(city){
   if(!tier) return npc.perk + " · 우호도 20부터 시작";
   const legacy=S?.npcLegacy?.[city] ? " · ★ 개인 스토리 완결 보너스" : "";
   const pct=tier===1?2:tier===2?5:8;
-  if(city==="capital") return "왕도 수수료 추가 -" + ([0,.5,1,1.5][tier] + (S?.npcLegacy?.[city]?.5:0)) + "%p" + legacy;
+  if(city==="capital") return "왕도 수수료 추가 -" + ([0,.5,1,1.5][tier] + (S?.npcLegacy?.[city] ? .5 : 0)) + "%p" + legacy;
   if(city==="mine") return "카르둠 제작 공임 -" + Math.round(cityNpcCraftDiscount(city)*100) + "%" + legacy;
   if(city==="holycity") return "신성상품 현지가 약 -" + pct + "% · 제작 공임 -" + Math.round(cityNpcCraftDiscount(city)*100) + "%" + legacy;
   if(city==="port" && S?.npcLegacy?.port) return npc.perk + " · 현지가 약 -" + pct + "% · 항구 이동비 -4G · ★ 개인 스토리 완결";
