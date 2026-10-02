@@ -1613,3 +1613,18 @@ body.app-tabs-ready .panel-head{border-bottom:1px solid rgba(177,145,103,.34);pa
     white-space:nowrap;
   }
 }
+
+/* MOBILE TAB SAFE GAP 2026-10-02
+   All tab content starts clearly below the fixed HUD. */
+@media(max-width:680px){
+  body.app-tabs-ready .layout{
+    padding-top:18px!important;
+  }
+  body.app-tabs-ready[data-app-tab="market"] #marketPanel,
+  body.app-tabs-ready[data-app-tab="info"] #infoNewsPanel,
+  body.app-tabs-ready[data-app-tab="craft"] #craftPanel,
+  body.app-tabs-ready[data-app-tab="merc"] #mercenaryPanel,
+  body.app-tabs-ready[data-app-tab="caravan"] #caravanSummary{
+    margin-top:0!important;
+  }
+}
