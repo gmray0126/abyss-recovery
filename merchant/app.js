@@ -4207,6 +4207,12 @@ function setAppTab(tab,{scroll=true}={}){
     if(window.scrollY>y+120 || window.scrollY<y-120) window.scrollTo({top:y,behavior:"smooth"});
   }
 }
+function syncAppHudHeight(){
+  const bar=$("#appTabBar");
+  if(!bar) return;
+  const h=Math.ceil(bar.getBoundingClientRect().height);
+  document.documentElement.style.setProperty("--app-hud-height",h+"px");
+}
 function initAppTabs(){
   let saved="market";
   try{
@@ -4219,14 +4225,22 @@ function initAppTabs(){
   setAppTab(saved,{scroll:false});
   document.body.classList.add("app-tabs-ready");
 
-  $("#appTabBar")?.addEventListener("click",e=>{
+  const bar=$("#appTabBar");
+  syncAppHudHeight();
+  requestAnimationFrame(syncAppHudHeight);
+  window.addEventListener("resize",syncAppHudHeight,{passive:true});
+  if(bar && "ResizeObserver" in window){
+    new ResizeObserver(syncAppHudHeight).observe(bar);
+  }
+
+  bar?.addEventListener("click",e=>{
     const end=e.target.closest("#tabEndDayBtn");
     if(end){ openTravel(); return; }
     const btn=e.target.closest("[data-app-tab]");
     if(btn) setAppTab(btn.dataset.appTab,{scroll:true});
   });
 
-  $("#appTabBar")?.addEventListener("keydown",e=>{
+  bar?.addEventListener("keydown",e=>{
     const btn=e.target.closest("[data-app-tab]");
     if(!btn || !["ArrowLeft","ArrowRight"].includes(e.key)) return;
     e.preventDefault();
