@@ -3098,6 +3098,8 @@ function render(){
   $("#cashChip").textContent = fmt(S.cash);
   $("#cashStat").textContent = fmt(S.cash);
   $("#netStat").textContent = fmt(net());
+  if($("#mobileQuickNet")) $("#mobileQuickNet").textContent = fmt(net());
+  if($("#mobileEndDayBtn")) $("#mobileEndDayBtn").textContent = S.travelOpen ? "이동지 선택 중" : "하루 넘기기";
   $("#feeStat").textContent = fmt(fee());
   $("#capStat").textContent = used() + " / " + S.capacity;
   $("#marketTitle").textContent = CITIES[S.city].name + " 시장";
@@ -3415,6 +3417,12 @@ function setupSafeMobileSections(){
     caravan:'[data-mobile-tab="caravan"]'
   };
   $("#mobileQuickNav")?.addEventListener("click",e=>{
+    const endDay=e.target.closest("#mobileEndDayBtn");
+    if(endDay){
+      openTravel();
+      return;
+    }
+
     const b=e.target.closest("[data-jump-target]");
     if(!b) return;
     const panel=document.querySelector(jumpMap[b.dataset.jumpTarget]||"");
