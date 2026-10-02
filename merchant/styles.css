@@ -1520,3 +1520,38 @@ body.app-tabs-ready .panel-head{border-bottom:1px solid rgba(177,145,103,.34);pa
   .item-icon{width:34px;height:34px;flex-basis:34px;font-size:18px}
   .market-price{font-size:15px}
 }
+
+/* MARKET LOCAL SPECIALTY + ICONLESS PASS */
+.hud-brand{padding-left:9px!important}
+.app-tab-links button span,.hud-seal,.item-icon,.npc-avatar{display:none!important}
+.npc-identity{gap:0!important}
+.item-identity{gap:0!important}
+.item-name-line{display:flex;align-items:center;gap:7px;min-width:0}
+.item-name-line h3{margin:0!important}
+.specialty-badge{
+  display:inline-flex;align-items:center;
+  padding:2px 6px;border-radius:999px;
+  border:1px solid #c9b18d;background:#f4ead8;
+  color:#76583b;font-size:8px;font-weight:900;white-space:nowrap
+}
+.specialty-badge.local{
+  border-color:#a9b48d;background:#edf2df;color:#53633d
+}
+.specialty-badge.remote{
+  border-color:#c9b9aa;background:#f1ece5;color:#8a7462
+}
+.market-actions button:disabled{opacity:.48!important;cursor:not-allowed!important}
+
+@media(min-width:981px){
+  body.app-tabs-ready[data-app-tab="market"] .market-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:9px!important
+  }
+  body.app-tabs-ready[data-app-tab="market"] .market-card{
+    padding:10px 11px!important
+  }
+}
+@media(max-width:680px){
+  .app-tab-links button b{display:inline!important}
+  .item-name-line{align-items:flex-start;flex-direction:column;gap:2px}
+}
