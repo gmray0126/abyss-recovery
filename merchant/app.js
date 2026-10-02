@@ -69,7 +69,7 @@ const CITIES = {
   },
   arcane:{
     name:"마도도시 아르카나",
-    desc:"마법석과 포션을 대량 소비·생산하는 마도학술도시. 약초는 실바렌에서 수입합니다.",
+    desc:"마법석과 포션을 대량 소비·생산하는 마도학술도시. 전쟁 후 교화된 마족들도 정착해 살아가며 성도 루미에르와 사이는 매우 나쁩니다.",
     travel:26,fee:.05,
     mods:{bread:1.20,wheat:1.16,iron:1.12,sword:1.04,armor:1.08,herb:1.06,potion:.72,gem:1.15,spice:1.12,mana:.54,beer:1.12,holy:1.12,elf_silk:1.08,starlight_wine:1.12,holy_oil:1.04,blessed_incense:1.08}
   },
@@ -86,6 +86,149 @@ const CITIES = {
     mods:{bread:1.08,wheat:1.06,iron:1.10,sword:1.16,armor:1.14,herb:.88,potion:.90,gem:1.18,spice:1.06,mana:1.18,beer:1.24,holy:.50,elf_silk:1.15,starlight_wine:1.20,holy_oil:.58,blessed_incense:.62}
   }
 };
+
+const CITY_RIVALS = {
+  farm:"port", port:"farm",
+  mine:"forest", forest:"mine",
+  arcane:"holycity", holycity:"arcane"
+};
+
+const CITY_NPCS = {
+  capital:{
+    name:"왕실 상무관 엘레노아",title:"왕도 상무관",favorite:"spice",
+    desc:"왕실 조달과 상인조합 사이를 오가는 실무 관료. 상인에게 친절하지만 숫자에는 더 친절합니다.",
+    perk:"왕도 판매 수수료 우대"
+  },
+  farm:{
+    name:"대농장주 마르타",title:"평원 농장연합 대표",favorite:"iron",
+    desc:"풍요 평원의 절반쯤은 자기 밭이라고 농담하는 농장주. 청해 항구의 값싼 수입 농산물을 매우 싫어합니다.",
+    perk:"밀·빵·맥주 현지 매입 우대"
+  },
+  mine:{
+    name:"룬장인 브루노",title:"카르둠 대장간 대표",favorite:"beer",
+    desc:"드워프 장인들의 대표. 엘프 물건은 예쁘기만 하고 오래 못 간다고 주장합니다.",
+    perk:"카르둠 제작 공임 우대"
+  },
+  port:{
+    name:"선주 세일라",title:"청해 상선연합 대표",favorite:"wheat",
+    desc:"항구의 상선을 여럿 거느린 선주. 평원 상인들이 항구세를 비싸다고 욕하는 걸 아주 잘 알고 있습니다.",
+    perk:"보석·향신료 현지 매입 우대"
+  },
+  arcane:{
+    name:"네르 교수",title:"교화 마족 마도학 교수",favorite:"herb",
+    desc:"전쟁 후 아르카나에 정착한 교화 마족. 마법이 종족보다 중요하다고 믿으며 루미에르 교단과 자주 충돌합니다.",
+    perk:"마법석·포션 현지 매입 우대"
+  },
+  forest:{
+    name:"수림상단주 리시엘",title:"실바렌 수림상단주",favorite:"mana",
+    desc:"엘프 상단의 대표. 카르둠의 광산 확장이 숲을 망친다고 생각해 드워프들과 사이가 좋지 않습니다.",
+    perk:"약초·엘프 특산품 현지 매입 우대"
+  },
+  holycity:{
+    name:"성녀 아리아",title:"루미에르 성녀",favorite:"bread",
+    desc:"대성당의 상징이자 공주의 발언과 자주 정면충돌하는 성녀. 교화 마족을 받아들인 아르카나를 아직 신뢰하지 않습니다.",
+    perk:"성수·성유·축복받은 향 우대 및 교단 신뢰"
+  }
+};
+
+function cityNpcRep(city=S.city){
+  return Math.max(0,Math.min(100,Number(S?.npcRep?.[city] || 0)));
+}
+function cityNpcTier(city=S.city){
+  const rep=cityNpcRep(city);
+  return rep>=80?3:rep>=50?2:rep>=20?1:0;
+}
+function cityNpcPriceFactor(city,item){
+  const tier=cityNpcTier(city);
+  if(!tier) return 1;
+  const rates=[1,.98,.95,.92];
+  const specialties={
+    farm:["wheat","bread","beer"],
+    port:["gem","spice"],
+    arcane:["mana","potion"],
+    forest:["herb","elf_silk","starlight_wine"],
+    holycity:["holy","holy_oil","blessed_incense"]
+  };
+  return specialties[city]?.includes(item) ? rates[tier] : 1;
+}
+function cityNpcFeeDiscount(city){
+  if(city!=="capital") return 0;
+  return [0,.005,.01,.015][cityNpcTier(city)] || 0;
+}
+function cityNpcCraftDiscount(city){
+  if(!["mine","holycity"].includes(city)) return 0;
+  return [0,.05,.10,.15][cityNpcTier(city)] || 0;
+}
+function cityNpcBenefitText(city){
+  const tier=cityNpcTier(city);
+  const npc=CITY_NPCS[city];
+  if(!npc) return "";
+  if(!tier) return npc.perk + " · 우호도 20부터 시작";
+  const pct=tier===1?2:tier===2?5:8;
+  if(city==="capital") return "왕도 수수료 추가 -" + [0,.5,1,1.5][tier] + "%p";
+  if(city==="mine") return "카르둠 제작 공임 -" + [0,5,10,15][tier] + "%";
+  if(city==="holycity") return "신성상품 현지가 약 -" + pct + "% · 제작 공임 -" + [0,5,10,15][tier] + "%";
+  return npc.perk + " · 현지가 약 -" + pct + "%";
+}
+function changeCityNpcRep(city,amount,{rival=true}={}){
+  if(!CITY_NPCS[city]) return;
+  S.npcRep ||= {};
+  S.npcRep[city]=Math.max(0,Math.min(100,(S.npcRep[city]||0)+Number(amount||0)));
+  if(amount>0 && rival && CITY_RIVALS[city]){
+    const other=CITY_RIVALS[city];
+    const penalty=Math.max(1,Math.floor(amount/4));
+    S.npcRep[other]=Math.max(0,(S.npcRep[other]||0)-penalty);
+  }
+}
+function talkCityNpc(){
+  if(checkBlocked()) return;
+  const city=S.city,npc=CITY_NPCS[city];
+  if(!npc) return;
+  S.npcTalkDay ||= {};
+  if(S.npcTalkDay[city]===S.day){ toast(npc.name+"과는 오늘 이미 이야기를 나눴습니다."); return; }
+  S.npcTalkDay[city]=S.day;
+  changeCityNpcRep(city,1,{rival:false});
+  toast(npc.name+"과 이야기를 나눴습니다. 개인 우호도 +1.");
+  render();
+}
+function helpCityNpc(){
+  if(checkBlocked()) return;
+  const city=S.city,npc=CITY_NPCS[city];
+  if(!npc) return;
+  S.npcFavorDay ||= {};
+  if(S.npcFavorDay[city]===S.day){ toast("오늘의 개인 부탁은 이미 해결했습니다."); return; }
+  const item=npc.favorite;
+  if((S.inv[item]||0)<1){ toast(npc.name+"의 부탁에는 "+ITEMS[item].name+" 1개가 필요합니다."); return; }
+  S.inv[item]-=1;
+  S.npcFavorDay[city]=S.day;
+  changeCityNpcRep(city,5,{rival:true});
+  if(city==="holycity") changeFactionRep("church",2);
+  if(city==="arcane") changeFactionRep("church",-1);
+  if(city==="capital") changeFactionRep("kingdom",1);
+  else changeFactionRep("merchant",.5);
+  toast(npc.name+"의 부탁을 해결했습니다. 개인 우호도 +5"+(CITY_RIVALS[city]?" · 라이벌 도시 인맥 -1":"")+".");
+  render();
+}
+function renderCityNpc(){
+  const box=$("#cityNpcBox");
+  if(!box) return;
+  const city=S.city,npc=CITY_NPCS[city];
+  if(!npc){ box.innerHTML=""; return; }
+  const rep=cityNpcRep(city);
+  const rival=CITY_RIVALS[city];
+  const favorite=ITEMS[npc.favorite]?.name||npc.favorite;
+  const talked=S.npcTalkDay?.[city]===S.day;
+  const helped=S.npcFavorDay?.[city]===S.day;
+  box.innerHTML =
+    '<article class="city-npc-card"><div class="city-npc-head"><div><span>'+npc.title+'</span><h3>'+npc.name+'</h3></div><strong>'+Math.round(rep)+' / 100</strong></div>'+
+    '<div class="npc-meter"><i style="width:'+rep+'%"></i></div>'+
+    '<p>'+npc.desc+'</p>'+
+    '<div class="npc-benefit"><b>현재 혜택</b><span>'+cityNpcBenefitText(city)+'</span></div>'+
+    (rival?'<div class="npc-rival">⚡ 라이벌: '+CITIES[rival].name+' · 큰 부탁을 들어주면 상대 인맥이 조금 나빠집니다.</div>':'')+
+    '<div class="npc-actions"><button id="npcTalkBtn"'+(talked?' disabled':'')+'>'+(talked?'오늘 대화 완료':'대화하기 · 우호도 +1')+'</button>'+
+    '<button id="npcFavorBtn"'+(helped || (S.inv[npc.favorite]||0)<1?' disabled':'')+'>'+(helped?'오늘 부탁 완료':favorite+' 1개 건네기 · 우호도 +5')+'</button></div></article>';
+}
+
 
 const CRAFT_LIMIT = 3;
 const CRAFT_RECIPES = [
@@ -106,6 +249,19 @@ const CRAFT_RECIPES = [
 const MERC_MAX_ROSTER = 6;
 const MERC_RECRUIT_COST = 300;
 const MERC_NAMES = ["리아","브람","세라","카엘","미라","토르빈","유나","베른","엘리","로웬","니아","가론"];
+const NAMED_MERCS = [
+  {id:"liana",name:"잿빛 검 리아나",city:"capital",unlockDay:10,gradeIndex:1,cost:560,trait:"escort",
+    traitName:"왕실 호위술",desc:"전직 왕실 호위병. 상단 호위 배치 시 같은 등급보다 도적 방어가 강합니다."},
+  {id:"bron",name:"오우거 사냥꾼 브론",city:"mine",unlockDay:18,gradeIndex:2,cost:820,trait:"hunter",
+    traitName:"거물 사냥꾼",desc:"카르둠 출신 사냥꾼. 원정에서 마수 가죽과 오우거 뿔을 더 많이 챙깁니다."},
+  {id:"miel",name:"떠돌이 음유용병 미엘",city:"port",unlockDay:14,gradeIndex:1,cost:620,trait:"promoter",
+    traitName:"입소문 장사",desc:"칼보다 입이 빠른 용병. 홍보 활동 배치 시 판매 확률과 물량 보너스가 커집니다."},
+  {id:"kasha",name:"교화 마족 창병 카샤",city:"arcane",unlockDay:25,gradeIndex:2,cost:900,trait:"pathfinder",
+    traitName:"마계 길눈",desc:"아르카나에 정착한 마족 출신 용병. 모든 원정 시간이 추가로 1일 줄어듭니다."},
+  {id:"aelrin",name:"수림 추적자 아엘린",city:"forest",unlockDay:22,gradeIndex:2,cost:860,trait:"rare",
+    traitName:"정령의 눈",desc:"실바렌 추적자. 희귀 몬스터 소재 획득 확률이 조금 더 높습니다."}
+];
+
 const MERC_GRADES = [
   {id:"E",name:"E급",promoteXp:6,promoteCost:180,trainCost:70,loot:1.00,rare:0.00,dayCut:0,upkeep:5},
   {id:"D",name:"D급",promoteXp:14,promoteCost:320,trainCost:110,loot:1.18,rare:0.04,dayCut:0,upkeep:8},
@@ -213,6 +369,36 @@ const MERCENARY_EVENTS = [
       {label:"경비대에 맡긴다",effect:"merc_brawl_guard"},
       {label:"누가 이기나 구경한다",effect:"merc_brawl_watch"}
     ]
+  },
+  {
+    id:"merc_pay_raise",title:"용병들의 급료 협상",text:"용병들이 최근 위험도가 너무 올랐다며 급료 조정을 요구합니다. 대표가 장부를 들고 꽤 진지한 표정으로 찾아왔습니다.",
+    options:[
+      {label:"격려금 120G를 지급한다",effect:"merc_raise_pay"},
+      {label:"다음 원정 성공 시 보너스를 약속한다",effect:"merc_raise_promise"},
+      {label:"계약서는 이미 썼습니다",effect:"merc_raise_refuse"}
+    ]
+  },
+  {
+    id:"merc_duel",title:"용병 길드 공개 대련",text:"길드에서 상단 소속 용병 한 명을 공개 대련에 내보내 달라고 합니다. 잘하면 이름값을 올릴 기회입니다.",
+    options:[
+      {label:"훈련비 70G를 지원해 참가시킨다",effect:"merc_duel_sponsor"},
+      {label:"구경만 한다",effect:"merc_duel_watch"}
+    ]
+  },
+  {
+    id:"merc_loot_argument",title:"원정 전리품 분배 논쟁",text:"용병들이 가치 있는 전리품 하나를 발견했는데 계약상 누구 몫인지 애매합니다.",
+    options:[
+      {label:"용병들이 가지게 한다",effect:"merc_loot_give"},
+      {label:"상단 몫이라며 120G에 처분한다",effect:"merc_loot_take"},
+      {label:"절반씩 나눈다",effect:"merc_loot_split"}
+    ]
+  },
+  {
+    id:"merc_rescue",title:"용병이 길에서 아이를 구했습니다",text:"상단 소속 용병이 이동 중 위험에 처한 아이를 구했습니다. 소문이 빠르게 퍼지고 있습니다.",
+    options:[
+      {label:"치료비 60G까지 지원한다",effect:"merc_rescue_support"},
+      {label:"용병 개인의 선행으로 둔다",effect:"merc_rescue_neutral"}
+    ]
   }
 ];
 
@@ -277,12 +463,12 @@ const EVENTS = [
 
   {id:"potion_heresy",n:"성직자들이 포션을 이단으로 규정",tag:"종교",txt:"회복 포션 불매운동이 시작됐습니다. 성수 판매상들은 매우 신앙심이 깊어졌습니다.",p:{potion:.52,holy:1.7},d:{potion:.3,holy:2},days:3,follow:{id:"church_invest",chance:.42}},
   {id:"church_invest",n:"성직자들이 포션 회사에 투자",tag:"막장",chainOnly:true,txt:"교단이 갑자기 새 교리를 발표했습니다. 투자설은 부인했습니다.",p:{potion:1.65,holy:.86},d:{potion:1.9,holy:.75},days:2},
-  {id:"antihero_foundation",n:"반용사 경제피해대책위원회 결성",tag:"단체",chainOnly:true,txt:"용사의 한마디에 재고가 폭등락하자 상인들이 '반용사 경제피해대책위원회'를 만들었습니다. 첫 회의 안건은 용사 광고 금지입니다.",p:{sword:.82,armor:.9,beer:1.16},d:{sword:.72,armor:.82,beer:1.3},days:2,follow:{id:"antihero_rally",chance:.78}},
-  {id:"antihero_rally",n:"반용사 단체 대규모 시위",tag:"단체",chainOnly:true,txt:"'용사는 마왕만 잡고 시세는 건드리지 마라!'라는 현수막이 왕도 앞을 뒤덮었습니다. 구경꾼 때문에 맥주와 빵은 잘 팔립니다.",p:{sword:.68,armor:.78,beer:1.38,bread:1.2},d:{sword:.5,armor:.65,beer:1.7,bread:1.35},days:2,follow:{id:"hero_fan_counter",chance:.55}},
+  {id:"antihero_foundation",n:"상인조합 경제피해대책위원회 결성",tag:"단체",chainOnly:true,txt:"용사의 한마디에 재고가 폭등락하자 상인들이 '상인조합 경제피해대책위원회'를 만들었습니다. 첫 회의 안건은 용사 광고 금지입니다.",p:{sword:.82,armor:.9,beer:1.16},d:{sword:.72,armor:.82,beer:1.3},days:2,follow:{id:"antihero_rally",chance:.78}},
+  {id:"antihero_rally",n:"상인조합 피해대책위 대규모 시위",tag:"단체",chainOnly:true,txt:"'용사는 마왕만 잡고 시세는 건드리지 마라!'라는 현수막이 왕도 앞을 뒤덮었습니다. 구경꾼 때문에 맥주와 빵은 잘 팔립니다.",p:{sword:.68,armor:.78,beer:1.38,bread:1.2},d:{sword:.5,armor:.65,beer:1.7,bread:1.35},days:2,follow:{id:"hero_fan_counter",chance:.55}},
   {id:"hero_fan_counter",n:"용사 팬클럽 맞불 집회",tag:"유행",chainOnly:true,txt:"용사 팬클럽이 '우리 용사님이 뭘 잘못했냐'며 맞불 집회를 열었습니다. 검 굿즈가 다시 팔립니다.",p:{sword:1.38,gem:1.15,beer:1.2},d:{sword:1.65,gem:1.25,beer:1.3},days:2,follow:{id:"hero_axe",chance:.7}},
-  {id:"antihero_lawsuit",n:"상인연합, 용사에게 시세조작 손해배상 청구",tag:"단체",txt:"반용사 단체가 용사의 인터뷰 한마디로 손해를 봤다며 집단소송을 냈습니다. 변호사들은 보석으로 수임료를 받습니다.",p:{sword:.8,gem:1.28,spice:1.12},d:{sword:.7,gem:1.45},days:2},
-  {id:"antihero_boycott",n:"반용사 단체 '검 안 사기 운동'",tag:"단체",txt:"용사가 또 검을 칭찬하자 반용사 상인연합이 검 불매운동을 시작했습니다. 갑옷은 왜 같이 안 사는지 아무도 모릅니다.",p:{sword:.58,armor:.88,beer:1.18},d:{sword:.38,armor:.8,beer:1.28},days:2},
-  {id:"antihero_merch",n:"반용사 굿즈 대박",tag:"단체",txt:"반용사 단체의 '시세를 지켜라' 배지가 유행했습니다. 보석상들이 배지를 금으로 만들기 시작했습니다.",p:{gem:1.3,beer:1.15},d:{gem:1.5,beer:1.25},days:2},
+  {id:"antihero_lawsuit",n:"상인연합, 용사에게 시세조작 손해배상 청구",tag:"단체",txt:"상인조합 피해대책위가 용사의 인터뷰 한마디로 손해를 봤다며 집단소송을 냈습니다. 변호사들은 보석으로 수임료를 받습니다.",p:{sword:.8,gem:1.28,spice:1.12},d:{sword:.7,gem:1.45},days:2},
+  {id:"antihero_boycott",n:"상인조합 피해대책위 '검 안 사기 운동'",tag:"단체",txt:"용사가 또 검을 칭찬하자 반용사 상인연합이 검 불매운동을 시작했습니다. 갑옷은 왜 같이 안 사는지 아무도 모릅니다.",p:{sword:.58,armor:.88,beer:1.18},d:{sword:.38,armor:.8,beer:1.28},days:2},
+  {id:"antihero_merch",n:"반용사 굿즈 대박",tag:"단체",txt:"상인조합 피해대책위의 '시세를 지켜라' 배지가 유행했습니다. 보석상들이 배지를 금으로 만들기 시작했습니다.",p:{gem:1.3,beer:1.15},d:{gem:1.5,beer:1.25},days:2},
   {id:"hero_ad",n:"유명 용사가 검 광고",tag:"유행",txt:"“마왕도 한 방!” 광고가 대박 났습니다. 실제 마왕은 인터뷰를 거부했습니다.",p:{sword:1.48},d:{sword:1.85},days:2,follow:{id:"antihero_foundation",chance:.72}},
   {id:"hero_axe",n:"유명 용사는 사실 도끼 유저",tag:"정정",chainOnly:true,txt:"광고 촬영용으로만 검을 들었다는 사실이 밝혀졌습니다.",p:{sword:.7},d:{sword:.55},days:2},
   {id:"hero_fast",n:"용사가 마왕을 너무 빨리 잡았습니다",tag:"세계",txt:"전쟁 특수가 조기 종료됐습니다. 대신 전국에서 축하 연회가 열립니다.",p:{sword:.66,armor:.7,spice:1.42,beer:1.5},d:{sword:.5,armor:.55,spice:1.7,beer:1.8},days:3,follow:{id:"demon_return",chance:.38}},
@@ -394,6 +580,16 @@ const EVENTS = [
     txt:"성녀가 왕국 각지에 무료 치료단을 보냈습니다. 약초·포션·성유 주문이 폭증했습니다.",
     p:{herb:1.24,potion:1.30,holy_oil:1.28},d:{herb:1.55,potion:1.72,holy_oil:1.65},shock:{herb:1.07,potion:1.09,holy_oil:1.08},days:2},
 
+  {id:"arcane_holy_dispute",n:"아르카나와 루미에르, 교화 마족 문제로 공개 설전",tag:"도시 갈등",cities:["arcane","holycity"],
+    txt:"아르카나는 교화된 마족도 시민이라고 선언했고 루미에르 교단은 검증 없는 공존은 위험하다고 반박했습니다. 양 도시의 상인들까지 편을 나누기 시작했습니다.",
+    p:{mana:1.22,holy:1.20,holy_oil:1.14,potion:1.12},d:{mana:1.38,holy:1.36,holy_oil:1.28},days:2},
+  {id:"elf_dwarf_trade_spat",n:"실바렌-카르둠 무역분쟁",tag:"도시 갈등",cities:["forest","mine"],
+    txt:"엘프 장로회가 광산 먼지를 문제 삼자 드워프 장인들이 엘프 목제품 검사를 강화했습니다. 서로 안 산다더니 중간상인만 바빠졌습니다.",
+    p:{iron:1.18,elf_silk:1.18,herb:1.12,sword:1.10},d:{iron:1.30,elf_silk:1.32,herb:1.22},days:2},
+  {id:"port_farm_trade_spat",n:"청해 항구와 풍요 평원, 운임·곡물세 충돌",tag:"도시 갈등",cities:["port","farm"],
+    txt:"평원 농장주들은 항구 운임이 폭리라고 주장하고 선주들은 곡물 상인들이 배를 창고처럼 쓴다고 맞받았습니다.",
+    p:{wheat:1.18,spice:1.14,beer:1.12},d:{wheat:1.30,spice:1.25,beer:1.22},days:2},
+
   {id:"royal_weapon_sale_ban",n:"왕실, 민간 무기 판매 3일간 금지",tag:"판매금지",txt:"왕실이 치안 안정을 이유로 검과 갑옷의 민간 판매를 전면 금지했습니다. 이미 진열한 물건도 거래가 중지됩니다.",bannedItems:["sword","armor"],p:{sword:.86,armor:.88},d:{sword:.35,armor:.38},days:3},
   {id:"potion_sale_ban",n:"왕실 보건국, 포션 판매 일시 금지",tag:"판매금지",txt:"성분표시 오류가 발견됐다는 이유로 포션 판매가 며칠간 금지됐습니다. 약초상들은 자기들은 무관하다며 웃고 있습니다.",bannedItems:["potion"],p:{potion:.72,herb:1.18},d:{potion:.2,herb:1.3},days:2},
   {id:"grain_sale_control",n:"왕실, 곡물 사재기 방지 판매통제",tag:"판매금지",txt:"빵과 밀을 비축한 상인이 너무 많아지자 왕실이 민간 판매를 잠시 막았습니다. 창고에 곡물이 있는 상인들의 표정이 굳었습니다.",bannedItems:["bread","wheat"],p:{bread:.78,wheat:.74},d:{bread:.28,wheat:.25},days:2},
@@ -435,7 +631,7 @@ const ROUTE_THRESHOLD = 12;
 const ROUTE_LEAD = 2;
 const ROUTES = {
   royal:{name:"왕실",ending:"왕실 공인 대상인",desc:"왕실·길드와의 신뢰를 쌓아 제도권 상단의 정점에 섭니다."},
-  antihero:{name:"반용사",ending:"시세를 지킨 경제수호자",desc:"용사의 말 한마디에 무너지는 시장에 맞서 상인들의 목소리를 대표합니다."},
+  antihero:{name:"독립상인",ending:"시세를 지킨 경제수호자",desc:"상인조합 안에서 왕실·용사·유명인의 시장 개입에 맞서 독립 상인의 목소리를 키웁니다."},
   underworld:{name:"암시장",ending:"뒷골목의 상왕",desc:"합법과 불법의 경계를 넘나들며 왕국의 그림자 유통망을 장악합니다."},
   artisan:{name:"장인",ending:"왕국 제일의 공방상단",desc:"단순 시세차익을 넘어 직접 생산과 가공으로 상단의 이름을 남깁니다."}
 };
@@ -445,7 +641,7 @@ const WORLD_PHASES = [
     id:"prosperity",start:1,end:24,name:"왕국 호황기",short:"호황",
     desc:"마왕 소식도 국경 분쟁도 잠잠합니다. 사치품과 축제가 잘 팔리고 도로 사정도 안정적입니다.",
     news:"왕국 전역에 긴 평화와 호황이 이어집니다.",
-    newsText:"상인 길드는 올해를 '돈 벌기 좋은 해'라고 선언했습니다. 이 말이 불길하다는 사람도 있습니다.",
+    newsText:"상인조합는 올해를 '돈 벌기 좋은 해'라고 선언했습니다. 이 말이 불길하다는 사람도 있습니다.",
     travel:0,risk:0,volatility:.82,war:false,
     p:{gem:1.06,spice:1.08,beer:1.05},d:{gem:1.12,spice:1.12,beer:1.12}
   },
@@ -502,7 +698,7 @@ const CHOICE_EVENTS = [
     {label:"숨겨주고 사례금을 노린다",effect:"hide_smuggler"},
     {label:"경비대에 신고한다",effect:"report_smuggler"}
   ]},
-  {id:"antihero_donation",title:"반용사 단체 모금함",text:"'용사는 마왕만 잡고 경제에는 손대지 마라!'라고 적힌 모금함이 놓여 있습니다.",options:[
+  {id:"antihero_donation",title:"상인조합 피해대책위 모금함",text:"'용사는 마왕만 잡고 경제에는 손대지 마라!'라고 적힌 모금함이 놓여 있습니다.",options:[
     {label:"50G 후원한다",effect:"support_antihero"},
     {label:"용사도 먹고살아야지",effect:"support_hero"}
   ]},
@@ -518,9 +714,9 @@ const CHOICE_EVENTS = [
     {label:"75G에 상자를 산다",effect:"buy_crate"},
     {label:"남의 불행은 사지 않는다",effect:"skip_crate"}
   ]},
-  {id:"royal_economy_meeting",title:"왕실 경제회의 초청장",text:"왕실이 상인들의 의견을 듣겠다며 당신을 불렀습니다. 회의장 밖에는 반용사 단체와 장인조합도 모여 있습니다.",options:[
+  {id:"royal_economy_meeting",title:"왕실 경제회의 초청장",text:"왕실이 상인들의 의견을 듣겠다며 당신을 불렀습니다. 회의장 밖에는 상인조합 피해대책위와 장인조합도 모여 있습니다.",options:[
     {label:"왕실 정책 자문에 협조한다",effect:"route_royal_meeting"},
-    {label:"반용사 단체의 성명서를 대신 읽는다",effect:"route_antihero_meeting"},
+    {label:"상인조합 피해대책위의 성명서를 대신 읽는다",effect:"route_antihero_meeting"},
     {label:"장인조합의 유통권을 요구한다",effect:"route_artisan_meeting"}
   ]},
   {id:"underground_auction",title:"초대받지 않은 지하 경매",text:"검은 봉투 안에 오늘 밤 열리는 비밀 경매의 좌표가 적혀 있습니다. 왕실 압수품도 나온다는 소문입니다.",options:[
@@ -533,15 +729,15 @@ const CHOICE_EVENTS = [
     {label:"남은 재고를 암시장에 연결한다",effect:"route_underworld_factory"},
     {label:"왕실 보조금을 신청해준다",effect:"route_royal_subsidy"}
   ]},
-  {id:"hero_market_speech",title:"용사의 공개 연설",text:"용사가 또 특정 물건을 칭찬하려 합니다. 반용사 단체는 연설을 막아달라 하고, 왕실은 질서 유지를 요청합니다.",options:[
-    {label:"반용사 단체와 연설을 저지한다",effect:"route_antihero_block"},
+  {id:"hero_market_speech",title:"용사의 공개 연설",text:"용사가 또 특정 물건을 칭찬하려 합니다. 상인조합 피해대책위는 연설을 막아달라 하고, 왕실은 질서 유지를 요청합니다.",options:[
+    {label:"상인조합 피해대책위와 연설을 저지한다",effect:"route_antihero_block"},
     {label:"왕실 요청대로 질서를 유지한다",effect:"route_royal_order"},
     {label:"사람 몰린 틈에 굿즈를 제작해 판다",effect:"route_artisan_merch"}
   ]},
   {id:"black_ledger",title:"정체불명의 검은 장부",text:"밀수조직의 거래 장부가 우연히 손에 들어왔습니다. 어느 쪽에 넘기느냐에 따라 적과 친구가 달라집니다.",options:[
     {label:"밀수조직에 돌려주고 빚을 만든다",effect:"route_underworld_ledger"},
     {label:"왕실 수사관에게 넘긴다",effect:"route_royal_ledger"},
-    {label:"반용사 단체에 흘려 상인 피해를 폭로한다",effect:"route_antihero_ledger"}
+    {label:"상인조합 피해대책위에 흘려 상인 피해를 폭로한다",effect:"route_antihero_ledger"}
   ]}
 ];
 const ROUTE_STORIES = {
@@ -573,17 +769,17 @@ const ROUTE_STORIES = {
       {label:"왕실에 중재안을 제출한다",effect:"route_story",route:"royal",amount:1.2,bonusRoute:"antihero",bonusAmount:.6,message:"왕실은 검토하겠다고 답했고 피해상인들은 일단 기다려보기로 했습니다."},
       {label:"시장 문제는 시장이 해결하게 둔다",effect:"route_story",route:"antihero",amount:-.8,message:"피해상인들은 당신을 현실적인 사람이라 부르며 다시는 찾아오지 않았습니다."}
     ]},
-    {stage:2,minScore:6,minDay:30,title:"용사 광고 감시대",text:"반용사 단체가 용사의 상업 광고와 시세 발언을 감시할 상설 조직을 만들려 합니다.",options:[
+    {stage:2,minScore:6,minDay:30,title:"용사 광고 감시대",text:"상인조합 피해대책위가 용사의 상업 광고와 시세 발언을 감시할 상설 조직을 만들려 합니다.",options:[
       {label:"감시대 운영비 100G를 후원한다",effect:"route_story",route:"antihero",amount:2.4,cost:100,pendingFollow:{id:"antihero_rally",chance:.95},message:"감시대가 출범했고 용사의 인터뷰마다 상인 둘이 따라붙기 시작했습니다."},
       {label:"광고는 허용하되 피해보상 규칙을 만든다",effect:"route_story",route:"antihero",amount:1.5,bonusRoute:"royal",bonusAmount:.5,message:"용사 팬클럽도 마지못해 피해보상 규칙에 동의했습니다."},
       {label:"용사 굿즈 사업에 투자한다",effect:"route_story",route:"artisan",amount:1.5,reward:100,message:"감시대는 화를 냈지만 굿즈는 100G어치 팔렸습니다."}
     ]},
     {stage:3,minScore:9,minDay:50,title:"전시 가격통제 청문회",text:"왕실은 전쟁을 이유로 일부 품목의 가격을 강제로 제한하려 합니다. 상인연합은 시장 붕괴를 우려합니다.",options:[
       {label:"상인 대표로 가격통제에 반대한다",effect:"route_story",route:"antihero",amount:2.5,message:"청문회 기록에 당신의 연설이 그대로 남았습니다. 상인들은 거리에서 이름을 외쳤습니다."},
-      {label:"전시에는 왕실 통제가 필요하다고 지지한다",effect:"route_story",route:"royal",amount:2,message:"왕실은 환영했지만 반용사 단체 본부 창문에서 당신 포스터가 내려갔습니다."},
+      {label:"전시에는 왕실 통제가 필요하다고 지지한다",effect:"route_story",route:"royal",amount:2,message:"왕실은 환영했지만 상인조합 피해대책위 본부 창문에서 당신 포스터가 내려갔습니다."},
       {label:"통제 품목을 암시장으로 돌릴 길을 찾는다",effect:"route_story",route:"underworld",amount:2.1,message:"공식 시장은 조용했지만 골목 가격표는 세 배로 늘었습니다."}
     ]},
-    {stage:4,minScore:11,minDay:80,title:"독립 상인연맹 창설",text:"전후 경제를 누가 이끌지 결정할 시점입니다. 반용사 단체는 왕실과 용사 양쪽에서 독립한 상인연맹을 만들자고 합니다.",options:[
+    {stage:4,minScore:11,minDay:80,title:"독립 상인연맹 창설",text:"전후 경제를 누가 이끌지 결정할 시점입니다. 상인조합 피해대책위는 왕실과 용사 양쪽에서 독립한 상인연맹을 만들자고 합니다.",options:[
       {label:"초대 의장직을 맡는다 · 150G",effect:"route_story",route:"antihero",amount:3,cost:150,message:"독립 상인연맹이 창설됐고 당신이 초대 의장으로 선출됐습니다."},
       {label:"왕실과 공동 운영 체제로 타협한다",effect:"route_story",route:"royal",amount:1.4,bonusRoute:"antihero",bonusAmount:1,message:"완전한 독립은 아니지만 상인들의 발언권은 크게 늘었습니다."},
       {label:"조직보다는 각자 장사하는 게 낫다",effect:"route_story",route:"antihero",amount:-1,message:"연맹은 다른 의장을 뽑았고 당신은 다시 장부로 돌아갔습니다."}
@@ -769,9 +965,9 @@ function checkContractDeadline(){
 }
 
 const FACTIONS = {
-  merchant:{name:"상인조합",desc:"정규 거래와 길드 의뢰를 통해 신뢰를 쌓습니다."},
+  merchant:{name:"상인조합",desc:"정규 거래·길드 의뢰와 시장개입 대응을 함께 맡는 상인들의 대표 조직입니다."},
   kingdom:{name:"왕국",desc:"왕실·경비대·제도권과 협력하면 올라갑니다."},
-  antihero:{name:"반용사 연합",desc:"용사와 공주의 시장교란에 맞서는 상인들의 연합입니다."},
+  church:{name:"루미에르 교단",desc:"성녀와 대성당 중심의 신앙 세력. 신성상품·구휼·성도 인맥으로 신뢰를 쌓습니다."},
   underworld:{name:"지하 유통망",desc:"암시장·밀수조직과 거래할수록 깊게 연결됩니다."},
   artisan:{name:"장인조합",desc:"공방을 이용하고 장인 편을 들수록 인정받습니다."},
   mercenary:{name:"용병 길드",desc:"용병 고용·훈련·원정과 지원 이벤트로 우호도가 올라갑니다."}
@@ -785,7 +981,7 @@ function changeFactionRep(key,amount){
     changeMercFriendship(amount);
     return;
   }
-  S.factionRep ||= {merchant:0,kingdom:0,antihero:0,underworld:0,artisan:0};
+  S.factionRep ||= {merchant:0,kingdom:0,church:0,underworld:0,artisan:0};
   S.factionRep[key] = Math.max(0,Math.min(100,(S.factionRep[key] || 0) + Number(amount || 0)));
 }
 function repTierValue(rep,low,mid,high){
@@ -805,11 +1001,15 @@ function merchantRumorAccuracy(){
 function kingdomCommissionDiscount(){
   return repTierValue(factionRep("kingdom"),.01,.02,.03);
 }
+function churchCommissionDiscount(){
+  return repTierValue(factionRep("church"),.005,.01,.02);
+}
 function effectiveCityFee(city){
-  return Math.max(.01,(CITIES[city]?.fee || 0) - kingdomCommissionDiscount());
+  const church = city==="holycity" ? churchCommissionDiscount() : 0;
+  return Math.max(.01,(CITIES[city]?.fee || 0) - kingdomCommissionDiscount() - cityNpcFeeDiscount(city) - church);
 }
 function antiheroShockProtection(){
-  return repTierValue(factionRep("antihero"),.12,.25,.40);
+  return repTierValue(factionRep("merchant"),.12,.25,.40);
 }
 function protectPublicShock(factor,event){
   if(factor >= 1) return factor;
@@ -841,14 +1041,20 @@ function artisanFeeDiscount(){
 function artisanFee(base){
   return Math.max(0,Math.round(base * (1 - artisanFeeDiscount())));
 }
+function recipeFee(recipe){
+  let fee=artisanFee(recipe.fee);
+  fee=Math.round(fee*(1-cityNpcCraftDiscount(recipe.city)));
+  if(recipe.city==="holycity") fee=Math.round(fee*(1-repTierValue(factionRep("church"),.05,.10,.20)));
+  return Math.max(0,fee);
+}
 function craftLimitForRecipe(){
   return CRAFT_LIMIT + (factionRep("artisan") >= 80 ? 1 : 0);
 }
 function factionBenefitText(key){
   const rep = factionRep(key);
-  if(key === "merchant") return "상인 소문 정확도 " + Math.round(merchantRumorAccuracy()*100) + "%";
+  if(key === "merchant") return "소문 정확도 " + Math.round(merchantRumorAccuracy()*100) + "% · 공주·용사발 하락 " + Math.round(antiheroShockProtection()*100) + "% 완충";
   if(key === "kingdom") return "정규시장 판매 수수료 -" + Math.round(kingdomCommissionDiscount()*100) + "%p";
-  if(key === "antihero") return "공주·용사발 가격 하락 " + Math.round(antiheroShockProtection()*100) + "% 완충";
+  if(key === "church") return "성도 판매 수수료 -" + Math.round(churchCommissionDiscount()*100) + "%p · 신성 제작 공임 우대";
   if(key === "underworld") return "암시장 매입 " + Math.round(underworldPayoutRate(false)*100) + "% · 단속 " + Math.round(underworldCatchChance(false)*100) + "%";
   if(key === "artisan") return "제작 공임 -" + Math.round(artisanFeeDiscount()*100) + "% · 품목당 " + craftLimitForRecipe() + "회";
   if(key === "mercenary") return "용병 비용 -" + Math.round(mercDiscountRate()*100) + "% · 고우호 지원 이벤트";
@@ -857,7 +1063,7 @@ function factionBenefitText(key){
 function addRoute(route,amount){
   if(!S.routeScores || !ROUTES[route]) return;
   S.routeScores[route] = Math.max(0,(S.routeScores[route] || 0) + amount);
-  const factionMap = {royal:"kingdom",antihero:"antihero",underworld:"underworld",artisan:"artisan"};
+  const factionMap = {royal:"kingdom",antihero:"merchant",underworld:"underworld",artisan:"artisan"};
   const repScale = route === "artisan" ? 1.8 : route === "underworld" ? 3 : 3.5;
   if(factionMap[route]) changeFactionRep(factionMap[route],amount * repScale);
 }
@@ -881,11 +1087,11 @@ function endingData(route){
   };
   if(route === "royal") return {
     title:"왕실 공인 대상상이 되었습니다.",
-    text:"왕실과 상인 길드가 당신의 상단을 왕국 공식 대상단으로 인정했습니다. 이제 귀족들도 가격 흥정 전에 당신의 눈치를 봅니다."
+    text:"왕실과 상인조합가 당신의 상단을 왕국 공식 대상단으로 인정했습니다. 이제 귀족들도 가격 흥정 전에 당신의 눈치를 봅니다."
   };
   if(route === "antihero") return {
     title:"시세를 지킨 경제수호자가 되었습니다.",
-    text:"용사는 마왕을 쓰러뜨렸고, 당신은 용사가 뒤흔든 시세와 싸웠습니다. 반용사 경제피해대책위원회는 당신의 초상화를 회의실 한가운데 걸었습니다."
+    text:"용사는 마왕을 쓰러뜨렸고, 당신은 용사가 뒤흔든 시세와 싸웠습니다. 상인조합 경제피해대책위원회는 당신의 초상화를 회의실 한가운데 걸었습니다."
   };
   if(route === "underworld") return {
     title:"뒷골목의 상왕이 되었습니다.",
@@ -1255,6 +1461,7 @@ function cityPrice(city,item){
     (1 + pressure) *
     effectMult(city,item,"p") *
     phaseItemMult(item,"p") *
+    cityNpcPriceFactor(city,item) *
     noise
   ));
 }
@@ -1745,14 +1952,24 @@ function normalizeSavedState(state){
     state.factionRep = {
       merchant:Math.min(100,(state.completedContracts || 0) * 3),
       kingdom:Math.min(100,(state.routeScores.royal || 0) * 3.5),
-      antihero:Math.min(100,(state.routeScores.antihero || 0) * 3.5),
+      church:Math.min(100,(state.saintDeclarations || 0) * 2),
       underworld:Math.min(100,(state.routeScores.underworld || 0) * 3),
       artisan:Math.min(100,(state.routeScores.artisan || 0) * 1.8)
     };
   }
-  for(const key of ["merchant","kingdom","antihero","underworld","artisan"]){
+  if(!state.factionMergeV2){
+    state.factionRep.merchant=Math.min(100,Number(state.factionRep.merchant||0)+Number(state.factionRep.antihero||0));
+    delete state.factionRep.antihero;
+    state.factionRep.church ??= Math.min(100,Number(state.saintDeclarations||0)*2);
+    state.factionMergeV2=true;
+  }
+  for(const key of ["merchant","kingdom","church","underworld","artisan"]){
     state.factionRep[key] = Math.max(0,Math.min(100,Number(state.factionRep[key] || 0)));
   }
+  state.npcRep ||= {};
+  state.npcTalkDay ||= {};
+  state.npcFavorDay ||= {};
+  for(const city of Object.keys(CITY_NPCS)) state.npcRep[city]=Math.max(0,Math.min(100,Number(state.npcRep[city]||0)));
   state.lastPhaseId ??= null;
   if(state.finalTrial){
     // 이전 버전에서 이미 진행한 최종심사 일수는 납품 완료로 인정해 저장 호환성을 유지합니다.
@@ -1797,6 +2014,10 @@ function normalizeSavedState(state){
     m.expeditionId ??= null;
     m.assignment = ["warehouse","escort","promotion"].includes(m.assignment) ? m.assignment : null;
     m.hiredDay ??= 1;
+    if(m.namedId){
+      const def=NAMED_MERCS.find(n=>n.id===m.namedId);
+      if(def){ m.trait ??= def.trait; m.traitName ??= def.traitName; }
+    }
   }
   state.mercRoster = state.mercRoster.slice(0,MERC_MAX_ROSTER);
   state.mercExpeditions = [];
@@ -1909,7 +2130,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},factionRep:{merchant:0,kingdom:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,saintDeclarations:0,lastSaintDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},factionRep:{merchant:0,kingdom:0,church:0,underworld:0,artisan:0},factionMergeV2:true,npcRep:{capital:0,farm:0,mine:0,port:0,arcane:0,forest:0,holycity:0},npcTalkDay:{},npcFavorDay:{},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,saintDeclarations:0,lastSaintDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -2040,6 +2261,9 @@ function processOrders(){
       S.cash += payout;
       recordDaySale(o.item,sold,payout,"정규 시장");
       changeFactionRep("merchant",Math.min(1.5,.25 * sold));
+      if(o.city==="holycity" && ["holy","holy_oil","blessed_incense"].includes(o.item)){
+        changeFactionRep("church",Math.min(1,.20*sold));
+      }
       updateSaleContract(o.item,o.city,sold);
       soldText.push(ITEMS[o.item].name + " " + sold + "개 " + fmt(payout) + (commission ? " (수수료 -" + fmt(commission) + ")" : ""));
       promotedSold += sold;
@@ -2087,14 +2311,18 @@ function mercProtectionChance(merc,role){
   const warehouse = [.25,.40,.55,.70,.85,.97];
   const escort = [.20,.35,.50,.65,.82,.95];
   const table = role === "warehouse" ? warehouse : escort;
-  return table[Math.max(0,Math.min(table.length-1,merc.gradeIndex || 0))] || 0;
+  let chance = table[Math.max(0,Math.min(table.length-1,merc.gradeIndex || 0))] || 0;
+  if(role==="escort" && merc.trait==="escort") chance += .12;
+  return Math.min(.99,chance);
 }
 function mercPromotionEffect(merc){
   if(!merc) return {chance:1,capacity:1};
   const chance = [1.15,1.22,1.30,1.40,1.50,1.65];
   const capacity = [1.10,1.15,1.20,1.28,1.35,1.45];
   const i = Math.max(0,Math.min(5,merc.gradeIndex || 0));
-  return {chance:chance[i],capacity:capacity[i]};
+  let chanceMult=chance[i], capacityMult=capacity[i];
+  if(merc.trait==="promoter"){ chanceMult*=1.12; capacityMult*=1.12; }
+  return {chance:chanceMult,capacity:capacityMult};
 }
 function mercenaryUpkeep(){
   return (S.mercRoster || []).reduce((sum,m) => sum + (mercGrade(m).upkeep || 0),0);
@@ -2137,12 +2365,45 @@ function mercExpeditionCost(def){
   return Math.max(1,Math.round(def.cost * (1 - mercDiscountRate())));
 }
 function mercExpeditionDays(merc,def){
-  return Math.max(1,def.days - mercGrade(merc).dayCut);
+  const traitCut = merc?.trait==="pathfinder" ? 1 : 0;
+  return Math.max(1,def.days - mercGrade(merc).dayCut - traitCut);
 }
 function addMercLog(text){
   S.mercLog ||= [];
   S.mercLog.unshift(S.day + "일차 · " + text);
   S.mercLog = S.mercLog.slice(0,8);
+}
+function namedMercOffer(){
+  return NAMED_MERCS.find(n =>
+    n.city===S.city &&
+    S.day>=n.unlockDay &&
+    !(S.mercRoster||[]).some(m=>m.namedId===n.id)
+  ) || null;
+}
+function hireNamedMercenary(id){
+  if(checkBlocked()) return;
+  const def=NAMED_MERCS.find(n=>n.id===id);
+  if(!def || def.city!==S.city || S.day<def.unlockDay) return;
+  S.mercRoster ||= [];
+  if(S.mercRoster.length>=MERC_MAX_ROSTER){ toast("용병 정원이 가득 찼습니다."); return; }
+  const cost=Math.round(def.cost*(1-mercDiscountRate()));
+  if(S.cash<=cost){ toast("고용비 "+fmt(cost)+"가 부족합니다."); return; }
+  S.cash-=cost;
+  const merc={
+    id:"named_"+def.id,
+    namedId:def.id,
+    name:def.name,
+    gradeIndex:def.gradeIndex,
+    xp:Math.max(0,(MERC_GRADES[def.gradeIndex-1]?.promoteXp||0)-2),
+    missions:0,busyUntil:0,expeditionId:null,assignment:null,hiredDay:S.day,
+    trait:def.trait,traitName:def.traitName
+  };
+  S.mercRoster.push(merc);
+  S.mercTotalHires+=1;
+  changeMercFriendship(4);
+  addMercLog(def.name+" 합류 · "+MERC_GRADES[def.gradeIndex].name+" · "+def.traitName);
+  toast(def.name+"이 상단에 합류했습니다.");
+  render();
 }
 function uniqueMercName(){
   const used = new Set((S.mercRoster || []).map(m => m.name));
@@ -2258,6 +2519,15 @@ function rollMercenaryLoot(def,merc){
     const y = def.yields[0];
     loot[y.item] = Math.max(1,Math.round(y.min * mult));
   }
+  if(merc?.trait==="hunter"){
+    if(loot.beast_hide) loot.beast_hide=Math.max(1,Math.round(loot.beast_hide*1.30));
+    if(loot.ogre_horn) loot.ogre_horn=Math.max(1,Math.round(loot.ogre_horn*1.40));
+  }
+  if(merc?.trait==="rare"){
+    for(const y of def.yields.filter(x=>x.rare)){
+      if(!loot[y.item] && Math.random()<.18) loot[y.item]=1;
+    }
+  }
   return loot;
 }
 function processMercenaryExpeditions(){
@@ -2319,7 +2589,7 @@ function craftMercGear(id){
   if(!gear) return;
   if(S.day < gear.unlockDay){ toast(gear.unlockDay + "일차부터 제작할 수 있습니다."); return; }
   if(S.city !== "mine"){ toast("몬스터 장비 상품은 철산 카르둠 장비공방에서 제작할 수 있습니다."); return; }
-  const gearFee = artisanFee(gear.fee);
+  const gearFee = Math.max(0,Math.round(artisanFee(gear.fee) * (1-cityNpcCraftDiscount("mine"))));
   if(S.cash <= gearFee){ toast("공임 " + fmt(gearFee) + "를 내면 파산합니다."); return; }
   for(const [k,q] of Object.entries(gear.inputs)){
     if((S.inv[k] || 0) < q){ toast(ITEMS[k].name + " " + q + "개가 필요합니다."); return; }
@@ -2412,6 +2682,11 @@ function renderMercenaries(){
     '<button data-merc-recruit' + (recruitDisabled ? ' disabled' : '') + '>' +
       (roster.length >= MERC_MAX_ROSTER ? '정원 가득 참' : '신규 용병 고용 · ' + fmt(recruitCost)) +
     '</button></div>';
+  const namedOffer=namedMercOffer();
+  const namedRecruit = namedOffer
+    ? '<div class="named-merc-offer"><div><span>★ 네임드 용병</span><h3>'+namedOffer.name+'</h3><p>'+namedOffer.desc+'</p><b>'+namedOffer.traitName+' · '+MERC_GRADES[namedOffer.gradeIndex].name+' 시작</b></div>'+
+      '<button data-named-merc="'+namedOffer.id+'"'+(roster.length>=MERC_MAX_ROSTER || S.cash<=Math.round(namedOffer.cost*(1-mercDiscountRate()))?' disabled':'')+'>고용 · '+fmt(Math.round(namedOffer.cost*(1-mercDiscountRate())))+'</button></div>'
+    : '';
 
   const rosterHtml = roster.length
     ? '<div class="merc-roster-grid">' + roster.map(merc => {
@@ -2429,7 +2704,7 @@ function renderMercenaries(){
             ? '승급 심사 · ' + fmt(grade.promoteCost)
             : '승급 ' + merc.xp + ' / ' + nextXp + ' XP';
         return '<article class="merc-unit-card grade-' + grade.id + '">' +
-          '<div class="merc-unit-head"><div><span class="merc-grade">' + grade.name + '</span><h3>' + merc.name + '</h3></div>' +
+          '<div class="merc-unit-head"><div><span class="merc-grade">' + grade.name + (merc.namedId ? ' · ★ 네임드' : '') + '</span><h3>' + merc.name + '</h3></div>' +
             '<span class="' + (busy ? 'merc-busy' : assigned ? 'merc-assigned' : 'merc-idle') + '">' +
               (busy ? '원정 중' : assigned ? mercAssignmentName(merc.assignment) : '대기') +
             '</span></div>' +
@@ -2442,6 +2717,7 @@ function renderMercenaries(){
                   ? '<div class="merc-defense-now merc-promotion-now"><b>홍보 활동 배치</b><span>판매확률 ×' + mercPromotionEffect(merc).chance.toFixed(2) + ' · 판매물량 ×' + mercPromotionEffect(merc).capacity.toFixed(2) + '</span></div>'
                   : '<div class="merc-defense-now"><b>' + mercAssignmentName(merc.assignment) + ' 배치</b><span>방어 성공률 ' + Math.round(mercProtectionChance(merc,merc.assignment)*100) + '%</span></div>')
               : '<p class="merc-grade-bonus">소재 획득 ×' + grade.loot.toFixed(2) + (grade.rare ? ' · 희귀확률 +' + Math.round(grade.rare*100) + '%' : '') + (grade.dayCut ? ' · 원정 -' + grade.dayCut + '일' : '') + '</p>') +
+          (merc.traitName ? '<div class="merc-trait"><b>'+merc.traitName+'</b><span>'+((NAMED_MERCS.find(n=>n.id===merc.namedId)||{}).desc||"고유 특성")+'</span></div>' : '') +
           '<div class="merc-upkeep-line">일일 유지비 <b>' + fmt(grade.upkeep) + '</b></div>' +
           '<div class="merc-unit-actions">' +
             '<button data-merc-invest="' + merc.id + '"' + (busy || assigned || S.cash <= trainCost ? ' disabled' : '') + '>훈련 투자 ' + fmt(trainCost) + '</button>' +
@@ -2477,7 +2753,7 @@ function renderMercenaries(){
       '</article>';
     }).join("") + '</div>';
 
-  box.innerHTML = recruit + rosterHtml + expeditionHtml;
+  box.innerHTML = recruit + namedRecruit + rosterHtml + expeditionHtml;
 
   const heldGear = MERC_GEAR.filter(gear => (S.inv[gear.item] || 0) > 0);
   gearBox.innerHTML =
@@ -2485,7 +2761,7 @@ function renderMercenaries(){
       const locked = S.day < gear.unlockDay;
       const inputs = Object.entries(gear.inputs).map(([k,q]) => ITEMS[k].name + " " + q + "개").join(" + ");
       const enough = Object.entries(gear.inputs).every(([k,q]) => (S.inv[k] || 0) >= q);
-      const gearFee = artisanFee(gear.fee);
+      const gearFee = Math.max(0,Math.round(artisanFee(gear.fee) * (1-cityNpcCraftDiscount("mine"))));
       const disabled = locked || S.city !== "mine" || !enough || S.cash <= gearFee;
       const held = S.inv[gear.item] || 0;
       return '<article class="gear-card">' +
@@ -2586,7 +2862,7 @@ function applyWeeklySettlement(){
   S.cash -= due;
   S.lastSettlement = {day:S.day,due,rate};
   changeFactionRep("merchant",1);
-  toast("상인 길드 주간 결산: 자산의 " + Math.round(rate * 1000) / 10 + "% · " + fmt(due) + " 납부.");
+  toast("상인조합 주간 결산: 자산의 " + Math.round(rate * 1000) / 10 + "% · " + fmt(due) + " 납부.");
   if(S.cash <= 0){
     bankrupt("주간 결산금을 감당하지 못함");
     return false;
@@ -2661,7 +2937,7 @@ function advanceDay(dest){
   const beforeSettlement = S.cash;
   if(!applyWeeklySettlement()) return;
   const settlementLoss = Math.max(0,beforeSettlement - S.cash);
-  if(settlementLoss) knownCosts.push({label:"상인 길드 주간 결산",amount:settlementLoss});
+  if(settlementLoss) knownCosts.push({label:"상인조합 주간 결산",amount:settlementLoss});
 
   if(S.cash <= 0){
     bankrupt("하루 비용을 버티지 못함");
@@ -2877,7 +3153,7 @@ function resolveChoice(choice){
   if(effect === "report_smuggler"){ S.cash += 70; addRoute("royal",1.5); finish("경비대가 신고 포상금 70G를 줬습니다."); return; }
   if(effect === "support_antihero"){
     if(S.cash <= 50){ toast("50G가 없습니다."); return; }
-    S.cash -= 50; addRoute("antihero",2); S.pendingFollow = {id:"antihero_rally",chance:.92}; finish("반용사 단체가 후원자를 '경제수호자'라고 부르기 시작했습니다."); return;
+    S.cash -= 50; addRoute("antihero",2); S.pendingFollow = {id:"antihero_rally",chance:.92}; finish("상인조합 피해대책위가 후원자를 '경제수호자'라고 부르기 시작했습니다."); return;
   }
   if(effect === "support_hero"){ addRoute("royal",.5); S.pendingFollow = {id:"hero_fan_counter",chance:.8}; finish("용사 팬클럽이 무료 배지를 줬습니다. 팔 수는 없습니다."); return; }
   if(effect === "buy_tip"){
@@ -2926,6 +3202,36 @@ function resolveChoice(choice){
     else { changeMercFriendship(-2); finish("구경만 하다 술잔 하나가 마차 창문을 깼습니다."); }
     return;
   }
+  if(effect === "merc_raise_pay"){
+    if(S.cash<=120){ toast("120G가 없습니다."); return; }
+    S.cash-=120; changeMercFriendship(6); addMercLog("급료 협상 타결 · 격려금 지급");
+    finish("용병들이 장부에 도장을 찍고 분위기가 눈에 띄게 좋아졌습니다."); return;
+  }
+  if(effect === "merc_raise_promise"){
+    changeMercFriendship(2);
+    const candidates=(S.mercRoster||[]).filter(m=>!mercIsBusy(m));
+    if(candidates.length) pick(candidates).xp+=2;
+    finish("다음 성과를 조건으로 타협했습니다. 용병들이 훈련장으로 향합니다."); return;
+  }
+  if(effect === "merc_raise_refuse"){ changeMercFriendship(-5); finish("계약상 문제는 없지만 용병들 표정이 차가워졌습니다."); return; }
+  if(effect === "merc_duel_sponsor"){
+    if(S.cash<=70){ toast("70G가 없습니다."); return; }
+    const candidates=(S.mercRoster||[]).filter(m=>!mercIsBusy(m));
+    if(!candidates.length){ toast("대련에 내보낼 용병이 없습니다."); return; }
+    S.cash-=70; const m=pick(candidates); m.xp+=4; changeMercFriendship(3); addMercLog(m.name+" 공개 대련 승리 · 경험 +4");
+    finish(m.name+"이 공개 대련에서 이름을 알렸습니다."); return;
+  }
+  if(effect === "merc_duel_watch"){ finish("남의 용병끼리 싸우는 건 무료라 꽤 재미있었습니다."); return; }
+  if(effect === "merc_loot_give"){ changeMercFriendship(5); finish("용병들이 전리품을 나눠 가지며 당신을 좋은 고용주라고 부릅니다."); return; }
+  if(effect === "merc_loot_take"){ S.cash+=120; changeMercFriendship(-4); finish("전리품을 팔아 120G를 벌었지만 용병들은 오래 기억할 것 같습니다."); return; }
+  if(effect === "merc_loot_split"){ S.cash+=60; changeMercFriendship(2); finish("절반은 팔고 절반은 용병들에게 넘겼습니다. 60G를 확보했습니다."); return; }
+  if(effect === "merc_rescue_support"){
+    if(S.cash<=60){ toast("60G가 없습니다."); return; }
+    S.cash-=60; changeMercFriendship(5); changeFactionRep("merchant",1); changeFactionRep("church",1);
+    finish("치료비까지 지원했다는 소문이 퍼져 상단 평판이 좋아졌습니다."); return;
+  }
+  if(effect === "merc_rescue_neutral"){ changeMercFriendship(1); finish("용병 개인의 선행으로 남겼습니다. 그래도 좋은 소문은 조금 퍼졌습니다."); return; }
+
   if(effect === "merc_bandit_free"){
     S.banditSuppressionUntil = S.day + 10; changeMercFriendship(3); addMercLog("도적단 본거지 소탕 · 10일간 도적 위험 억제");
     finish("용병단이 보수도 받지 않고 도적소굴을 정리했습니다. 쌓아온 우호도가 처음으로 돈보다 강해졌습니다."); return;
@@ -2953,12 +3259,12 @@ function resolveChoice(choice){
   }
   if(effect === "route_underworld_factory"){ addRoute("underworld",1.8); S.cash += 70; finish("폐업 재고가 뒷골목 유통망으로 흘러가며 사례금 70G를 받았습니다."); return; }
   if(effect === "route_royal_subsidy"){ addRoute("royal",1.4); finish("왕실 보조금이 승인됐고 길드가 당신의 이름을 추천서에 적었습니다."); return; }
-  if(effect === "route_antihero_block"){ addRoute("antihero",2.2); S.pendingFollow={id:"antihero_rally",chance:.95}; finish("용사의 시세 발언은 취소됐고 반용사 단체가 당신을 전면에 세웠습니다."); return; }
+  if(effect === "route_antihero_block"){ addRoute("antihero",2.2); S.pendingFollow={id:"antihero_rally",chance:.95}; finish("용사의 시세 발언은 취소됐고 상인조합 피해대책위가 당신을 전면에 세웠습니다."); return; }
   if(effect === "route_royal_order"){ addRoute("royal",1.7); finish("큰 충돌 없이 행사가 끝났고 왕실 경비대장이 당신에게 감사를 표했습니다."); return; }
   if(effect === "route_artisan_merch"){ addRoute("artisan",1.5); S.cash += 100; finish("용사 얼굴이 찍힌 조악한 굿즈가 이상하게 잘 팔려 100G를 벌었습니다."); return; }
   if(effect === "route_underworld_ledger"){ addRoute("underworld",2.4); S.cash += 80; finish("밀수조직은 장부를 되찾고 80G와 함께 '빚 하나'를 남겼습니다."); return; }
   if(effect === "route_royal_ledger"){ addRoute("royal",2); S.cash += 60; finish("왕실 수사관이 장부를 압수하고 포상금 60G를 지급했습니다."); return; }
-  if(effect === "route_antihero_ledger"){ addRoute("antihero",2.1); S.pendingFollow={id:"antihero_lawsuit",chance:.9}; finish("장부 내용이 공개되자 반용사 단체가 대규모 폭로전을 시작했습니다."); return; }
+  if(effect === "route_antihero_ledger"){ addRoute("antihero",2.1); S.pendingFollow={id:"antihero_lawsuit",chance:.9}; finish("장부 내용이 공개되자 상인조합 피해대책위가 대규모 폭로전을 시작했습니다."); return; }
 
   finish("아무 일도 일어나지 않았습니다.");
 }
@@ -2984,7 +3290,7 @@ function craftRecipe(id,qty=1){
 
   const usedToday = S.craftUsed?.[r.id] || 0;
   const craftLimit = craftLimitForRecipe();
-  const feeNow = artisanFee(r.fee);
+  const feeNow = recipeFee(r);
   const left = Math.max(0,craftLimit - usedToday);
   const inputMax = Object.entries(r.inputs).reduce((m,[k,n]) => Math.min(m,Math.floor(S.inv[k]/n)),Infinity);
   const cashMax = feeNow > 0 ? Math.floor((S.cash - 1)/feeNow) : 999;
@@ -3018,14 +3324,14 @@ function renderCrafting(){
 
   const recipes = CRAFT_RECIPES.filter(r => r.city === S.city);
   if(!recipes.length){
-    box.innerHTML = '<div class="craft-empty"><b>' + CITIES[S.city].name + '에는 이용 가능한 생산 공방이 없습니다.</b><p>풍요 평원·철산 광산도시·마도도시에서 각각 다른 제작을 할 수 있습니다.</p></div>';
+    box.innerHTML = '<div class="craft-empty"><b>' + CITIES[S.city].name + '에는 이용 가능한 생산 공방이 없습니다.</b><p>풍요 평원·철산 카르둠·아르카나·성도 루미에르에서 각각 다른 제작을 할 수 있습니다.</p></div>';
     return;
   }
 
   box.innerHTML = '<div class="craft-grid">' + recipes.map(r => {
     const usedToday = S.craftUsed?.[r.id] || 0;
     const craftLimit = craftLimitForRecipe();
-    const feeNow = artisanFee(r.fee);
+    const feeNow = recipeFee(r);
     const left = Math.max(0,craftLimit - usedToday);
     const inputText = Object.entries(r.inputs).map(([k,n]) => ITEMS[k].name + " " + n + "개").join(" + ");
     const outputText = Object.entries(r.output).map(([k,n]) => ITEMS[k].name + " " + n + "개").join(" + ");
@@ -3284,6 +3590,7 @@ function render(){
 
   renderEndingGoal();
   renderRoutes();
+  renderCityNpc();
   renderExtras();
   renderMarket();
   renderCrafting();
@@ -3595,6 +3902,8 @@ $("#craftBox").addEventListener("click",(e) => {
 });
 $("#mercenaryBox").addEventListener("click",(e) => {
   if(e.target.closest("[data-merc-recruit]")){ recruitMercenary(); return; }
+  const named=e.target.closest("[data-named-merc]");
+  if(named){ hireNamedMercenary(named.dataset.namedMerc); return; }
 
   const invest = e.target.closest("[data-merc-invest]");
   if(invest){ investMercenary(invest.dataset.mercInvest); return; }
@@ -3658,6 +3967,10 @@ $("#travelCancel").addEventListener("click",() => {
     S.travelOpen = false;
     render();
   }
+});
+$("#cityNpcBox")?.addEventListener("click",(e)=>{
+  if(e.target.closest("#npcTalkBtn")) talkCityNpc();
+  if(e.target.closest("#npcFavorBtn")) helpCityNpc();
 });
 $("#informantBtn").addEventListener("click",useInformant);
 $("#upgradeBtn").addEventListener("click",upgrade);
