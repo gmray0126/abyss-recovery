@@ -910,3 +910,27 @@ body.modal-open{overflow:hidden}
 }
 
 .saint-alert{color:#6e4b87!important;border-color:#c9b5d8!important;background:#f7effc!important;font-weight:900}
+
+.city-npc-card{border:1px solid #d8c6a9;border-radius:14px;padding:12px;background:#fffdf8}
+.city-npc-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.city-npc-head span{font-size:10px;color:#80684f;font-weight:800}
+.city-npc-head h3{margin:2px 0 0;font-size:18px}
+.city-npc-head strong{font-size:14px;color:#8a4f2d;white-space:nowrap}
+.npc-meter{height:7px;border-radius:999px;background:#eadfce;overflow:hidden;margin:8px 0}
+.npc-meter i{display:block;height:100%;background:linear-gradient(90deg,#b98b5f,#7f5335)}
+.npc-benefit,.npc-rival{padding:7px 8px;border-radius:9px;background:#f7efdf;font-size:11px;margin-top:7px}
+.npc-benefit{display:flex;gap:8px;justify-content:space-between}
+.npc-rival{background:#fff3e6;color:#805330}
+.npc-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.named-merc-offer{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px;margin:8px 0;border:1px solid #bda77f;border-radius:12px;background:#fff5dc}
+.named-merc-offer span{font-size:10px;font-weight:900;color:#8a4f2d}
+.named-merc-offer h3{margin:2px 0}
+.named-merc-offer p{margin:4px 0;font-size:11px}
+.named-merc-offer b{font-size:11px}
+.merc-trait{display:flex;flex-direction:column;gap:2px;padding:6px 8px;margin:6px 0;border-radius:8px;background:#f5ecda}
+.merc-trait b{font-size:11px;color:#7b4c2d}.merc-trait span{font-size:9px;color:#69594a}
+@media(max-width:680px){
+  .city-npc-card{padding:9px}
+  .npc-actions{grid-template-columns:1fr}
+  .named-merc-offer{grid-template-columns:1fr}
+}
