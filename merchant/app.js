@@ -3878,8 +3878,11 @@ function render(){
   $("#cashChip").textContent = fmt(S.cash);
   $("#cashStat").textContent = fmt(S.cash);
   $("#netStat").textContent = fmt(net());
-  if($("#mobileQuickNet")) $("#mobileQuickNet").textContent = fmt(net());
-  if($("#mobileEndDayBtn")) $("#mobileEndDayBtn").textContent = S.travelOpen ? "이동지 선택 중" : "하루 넘기기";
+  if($("#tabBarNet")) $("#tabBarNet").textContent = fmt(net());
+  if($("#tabEndDayBtn")){
+    $("#tabEndDayBtn").textContent = S.travelOpen ? "이동지 선택 중" : "하루 넘기기";
+    $("#tabEndDayBtn").disabled = S.gameOver || S.travelOpen;
+  }
   $("#feeStat").textContent = fmt(fee());
   $("#capStat").textContent = used() + " / " + S.capacity;
   $("#marketTitle").textContent = CITIES[S.city].name + " 시장";
@@ -4152,6 +4155,55 @@ function escapeHtml(s){
   return s.replace(/[&<>"']/g,m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 }
 
+const APP_TABS = ["market","info","craft","merc","caravan"];
+function setAppTab(tab,{scroll=true}={}){
+  if(!APP_TABS.includes(tab)) tab="market";
+  document.body.dataset.appTab=tab;
+  document.querySelectorAll("[data-app-tab]").forEach(btn=>{
+    const active=btn.dataset.appTab===tab;
+    btn.classList.toggle("active",active);
+    btn.setAttribute("aria-selected",active?"true":"false");
+    btn.setAttribute("tabindex",active?"0":"-1");
+  });
+  try{ localStorage.setItem("fantasyMerchantAppTab",tab); }catch{}
+  if(scroll){
+    const bar=$("#appTabBar");
+    const y=Math.max(0,(bar?.getBoundingClientRect().top||0)+window.scrollY-4);
+    if(window.scrollY>y+120 || window.scrollY<y-120) window.scrollTo({top:y,behavior:"smooth"});
+  }
+}
+function initAppTabs(){
+  let saved="market";
+  try{
+    saved=localStorage.getItem("fantasyMerchantAppTab") ||
+      localStorage.getItem("fantasyMerchantMobileTab") || "market";
+  }catch{}
+  if(!APP_TABS.includes(saved)) saved="market";
+
+  // Progressive enhancement: only after JS is alive do we hide inactive panels.
+  setAppTab(saved,{scroll:false});
+  document.body.classList.add("app-tabs-ready");
+
+  $("#appTabBar")?.addEventListener("click",e=>{
+    const end=e.target.closest("#tabEndDayBtn");
+    if(end){ openTravel(); return; }
+    const btn=e.target.closest("[data-app-tab]");
+    if(btn) setAppTab(btn.dataset.appTab,{scroll:true});
+  });
+
+  $("#appTabBar")?.addEventListener("keydown",e=>{
+    const btn=e.target.closest("[data-app-tab]");
+    if(!btn || !["ArrowLeft","ArrowRight"].includes(e.key)) return;
+    e.preventDefault();
+    const i=APP_TABS.indexOf(btn.dataset.appTab);
+    const next=e.key==="ArrowRight"
+      ? APP_TABS[(i+1)%APP_TABS.length]
+      : APP_TABS[(i-1+APP_TABS.length)%APP_TABS.length];
+    setAppTab(next,{scroll:false});
+    document.querySelector('[data-app-tab="'+next+'"]')?.focus();
+  });
+}
+
 function mobileSectionTitle(panel){
   return panel.querySelector("h2,h3")?.textContent?.trim() || "섹션";
 }
@@ -4358,5 +4410,4 @@ document.addEventListener("visibilitychange",() => {
 });
 
 if(!restoreSavedGame()) init();
-initMobileTabs();
-setupSafeMobileSections();
+initAppTabs();
