@@ -2288,6 +2288,9 @@ function normalizeSavedState(state){
   state.dayIncomeLog = Array.isArray(state.dayIncomeLog) ? state.dayIncomeLog : [];
   state.daySalesLog = Array.isArray(state.daySalesLog) ? state.daySalesLog : [];
   state.daySummary ??= null;
+  if(state.travelOpen && state.daySummary?.open){
+    state.daySummary.open = false;
+  }
   state.lastMercEventDay ??= 0;
   state.banditSuppressionUntil ??= 0;
   state.gameOver ??= false;
@@ -3225,7 +3228,17 @@ function openTravel(){
   render();
 }
 function advanceDay(dest){
-  if(!S.travelOpen || S.gameOver || S.ending || S.daySummary?.open) return;
+  if(!CITIES[dest]){ toast("이동할 도시 정보를 찾지 못했습니다."); return; }
+  if(!S.travelOpen){ toast("이동 선택창을 다시 열어주세요."); return; }
+  if(S.gameOver){ toast("파산한 상단은 이동할 수 없습니다."); return; }
+  if(S.ending){ toast("엔딩 화면을 먼저 정리해주세요."); return; }
+
+  // 구버전/중간 배포에서 travelOpen과 이전 결산창 상태가 동시에 저장된 경우
+  // 이동 버튼이 아무 반응 없이 무시되던 상태를 자동 복구합니다.
+  if(S.daySummary?.open){
+    S.daySummary.open = false;
+  }
+
   const blocked = travelBlockEvent(dest);
   if(blocked){
     toast(blocked.n + " 때문에 " + CITIES[dest].name + " 이동이 불가능합니다.");
@@ -4059,7 +4072,7 @@ function renderTravel(){
       : '<span class="mini muted">' + (stay ? "이동비 없음" : "이동비 " + fmt(travelCostTo(id))) + " + 유지비 " + fmt(fee()) + '</span>';
     card.innerHTML =
       "<b>" + (stay ? "여기서 하루 더 · " : "") + c.name + "</b><p>" + c.desc + "</p>" +
-      status + '<button data-travel="' + id + '"' + (blocked ? " disabled" : "") + ">" +
+      status + '<button type="button" data-travel="' + id + '"' + (blocked ? " disabled" : "") + ">" +
       (stay ? "체류" : blocked ? "통행 금지" : "이동") + "</button>";
     box.appendChild(card);
   }
