@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#eadcc4">
   <title>판타지 상인 시뮬레이터</title>
-  <link rel="stylesheet" href="./styles.css?v=20261002-universal-tabs1">
+  <link rel="stylesheet" href="./styles.css?v=20261002-compact-tabs2">
 </head>
 <body data-mobile-tab="market">
 <div id="mobileRecoveryMarker" style="display:none">mobile-recovery-20261002-1</div><div id="app" class="app">
@@ -86,7 +86,7 @@
 
   <main class="layout">
     <div class="main-col">
-      <section class="panel" data-mobile-tab="info">
+      <section id="infoNewsPanel" class="panel" data-mobile-tab="info">
         <div class="panel-head">
           <div>
             <h2>오늘의 정보</h2>
@@ -124,7 +124,7 @@
         <div id="cityNpcBox"></div>
       </section>
 
-      <section class="panel" data-mobile-tab="info">
+      <section id="infoGuildPanel" class="panel" data-mobile-tab="info">
         <div class="panel-head">
           <div>
             <h2>상인조합 & 특수 거래</h2>
@@ -143,7 +143,7 @@
         </div>
       </section>
 
-      <section class="panel" data-mobile-tab="market">
+      <section id="marketPanel" class="panel" data-mobile-tab="market">
         <div class="panel-head">
           <div>
             <h2 id="marketTitle">왕도 시장</h2>
@@ -202,7 +202,7 @@
         <div id="blackMarketBox"></div>
       </section>
 
-      <section class="panel" data-mobile-tab="market">
+      <section id="ordersPanel" class="panel" data-mobile-tab="market">
         <div class="panel-head">
           <div>
             <h2>판매 등록</h2>
@@ -227,7 +227,7 @@
     </div>
 
     <aside class="side-col">
-      <section class="panel" data-mobile-tab="caravan">
+      <section id="caravanPanel" class="panel" data-mobile-tab="caravan">
         <h2>내 상단</h2>
         <div class="bar"><i id="capBar"></i></div>
         <p id="inventoryText" class="muted">재고 없음</p>
@@ -240,13 +240,13 @@
         </div>
       </section>
 
-      <section class="panel goal-panel" data-mobile-tab="caravan">
+      <section id="goalPanel" class="panel goal-panel" data-mobile-tab="caravan">
         <h2>상단의 최종 목표</h2>
         <div id="endingGoalBox"></div>
         <div id="routeBox" class="route-box"></div>
       </section>
 
-      <section class="panel" data-mobile-tab="merc">
+      <section id="mercActivityPanel" class="panel" data-mobile-tab="merc">
         <h2>용병 활동 배치</h2>
         <div class="merc-defense-side">
           <div id="warehouseGuardStatus" class="defense-status"><b>창고 경비</b><span>미배치</span></div>
@@ -262,7 +262,7 @@
         <p class="mini muted">현금이 0G 이하가 되는 순간 즉시 파산합니다.</p>
       </section>
 
-      <section class="panel" data-mobile-tab="caravan">
+      <section id="rankingPanel" class="panel" data-mobile-tab="caravan">
         <div class="panel-head compact">
           <h2>공용 클리어 랭킹</h2>
           <button id="rankRefresh" class="ghost">새로고침</button>
