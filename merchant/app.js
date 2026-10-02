@@ -3920,7 +3920,7 @@ function render(){
   $("#feeStat").textContent = fmt(fee());
   $("#capStat").textContent = used() + " / " + S.capacity;
   $("#marketTitle").textContent = CITIES[S.city].name + " 시장";
-  $("#feeBadge").textContent = "판매 수수료 " + Math.round(effectiveCityFee(S.city) * 100) + "%" +
+  $("#marketFeeText").textContent = "수수료 " + Math.round(effectiveCityFee(S.city) * 100) + "%" +
     (kingdomCommissionDiscount() ? " · 왕국 우호도 -" + Math.round(kingdomCommissionDiscount()*100) + "%p" : "");
   const worldPhase = currentWorldPhase();
   $("#worldPhaseBadge").textContent = worldPhase.name;
