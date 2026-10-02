@@ -35,6 +35,15 @@ const ITEMS = {
   monster_wyvern_armor:{name:"와이번 비늘 마차갑옷",base:1650,w:5,cat:"gear",craftOnly:true,monsterGear:true},
   monster_demon_compass:{name:"마족 추적 나침반",base:2350,w:1,cat:"gear",craftOnly:true,monsterGear:true}
 };
+const ITEM_ICONS = {
+  bread:"🥖",wheat:"🌾",iron:"▰",sword:"⚔️",armor:"🛡️",herb:"🌿",potion:"🧪",
+  gem:"💎",spice:"✦",mana:"🔮",beer:"🍺",holy:"💧",elf_silk:"🧵",
+  starlight_wine:"🍷",holy_oil:"🕯️",blessed_incense:"♨️"
+};
+const CITY_NPC_ICONS = {
+  capital:"♛",farm:"🌾",mine:"⚒",port:"⚓",arcane:"✧",forest:"🍃",holycity:"☩"
+};
+
 
 const CRAFT_LINKS = {
   flour:["wheat","bread"],
@@ -379,7 +388,7 @@ function renderCityNpc(){
   const talked=S.npcTalkDay?.[city]===S.day;
   const helped=S.npcFavorDay?.[city]===S.day;
   box.innerHTML =
-    '<article class="city-npc-card"><div class="city-npc-head"><div><span>'+npc.title+'</span><h3>'+npc.name+'</h3></div><strong>'+Math.round(rep)+' / 100</strong></div>'+
+    '<article class="city-npc-card"><div class="city-npc-head"><div class="npc-identity"><span class="npc-avatar">'+(CITY_NPC_ICONS[city]||"◆")+'</span><div><span>'+npc.title+'</span><h3>'+npc.name+'</h3></div></div><strong>'+Math.round(rep)+' / 100</strong></div>'+
     '<div class="npc-meter"><i style="width:'+rep+'%"></i></div>'+
     '<p>'+npc.desc+'</p>'+
     '<div class="npc-benefit"><b>현재 혜택</b><span>'+cityNpcBenefitText(city)+'</span></div>'+
@@ -3879,6 +3888,12 @@ function render(){
   $("#cashStat").textContent = fmt(S.cash);
   $("#netStat").textContent = fmt(net());
   if($("#tabBarNet")) $("#tabBarNet").textContent = fmt(net());
+  if($("#tabBarDay")) $("#tabBarDay").textContent = S.day + "일차";
+  if($("#tabBarCity")) $("#tabBarCity").textContent = CITIES[S.city].name;
+  if($("#caravanNet")) $("#caravanNet").textContent = fmt(net());
+  if($("#caravanCash")) $("#caravanCash").textContent = fmt(S.cash);
+  if($("#caravanCap")) $("#caravanCap").textContent = used() + " / " + S.capacity;
+  if($("#caravanDay")) $("#caravanDay").textContent = S.day + " / " + ENDING_GOALS.day + "일";
   if($("#tabEndDayBtn")){
     $("#tabEndDayBtn").textContent = S.travelOpen ? "이동지 선택 중" : "하루 넘기기";
     $("#tabEndDayBtn").disabled = S.gameOver || S.travelOpen;
@@ -4012,17 +4027,17 @@ function renderMarket(){
       : "왕국 추세 " + (globalDelta > 0 ? "▲ +" : "▼ ") + globalDelta.toFixed(1) + "%";
 
     card.innerHTML =
-      '<div class="title-row"><div><h3>' + it.name + '</h3><span class="' + priceClass + '">' +
-      fmt(p) + ' ' + (delta >= 0 ? '▲ ' : '▼ ') + Math.abs(delta).toFixed(0) +
-      '%</span></div><b class="' + demandClass + '">' + demandText + '</b></div>' +
-      '<div class="market-meta"><span>재고 ' + S.inv[k] + '</span><span>판매중 ' + listed + '</span><span>무게 ' + it.w + '</span><span class="' + trendClass + '">' + trendText + '</span>' +
+      '<div class="market-card-top"><div class="item-identity"><span class="item-icon">' + (ITEM_ICONS[k] || "◈") + '</span><div><h3>' + it.name + '</h3>' +
+      '<div class="market-price ' + priceClass + '">' + fmt(p) + ' <small>' + (delta >= 0 ? '▲ ' : '▼ ') + Math.abs(delta).toFixed(0) + '%</small></div></div></div>' +
+      '<b class="demand-pill ' + demandClass + '">' + demandText + '</b></div>' +
+      '<div class="market-meta"><span>재고 <b>' + S.inv[k] + '</b></span><span>판매중 <b>' + listed + '</b></span><span>무게 <b>' + it.w + '</b></span><span class="' + trendClass + '">' + trendText + '</span>' +
         (ban ? '<span class="sale-ban-badge">⛔ 판매금지 · ' + ban.remaining + '일</span>' : '') +
       '</div>' +
       '<div class="market-actions"><div class="qty">' +
-      '<button data-buy="' + k + '" data-q="1">1개 매입</button>' +
+      '<button data-buy="' + k + '" data-q="1">1개</button>' +
       '<button data-buy="' + k + '" data-q="5">5개</button>' +
       '<button data-buy="' + k + '" data-q="999">최대</button></div>' +
-      '<button data-sell="' + k + '" data-q="1"' + (ban ? ' disabled' : '') + '>' + (ban ? '판매금지' : '1개 판매등록') + '</button>' +
+      '<button data-sell="' + k + '" data-q="1"' + (ban ? ' disabled' : '') + '>' + (ban ? '판매금지' : '판매 등록') + '</button>' +
       '<button data-sell="' + k + '" data-q="999"' + (ban ? ' disabled' : '') + '>' + (ban ? '거래 중지' : '전부 등록') + '</button></div>';
 
     box.appendChild(card);
