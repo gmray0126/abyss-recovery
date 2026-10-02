@@ -908,3 +908,5 @@ body.modal-open{overflow:hidden}
     scroll-margin-top:112px!important;
   }
 }
+
+.saint-alert{color:#6e4b87!important;border-color:#c9b5d8!important;background:#f7effc!important;font-weight:900}
