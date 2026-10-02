@@ -665,3 +665,9 @@ body.modal-open{overflow:hidden}
   #mercenaryPanel .merc-roster-grid{grid-template-columns:1fr}
   #mercenaryPanel .merc-card{padding:10px}
 }
+
+@media(max-width:680px){
+  body:not([data-mobile-tab]) [data-mobile-tab="market"]{display:block!important}
+  body:not([data-mobile-tab]) .mobile-nav button[data-mobile-nav="market"]{background:#efe1ca;color:#6f3e22;box-shadow:inset 0 0 0 1px #d4bea0}
+  html,body{min-height:100%}
+}
