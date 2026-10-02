@@ -688,3 +688,138 @@ body.modal-open{overflow:hidden}
   .sticky-action{position:static!important;left:auto!important;right:auto!important;bottom:auto!important}
   .toast{position:sticky!important;left:auto!important;right:auto!important;bottom:8px!important}
 }
+
+.mobile-quick-nav{display:none}
+.mobile-section-toggle{display:none}
+@media(max-width:680px){
+  .mobile-nav{display:none!important}
+
+  .mobile-quick-nav{
+    position:sticky;
+    top:0;
+    z-index:70;
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:4px;
+    margin:0 0 8px;
+    padding:6px;
+    border:1px solid #cdbb9f;
+    border-radius:12px;
+    background:rgba(255,250,240,.96);
+    backdrop-filter:blur(10px);
+    box-shadow:0 5px 14px rgba(55,39,24,.10)
+  }
+  .mobile-quick-nav button{
+    min-height:38px;
+    padding:5px 2px;
+    border:0;
+    border-radius:9px;
+    background:#f5ead8;
+    color:#5f4b38;
+    font-size:10px;
+    font-weight:900;
+    line-height:1.15
+  }
+
+  body.mobile-enhanced [data-mobile-tab]{
+    display:block!important;
+    scroll-margin-top:58px
+  }
+  .mobile-section-toggle{
+    width:100%;
+    min-height:38px;
+    margin:0 0 8px;
+    padding:7px 9px;
+    border:1px solid #dac9af;
+    border-radius:9px;
+    background:#f7eddc;
+    color:#4d3f32;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px
+  }
+  .mobile-section-toggle span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:12px;
+    font-weight:900;
+    text-align:left
+  }
+  .mobile-section-toggle b{
+    font-size:9px;
+    color:#8a5a35;
+    white-space:nowrap
+  }
+
+  /* JS가 정상 작동한 경우에만 패널 내부를 접습니다. */
+  body.mobile-enhanced [data-mobile-tab].mobile-collapsed > *:not(.mobile-section-toggle){
+    display:none!important
+  }
+  body.mobile-enhanced [data-mobile-tab].mobile-collapsed{
+    padding-bottom:7px!important
+  }
+
+  /* 시장은 2열 압축형. 버튼은 누르기 충분한 크기를 유지합니다. */
+  .market-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important
+  }
+  .market-card{
+    padding:8px!important;
+    border-radius:10px!important
+  }
+  .market-card h3{
+    font-size:13px!important;
+    margin:0 0 3px!important
+  }
+  .market-price{
+    font-size:18px!important
+  }
+  .market-meta{
+    gap:3px!important;
+    font-size:8px!important
+  }
+  .market-meta span{
+    padding:2px 4px!important
+  }
+  .market-actions{
+    grid-template-columns:1fr 1fr!important;
+    gap:4px!important
+  }
+  .market-actions .qty{
+    grid-column:1/-1!important
+  }
+  .market-actions button{
+    min-height:38px!important;
+    padding:6px 3px!important;
+    font-size:9px!important
+  }
+
+  /* 상단/정보 등 장문의 패널도 여백을 줄입니다. */
+  .panel{
+    padding:9px!important;
+    margin-bottom:7px!important
+  }
+  .panel-head{
+    gap:5px!important;
+    margin-bottom:6px!important
+  }
+  .panel h2{
+    font-size:16px!important
+  }
+  .panel p{
+    font-size:10px!important;
+    line-height:1.4!important
+  }
+  .intel-grid,.content-grid,.faction-grid{
+    gap:6px!important
+  }
+
+  /* 하루 마감은 화면 아래 고정 대신 일반 흐름에 둬 콘텐츠를 가리지 않게 합니다. */
+  .sticky-action{
+    position:static!important;
+    margin-bottom:10px!important
+  }
+}
