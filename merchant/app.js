@@ -15,6 +15,12 @@ const ITEMS = {
   mana:{name:"마법석",base:130,w:2,cat:"magic"},
   beer:{name:"맥주",base:26,w:1,cat:"food"},
   holy:{name:"성수",base:92,w:1,cat:"alchemy"},
+
+  elf_silk:{name:"엘프 비단",base:148,w:1,cat:"luxury"},
+  starlight_wine:{name:"별빛 포도주",base:88,w:1,cat:"luxury"},
+  holy_oil:{name:"성유",base:136,w:1,cat:"alchemy"},
+  blessed_incense:{name:"축복받은 향",base:124,w:1,cat:"luxury"},
+
   flour:{name:"밀가루",base:22,w:1,cat:"food",craftOnly:true},
   steel:{name:"강철재",base:88,w:2,cat:"metal",craftOnly:true},
   extract:{name:"약초 농축액",base:52,w:1,cat:"alchemy",craftOnly:true},
@@ -37,11 +43,48 @@ const CRAFT_LINKS = {
 };
 const tradableKeys = () => Object.keys(ITEMS).filter(k => !ITEMS[k].craftOnly);
 const CITIES = {
-  capital:{name:"왕도",desc:"평시 치안이 가장 좋지만 거래 수수료가 매우 비싼 대도시",travel:0,fee:.12,mods:{bread:1.15,wheat:1.2,iron:1.08,sword:1.08,armor:1.12,herb:1.1,potion:1.15,gem:1.32,spice:1.25,mana:1.2,beer:1.15,holy:1.2}},
-  farm:{name:"풍요 평원",desc:"곡물과 술이 넘치는 농업지대",travel:14,fee:.03,mods:{bread:.72,wheat:.58,iron:1.28,sword:1.22,armor:1.3,herb:.83,potion:1.03,gem:1.2,spice:1.16,mana:1.14,beer:.65,holy:1.05}},
-  mine:{name:"철산 광산도시",desc:"철은 싸고 빵은 귀한 광산도시",travel:18,fee:.04,mods:{bread:1.35,wheat:1.26,iron:.58,sword:.76,armor:.78,herb:1.12,potion:1.12,gem:1.04,spice:1.22,mana:1.12,beer:1.28,holy:1.05}},
-  port:{name:"청해 항구",desc:"향신료·보석이 쏟아지는 무역항",travel:22,fee:.06,mods:{bread:1,wheat:.95,iron:1.02,sword:1.05,armor:1.08,herb:1,potion:1,gem:.84,spice:.56,mana:1.04,beer:.92,holy:1.1}},
-  arcane:{name:"마도도시 아르카나",desc:"마법석·포션이 생활필수품인 도시",travel:26,fee:.05,mods:{bread:1.2,wheat:1.16,iron:1.12,sword:1.04,armor:1.08,herb:.88,potion:.72,gem:1.15,spice:1.12,mana:.54,beer:1.12,holy:1.18}}
+  capital:{
+    name:"왕도",
+    desc:"왕실과 귀족이 몰려 있는 인간 왕국의 수도. 평시 치안은 좋지만 거래 수수료가 매우 비쌉니다.",
+    travel:0,fee:.12,
+    mods:{bread:1.15,wheat:1.20,iron:1.08,sword:1.08,armor:1.12,herb:1.18,potion:1.15,gem:1.32,spice:1.25,mana:1.20,beer:1.15,holy:1.18,elf_silk:1.34,starlight_wine:1.30,holy_oil:1.22,blessed_incense:1.26}
+  },
+  farm:{
+    name:"풍요 평원",
+    desc:"밀·빵·맥주가 넘쳐나는 인간 농업지대. 약초 산지는 이제 엘프 대삼림으로 넘어갔습니다.",
+    travel:14,fee:.03,
+    mods:{bread:.72,wheat:.58,iron:1.28,sword:1.22,armor:1.30,herb:1.12,potion:1.05,gem:1.20,spice:1.16,mana:1.14,beer:.65,holy:1.12,elf_silk:1.20,starlight_wine:1.10,holy_oil:1.12,blessed_incense:1.10}
+  },
+  mine:{
+    name:"철산 카르둠",
+    desc:"산을 파서 도시를 만든 드워프들의 거대 제련도시. 철·강철·무기는 싸고 식량과 고급 술은 귀합니다.",
+    travel:18,fee:.04,
+    mods:{bread:1.35,wheat:1.26,iron:.56,sword:.74,armor:.76,herb:1.22,potion:1.14,gem:1.04,spice:1.22,mana:1.12,beer:.82,holy:1.10,elf_silk:1.30,starlight_wine:1.38,holy_oil:1.12,blessed_incense:1.18}
+  },
+  port:{
+    name:"청해 항구",
+    desc:"보석·향신료와 외국 물자가 몰리는 국제 무역항.",
+    travel:22,fee:.06,
+    mods:{bread:1.00,wheat:.95,iron:1.02,sword:1.05,armor:1.08,herb:1.02,potion:1.00,gem:.84,spice:.56,mana:1.04,beer:.92,holy:1.10,elf_silk:.94,starlight_wine:.96,holy_oil:1.08,blessed_incense:.90}
+  },
+  arcane:{
+    name:"마도도시 아르카나",
+    desc:"마법석과 포션을 대량 소비·생산하는 마도학술도시. 약초는 실바렌에서 수입합니다.",
+    travel:26,fee:.05,
+    mods:{bread:1.20,wheat:1.16,iron:1.12,sword:1.04,armor:1.08,herb:1.06,potion:.72,gem:1.15,spice:1.12,mana:.54,beer:1.12,holy:1.12,elf_silk:1.08,starlight_wine:1.12,holy_oil:1.04,blessed_incense:1.08}
+  },
+  forest:{
+    name:"대삼림 실바렌",
+    desc:"고대 수목 사이에 자리한 엘프 도시. 약초·엘프 비단·별빛 포도주의 본산입니다.",
+    travel:24,fee:.04,
+    mods:{bread:1.12,wheat:1.10,iron:1.26,sword:1.24,armor:1.30,herb:.54,potion:.92,gem:1.12,spice:1.04,mana:.92,beer:1.18,holy:1.14,elf_silk:.56,starlight_wine:.60,holy_oil:1.20,blessed_incense:1.12}
+  },
+  holycity:{
+    name:"성도 루미에르",
+    desc:"성녀와 대성당을 중심으로 움직이는 신성도시. 성수·성유·축복받은 향이 쏟아지며 암시장은 존재하지 않습니다.",
+    travel:28,fee:.05,
+    mods:{bread:1.08,wheat:1.06,iron:1.10,sword:1.16,armor:1.14,herb:.88,potion:.90,gem:1.18,spice:1.06,mana:1.18,beer:1.24,holy:.50,elf_silk:1.15,starlight_wine:1.20,holy_oil:.58,blessed_incense:.62}
+  }
 };
 
 const CRAFT_LIMIT = 3;
@@ -50,13 +93,15 @@ const CRAFT_RECIPES = [
   {id:"farm_bread",city:"farm",stage:2,shop:"풍요 제빵소",name:"빵 굽기",inputs:{flour:1},output:{bread:2},fee:3},
   {id:"farm_beer",city:"farm",stage:1,shop:"평원 양조장",name:"농가 맥주 양조",inputs:{wheat:2},output:{beer:1},fee:4},
 
-  {id:"mine_steel",city:"mine",stage:1,shop:"철산 제련소",name:"강철 제련",inputs:{iron:2},output:{steel:1},fee:5},
-  {id:"mine_sword",city:"mine",stage:2,shop:"철산 대장간",name:"강철검 제작",inputs:{steel:1},output:{sword:1},fee:7},
-  {id:"mine_armor",city:"mine",stage:2,shop:"철산 대장간",name:"강철 갑옷 제작",inputs:{steel:1,iron:1},output:{armor:1},fee:10},
+  {id:"mine_steel",city:"mine",stage:1,shop:"카르둠 대제련소",name:"드워프식 강철 제련",inputs:{iron:2},output:{steel:1},fee:5},
+  {id:"mine_sword",city:"mine",stage:2,shop:"카르둠 룬대장간",name:"강철검 제작",inputs:{steel:1},output:{sword:1},fee:7},
+  {id:"mine_armor",city:"mine",stage:2,shop:"카르둠 룬대장간",name:"강철 갑옷 제작",inputs:{steel:1,iron:1},output:{armor:1},fee:10},
 
-  {id:"arcane_extract",city:"arcane",stage:1,shop:"연금술 공방",name:"약초 농축",inputs:{herb:2},output:{extract:1},fee:4},
-  {id:"arcane_potion",city:"arcane",stage:2,shop:"연금술 공방",name:"회복 포션 조제",inputs:{extract:1},output:{potion:1},fee:6},
-  {id:"arcane_holy",city:"arcane",stage:2,shop:"성수 조제실",name:"성수 정제",inputs:{extract:1},output:{holy:1},fee:12}
+  {id:"arcane_extract",city:"arcane",stage:1,shop:"아르카나 연금술 공방",name:"약초 농축",inputs:{herb:2},output:{extract:1},fee:4},
+  {id:"arcane_potion",city:"arcane",stage:2,shop:"아르카나 연금술 공방",name:"회복 포션 조제",inputs:{extract:1},output:{potion:1},fee:6},
+
+  {id:"holy_oil_craft",city:"holycity",stage:2,shop:"루미에르 축성소",name:"성유 축성",inputs:{holy:1,herb:1},output:{holy_oil:1},fee:8},
+  {id:"holy_incense_craft",city:"holycity",stage:2,shop:"대성당 향공방",name:"축복받은 향 제작",inputs:{holy:1,spice:1},output:{blessed_incense:1},fee:10}
 ];
 const MERC_MAX_ROSTER = 6;
 const MERC_RECRUIT_COST = 300;
@@ -321,6 +366,34 @@ const EVENTS = [
     p:{mana:.9},d:{mana:.82},
     gearP:{monster_demon_compass:.50,monster_slime_cooler:.84},days:1},
 
+  {id:"dwarf_forge_festival",n:"카르둠 대용광로 축제",tag:"드워프",cities:["mine"],
+    txt:"드워프 장인들이 밤새 용광로를 돌리며 제작 경연을 벌입니다. 철은 넘쳐나지만 완성품을 사려는 외지 상단도 몰려듭니다.",
+    p:{iron:.78,sword:1.18,armor:1.20,beer:1.25},d:{iron:.82,sword:1.35,armor:1.38,beer:1.45},days:2},
+  {id:"elf_moon_festival",n:"실바렌 달빛 축제",tag:"엘프",cities:["forest"],
+    txt:"엘프들이 수백 년 된 숲의 개화기를 맞아 달빛 축제를 엽니다. 약초와 비단이 시장에 쏟아지고 별빛 포도주는 도시 밖으로 빠르게 팔려나갑니다.",
+    p:{herb:.72,elf_silk:.76,starlight_wine:1.18},d:{herb:.84,elf_silk:.90,starlight_wine:1.55},days:2},
+  {id:"holy_pilgrimage",n:"루미에르 대순례 기간 시작",tag:"교단",cities:["holycity"],
+    txt:"각지의 순례객이 성도로 몰려들었습니다. 성수·성유·축복받은 향을 사려는 줄이 대성당 밖까지 이어집니다.",
+    p:{holy:1.28,holy_oil:1.30,blessed_incense:1.34,bread:1.08},d:{holy:1.65,holy_oil:1.70,blessed_incense:1.75,bread:1.25},days:3},
+
+  {id:"princess_holy_smell",n:"공주: '성수는 냄새가 좀 병원 같지 않아요?'",tag:"공주 발언",princess:true,
+    txt:"왕도 귀족들이 성수 주문을 취소하기 시작했습니다. 루미에르 성직자들은 왕궁 쪽을 바라보며 아주 길게 침묵했습니다.",
+    p:{holy:.58,holy_oil:.68,blessed_incense:.82,gem:1.08},d:{holy:.40,holy_oil:.52,blessed_incense:.70},shock:{holy:.84,holy_oil:.88,blessed_incense:.93},days:1,
+    follow:{id:"saint_holy_rebuke",chance:.5}},
+  {id:"saint_holy_rebuke",n:"성녀: '신앙을 유행처럼 논하지 마십시오'",tag:"성녀 선언",saint:true,chainOnly:true,
+    txt:"성녀의 정면 반박 이후 전국 교회가 성수와 성유를 대량 주문했습니다. 왕궁과 대성당의 사이가 싸늘해졌고 상인들만 계산기를 두드립니다.",
+    p:{holy:1.75,holy_oil:1.62,blessed_incense:1.42},d:{holy:2.10,holy_oil:1.95,blessed_incense:1.70},shock:{holy:1.18,holy_oil:1.14,blessed_incense:1.10},days:1},
+
+  {id:"saint_luxury_abstinence",n:"성녀: '지금은 사치보다 구휼이 먼저입니다'",tag:"성녀 선언",saint:true,
+    txt:"성녀가 귀족들의 사치 경쟁을 공개적으로 비판했습니다. 보석과 엘프 비단 주문은 줄고, 약과 성물 기부 주문이 몰립니다.",
+    p:{gem:.66,spice:.78,elf_silk:.70,holy:1.22,holy_oil:1.25,potion:1.18},d:{gem:.48,spice:.65,elf_silk:.52,holy:1.55,holy_oil:1.60,potion:1.42},shock:{gem:.90,elf_silk:.91,holy:1.07},days:2},
+  {id:"saint_temperance",n:"성녀: '축제라 해도 취할 이유는 없습니다'",tag:"성녀 선언",saint:true,
+    txt:"교단이 절제 주간을 선포했습니다. 맥주와 별빛 포도주 소비가 급감하고 축복받은 향 판매대는 오히려 붐빕니다.",
+    p:{beer:.64,starlight_wine:.58,blessed_incense:1.32},d:{beer:.48,starlight_wine:.42,blessed_incense:1.65},shock:{beer:.91,starlight_wine:.88,blessed_incense:1.08},days:2},
+  {id:"saint_healing_mission",n:"성녀, 빈민가 무료 치료단 파견",tag:"성녀 선언",saint:true,
+    txt:"성녀가 왕국 각지에 무료 치료단을 보냈습니다. 약초·포션·성유 주문이 폭증했습니다.",
+    p:{herb:1.24,potion:1.30,holy_oil:1.28},d:{herb:1.55,potion:1.72,holy_oil:1.65},shock:{herb:1.07,potion:1.09,holy_oil:1.08},days:2},
+
   {id:"royal_weapon_sale_ban",n:"왕실, 민간 무기 판매 3일간 금지",tag:"판매금지",txt:"왕실이 치안 안정을 이유로 검과 갑옷의 민간 판매를 전면 금지했습니다. 이미 진열한 물건도 거래가 중지됩니다.",bannedItems:["sword","armor"],p:{sword:.86,armor:.88},d:{sword:.35,armor:.38},days:3},
   {id:"potion_sale_ban",n:"왕실 보건국, 포션 판매 일시 금지",tag:"판매금지",txt:"성분표시 오류가 발견됐다는 이유로 포션 판매가 며칠간 금지됐습니다. 약초상들은 자기들은 무관하다며 웃고 있습니다.",bannedItems:["potion"],p:{potion:.72,herb:1.18},d:{potion:.2,herb:1.3},days:2},
   {id:"grain_sale_control",n:"왕실, 곡물 사재기 방지 판매통제",tag:"판매금지",txt:"빵과 밀을 비축한 상인이 너무 많아지자 왕실이 민간 판매를 잠시 막았습니다. 창고에 곡물이 있는 상인들의 표정이 굳었습니다.",bannedItems:["bread","wheat"],p:{bread:.78,wheat:.74},d:{bread:.28,wheat:.25},days:2},
@@ -331,6 +404,12 @@ const EVENTS = [
   {id:"mine_entry_ban",n:"철산 광산도시 군사통제구역 지정",tag:"출입금지",cities:["mine"],blockedCities:["mine"],txt:"갱도 깊은 곳에서 정체불명의 폭발이 발생해 철산 전체가 임시 군사통제구역으로 지정됐습니다.",p:{iron:1.28,sword:1.14,armor:1.16},d:{iron:1.4},days:3},
   {id:"port_entry_ban",n:"청해 항구 전면 입항·입성 금지",tag:"출입금지",cities:["port"],blockedCities:["port"],txt:"밀수선 추적작전 때문에 항구 출입문과 부두가 동시에 봉쇄됐습니다. 멀쩡한 상인들까지 같이 갇혔습니다.",p:{spice:1.25,gem:1.18},d:{spice:1.35,gem:1.3},days:2},
   {id:"arcane_entry_ban",n:"아르카나 외부인 접근금지",tag:"출입금지",cities:["arcane"],blockedCities:["arcane"],txt:"마법대학이 '도시 규모의 실험'을 시작한다며 외부인 접근을 막았습니다. 교수들은 안전하다는 말만 반복합니다.",p:{mana:1.3,potion:1.16},d:{mana:1.42,potion:1.26},days:2},
+  {id:"forest_entry_ban",n:"실바렌 장로회, 외부 상단 출입 제한",tag:"출입금지",cities:["forest"],blockedCities:["forest"],
+    txt:"대삼림의 정령 이상 현상으로 엘프 장로회가 외부인 출입을 막았습니다. 약초와 엘프 비단 공급이 즉시 줄어듭니다.",
+    p:{herb:1.30,elf_silk:1.26,starlight_wine:1.18},d:{herb:1.45,elf_silk:1.40},days:2},
+  {id:"holycity_entry_ban",n:"루미에르 대성당, 성도 임시 봉쇄",tag:"출입금지",cities:["holycity"],blockedCities:["holycity"],
+    txt:"대규모 종교행사를 이유로 성도 관문이 닫혔습니다. 성수와 성유를 실은 마차들이 성벽 밖에서 줄을 섭니다.",
+    p:{holy:1.32,holy_oil:1.28,blessed_incense:1.22},d:{holy:1.48,holy_oil:1.42},days:2},
 
   {id:"prosperity_trade_fair",phases:["prosperity"],n:"왕국 대교역 박람회 개막",tag:"호황",txt:"전국 상인이 왕도로 몰려들었습니다. 보석과 향신료는 진열하자마자 팔립니다.",p:{gem:1.12,spice:1.14},d:{gem:1.45,spice:1.5},days:2},
   {id:"prosperity_tourism",phases:["prosperity"],n:"용사 성지순례 관광상품 대박",tag:"유행",txt:"아직 마왕도 안 나타났는데 용사 생가 관광상품이 먼저 대박 났습니다.",p:{beer:1.14,bread:1.08,gem:1.08},d:{beer:1.4,bread:1.25,gem:1.2},days:2},
@@ -355,7 +434,7 @@ const ENDING_GOALS = {day:100,wealth:100000,contracts:10,trialDays:7};
 const ROUTE_THRESHOLD = 12;
 const ROUTE_LEAD = 2;
 const ROUTES = {
-  royal:{name:"왕실",ending:"왕실 공인 대상상",desc:"왕실·길드와의 신뢰를 쌓아 제도권 상단의 정점에 섭니다."},
+  royal:{name:"왕실",ending:"왕실 공인 대상인",desc:"왕실·길드와의 신뢰를 쌓아 제도권 상단의 정점에 섭니다."},
   antihero:{name:"반용사",ending:"시세를 지킨 경제수호자",desc:"용사의 말 한마디에 무너지는 시장에 맞서 상인들의 목소리를 대표합니다."},
   underworld:{name:"암시장",ending:"뒷골목의 상왕",desc:"합법과 불법의 경계를 넘나들며 왕국의 그림자 유통망을 장악합니다."},
   artisan:{name:"장인",ending:"왕국 제일의 공방상단",desc:"단순 시세차익을 넘어 직접 생산과 가공으로 상단의 이름을 남깁니다."}
@@ -854,7 +933,7 @@ function renderRoutes(){
 }
 
 function finalTrialRequirement(){
-  const pool = ["bread","wheat","iron","sword","armor","herb","potion","gem","spice","mana","beer","holy"];
+  const pool = tradableKeys();
   const stage = Math.max(0,Math.min(ENDING_GOALS.trialDays-1,S.day - S.finalTrial.startDay));
   const targetWeights = [20,24,28,32,36,40,44];
   const targetWeight = targetWeights[stage] || 44;
@@ -1533,6 +1612,21 @@ function newIntel(){
     }
   }
 
+  // 성녀는 공주와 별개의 유명인입니다. 뉴스 슬롯이 남으면 독립적으로 선언할 수 있습니다.
+  const saintCooldownReady = S.day - (S.lastSaintDay ?? -999) >= 6;
+  if(sources.length < targetCount && saintCooldownReady && !sources.some(e => e.saint) && !S.active.some(e => e.saint)){
+    const saintChance = phase.id === "war" ? .15 : S.day >= 50 ? .12 : .09;
+    if(Math.random() < saintChance){
+      const saintPool = EVENTS.filter(e =>
+        e.saint &&
+        !e.chainOnly &&
+        !usedIds.has(e.id) &&
+        (!e.phases || e.phases.includes(phase.id))
+      );
+      if(saintPool.length) addSource(pick(saintPool));
+    }
+  }
+
   let safety = 0;
   while(sources.length < targetCount && safety++ < 30){
     const pool = EVENTS.filter(e => {
@@ -1543,8 +1637,8 @@ function newIntel(){
       if(e.noCapital && S.city === "capital" && !isWarActive()) return false;
       // 같은 사건이 아직 진행 중이면 새 뉴스 슬롯에서 또 뽑지 않습니다.
       if(S.active.some(a => a.id === e.id)) return false;
-      // 공주 발언은 전용 확률 + 5일 쿨다운을 통해서만 발생합니다.
-      if(e.princess) return false;
+      // 공주와 성녀 발언은 각각 전용 확률과 쿨다운을 통해서만 발생합니다.
+      if(e.princess || e.saint) return false;
       return true;
     });
     if(!pool.length) break;
@@ -1563,6 +1657,11 @@ function newIntel(){
     if(e.princess){
       S.princessStatements = (S.princessStatements || 0) + 1;
       S.lastPrincessDay = S.day;
+      applyEventMarketShock(e);
+    }
+    if(e.saint){
+      S.saintDeclarations = (S.saintDeclarations || 0) + 1;
+      S.lastSaintDay = S.day;
       applyEventMarketShock(e);
     }
 
@@ -1714,6 +1813,8 @@ function normalizeSavedState(state){
   }
   state.princessStatements ??= 0;
   state.lastPrincessDay ??= state.active.some(e => e.princess) ? (state.day || 1) : -999;
+  state.saintDeclarations ??= 0;
+  state.lastSaintDay ??= state.active.some(e => e.saint) ? (state.day || 1) : -999;
   state.plannedBlockade ??= null;
   state.dayStartCash ??= state.cash;
   state.dayIncomeLog = Array.isArray(state.dayIncomeLog) ? state.dayIncomeLog : [];
@@ -1808,7 +1909,7 @@ function init(){
     active:[], today:null, rumor:"", extra:null,
     insurance:false, guard:false, informant:false,
     travelOpen:false, gameOver:false, peak:1000, cause:"",
-    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},factionRep:{merchant:0,kingdom:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
+    contractOffer:null,contractOffers:[],contractActive:null,contractDoneDay:0,completedContracts:0,specialDeal:null,pendingFollow:null,choiceEvent:null,choiceResolvedDay:0,lastSettlement:null,finalTrial:null,ending:false,rankSaved:false,craftUsed:{},marketIndex:{},marketMomentum:{},marketChange:{},tradePressure:{},routeScores:{royal:0,antihero:0,underworld:0,artisan:0},routeStory:{royal:0,antihero:0,underworld:0,artisan:0},factionRep:{merchant:0,kingdom:0,antihero:0,underworld:0,artisan:0},endingRoute:"normal",endless:false,lastPhaseId:null,mercFriendship:0,mercTotalHires:0,mercCompleted:0,mercRoster:[],mercExpeditions:[],mercRosterMigrationV3:true,mercLog:[],mercEquipment:{},mercGearMigrationV2:true,princessStatements:0,lastPrincessDay:-999,saintDeclarations:0,lastSaintDay:-999,plannedBlockade:null,dayStartCash:1000,dayIncomeLog:[],daySalesLog:[],daySummary:null,lastMercEventDay:0,banditSuppressionUntil:0
   };
   for(const k of Object.keys(ITEMS)){
     S.inv[k] = 0;
@@ -2943,10 +3044,18 @@ function renderCrafting(){
   }).join("") + '</div>';
 }
 
+function blackMarketForbidden(city=S.city){
+  return city === "capital" || city === "holycity";
+}
+function blackMarketForbiddenText(city=S.city){
+  return city === "holycity"
+    ? "성도 루미에르에는 암시장이 없습니다. 교단 감찰관이 장터와 골목을 함께 순찰합니다."
+    : "왕도에는 암시장이 없습니다.";
+}
 function sellBlackMarket(item,qty){
   if(checkBlocked()) return;
-  if(S.city === "capital"){
-    toast("왕도에는 암시장이 없습니다.");
+  if(blackMarketForbidden()){
+    toast(blackMarketForbiddenText());
     return;
   }
   if(qty === 999) qty = S.inv[item];
@@ -2982,9 +3091,11 @@ function renderBlackMarket(){
   const panel = $("#blackMarketPanel");
   const box = $("#blackMarketBox");
 
-  if(S.city === "capital"){
+  if(blackMarketForbidden()){
     panel.classList.add("black-market-capital");
-    box.innerHTML = '<div class="black-market-locked"><b>왕도에는 암시장이 없습니다.</b><p>경비대가 골목까지 너무 열심히 순찰합니다. 전쟁 중이어도 암시장 거래는 불가능합니다.</p></div>';
+    box.innerHTML = S.city === "holycity"
+      ? '<div class="black-market-locked"><b>성도 루미에르에는 암시장이 없습니다.</b><p>교단 감찰관과 성기사단이 장터를 순찰합니다. 전쟁 중이어도 지하 거래는 열리지 않습니다.</p></div>'
+      : '<div class="black-market-locked"><b>왕도에는 암시장이 없습니다.</b><p>경비대가 골목까지 너무 열심히 순찰합니다. 전쟁 중이어도 암시장 거래는 불가능합니다.</p></div>';
     return;
   }
 
@@ -3112,7 +3223,9 @@ function render(){
     '<p>' + worldPhase.desc + '</p>' +
     '<div class="phase-effects"><span>이동 추가비 ' + fmt(worldPhase.travel) + '</span><span>위험도 ' + (worldPhase.risk ? '+' + Math.round(worldPhase.risk*100) + '%' : '기본') + '</span><span>시장 변동성 ×' + worldPhase.volatility.toFixed(2) + '</span>' +
       (S.active.some(e => e.princess) ? '<span class="princess-alert">👑 공주 발언 충격 진행 중</span>' : '') +
+      (S.active.some(e => e.saint) ? '<span class="saint-alert">⛪ 성녀 선언 영향 진행 중</span>' : '') +
       (S.princessStatements ? '<span>공주 발언 누적 ' + S.princessStatements + '회</span>' : '') +
+      (S.saintDeclarations ? '<span>성녀 선언 누적 ' + S.saintDeclarations + '회</span>' : '') +
       (S.active.some(e => e.bannedItems) ? '<span class="regulation-alert">⛔ 판매금지령 발효 중</span>' : '') +
       (S.active.some(e => e.blockedCities) ? '<span class="regulation-alert">🚧 지역 출입통제 중</span>' : '') +
     '</div>';
