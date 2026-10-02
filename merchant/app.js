@@ -35,15 +35,6 @@ const ITEMS = {
   monster_wyvern_armor:{name:"와이번 비늘 마차갑옷",base:1650,w:5,cat:"gear",craftOnly:true,monsterGear:true},
   monster_demon_compass:{name:"마족 추적 나침반",base:2350,w:1,cat:"gear",craftOnly:true,monsterGear:true}
 };
-const ITEM_ICONS = {
-  bread:"🥖",wheat:"🌾",iron:"▰",sword:"⚔️",armor:"🛡️",herb:"🌿",potion:"🧪",
-  gem:"💎",spice:"✦",mana:"🔮",beer:"🍺",holy:"💧",elf_silk:"🧵",
-  starlight_wine:"🍷",holy_oil:"🕯️",blessed_incense:"♨️"
-};
-const CITY_NPC_ICONS = {
-  capital:"♛",farm:"🌾",mine:"⚒",port:"⚓",arcane:"✧",forest:"🍃",holycity:"☩"
-};
-
 
 const CRAFT_LINKS = {
   flour:["wheat","bread"],
@@ -51,6 +42,29 @@ const CRAFT_LINKS = {
   extract:["herb","potion"]
 };
 const tradableKeys = () => Object.keys(ITEMS).filter(k => !ITEMS[k].craftOnly);
+const REGIONAL_SPECIALTIES = {
+  farm:["wheat","beer"],
+  mine:["iron","sword","armor"],
+  port:["gem","spice"],
+  arcane:["mana"],
+  forest:["herb","elf_silk","starlight_wine"],
+  holycity:["holy","holy_oil","blessed_incense"]
+};
+const SPECIALTY_HOME = Object.fromEntries(
+  Object.entries(REGIONAL_SPECIALTIES).flatMap(([city,items]) => items.map(item => [item,city]))
+);
+function specialtyHome(item){
+  return SPECIALTY_HOME[item] || null;
+}
+function canBuyInCity(item,city=S.city){
+  const home=specialtyHome(item);
+  return !home || home===city;
+}
+function specialtyLabel(item){
+  const home=specialtyHome(item);
+  return home ? CITIES[home].name + " 특산" : "";
+}
+
 const CITIES = {
   capital:{
     name:"왕도",
@@ -388,7 +402,7 @@ function renderCityNpc(){
   const talked=S.npcTalkDay?.[city]===S.day;
   const helped=S.npcFavorDay?.[city]===S.day;
   box.innerHTML =
-    '<article class="city-npc-card"><div class="city-npc-head"><div class="npc-identity"><span class="npc-avatar">'+(CITY_NPC_ICONS[city]||"◆")+'</span><div><span>'+npc.title+'</span><h3>'+npc.name+'</h3></div></div><strong>'+Math.round(rep)+' / 100</strong></div>'+
+    '<article class="city-npc-card"><div class="city-npc-head"><div class="npc-identity"><div><span>'+npc.title+'</span><h3>'+npc.name+'</h3></div></div><strong>'+Math.round(rep)+' / 100</strong></div>'+
     '<div class="npc-meter"><i style="width:'+rep+'%"></i></div>'+
     '<p>'+npc.desc+'</p>'+
     '<div class="npc-benefit"><b>현재 혜택</b><span>'+cityNpcBenefitText(city)+'</span></div>'+
@@ -2435,6 +2449,11 @@ function bankrupt(cause){
 }
 function buy(item,qty){
   if(checkBlocked()) return;
+  if(!canBuyInCity(item,S.city)){
+    const home=specialtyHome(item);
+    toast(ITEMS[item].name+"은 "+CITIES[home].name+"에서만 구매할 수 있는 특산품입니다.");
+    return;
+  }
   const maxCash = Math.floor((S.cash - 1) / S.prices[item]);
   const maxCap = Math.floor((S.capacity - used()) / ITEMS[item].w);
   if(qty === 999) qty = Math.min(maxCash,maxCap);
@@ -4027,16 +4046,17 @@ function renderMarket(){
       : "왕국 추세 " + (globalDelta > 0 ? "▲ +" : "▼ ") + globalDelta.toFixed(1) + "%";
 
     card.innerHTML =
-      '<div class="market-card-top"><div class="item-identity"><span class="item-icon">' + (ITEM_ICONS[k] || "◈") + '</span><div><h3>' + it.name + '</h3>' +
-      '<div class="market-price ' + priceClass + '">' + fmt(p) + ' <small>' + (delta >= 0 ? '▲ ' : '▼ ') + Math.abs(delta).toFixed(0) + '%</small></div></div></div>' +
+      '<div class="market-card-top"><div class="item-identity"><div><div class="item-name-line"><h3>' + it.name + '</h3>' +
+      (specialtyHome(k) ? '<span class="specialty-badge '+(canBuyInCity(k,S.city)?'local':'remote')+'">'+specialtyLabel(k)+(canBuyInCity(k,S.city)?'':' · 현지구매')+'</span>' : '') +
+      '</div><div class="market-price ' + priceClass + '">' + fmt(p) + ' <small>' + (delta >= 0 ? '▲ ' : '▼ ') + Math.abs(delta).toFixed(0) + '%</small></div></div></div>' +
       '<b class="demand-pill ' + demandClass + '">' + demandText + '</b></div>' +
       '<div class="market-meta"><span>재고 <b>' + S.inv[k] + '</b></span><span>판매중 <b>' + listed + '</b></span><span>무게 <b>' + it.w + '</b></span><span class="' + trendClass + '">' + trendText + '</span>' +
         (ban ? '<span class="sale-ban-badge">⛔ 판매금지 · ' + ban.remaining + '일</span>' : '') +
       '</div>' +
       '<div class="market-actions"><div class="qty">' +
-      '<button data-buy="' + k + '" data-q="1">1개</button>' +
-      '<button data-buy="' + k + '" data-q="5">5개</button>' +
-      '<button data-buy="' + k + '" data-q="999">최대</button></div>' +
+      '<button data-buy="' + k + '" data-q="1"' + (canBuyInCity(k,S.city)?'':' disabled') + '>' + (canBuyInCity(k,S.city)?'1개':'현지 전용') + '</button>' +
+      '<button data-buy="' + k + '" data-q="5"' + (canBuyInCity(k,S.city)?'':' disabled') + '>5개</button>' +
+      '<button data-buy="' + k + '" data-q="999"' + (canBuyInCity(k,S.city)?'':' disabled') + '>최대</button></div>' +
       '<button data-sell="' + k + '" data-q="1"' + (ban ? ' disabled' : '') + '>' + (ban ? '판매금지' : '판매 등록') + '</button>' +
       '<button data-sell="' + k + '" data-q="999"' + (ban ? ' disabled' : '') + '>' + (ban ? '거래 중지' : '전부 등록') + '</button></div>';
 
