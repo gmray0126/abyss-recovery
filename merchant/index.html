@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#eadcc4">
   <title>판타지 상인 시뮬레이터</title>
-  <link rel="stylesheet" href="./styles.css?v=20261002-world7city1">
+  <link rel="stylesheet" href="./styles.css?v=20261002-npc-faction-merc1">
 </head>
 <body data-mobile-tab="market">
 <div id="mobileRecoveryMarker" style="display:none">mobile-recovery-20261002-1</div><div id="app" class="app">
@@ -114,16 +114,26 @@
         </div>
       </section>
 
+      <section id="cityNpcPanel" class="panel" data-mobile-tab="info">
+        <div class="panel-head">
+          <div>
+            <h2>도시 인맥</h2>
+            <p>도시마다 한 명의 핵심 인물이 있습니다. 대화와 개인 부탁으로 우호도를 쌓으면 현지 혜택이 열립니다.</p>
+          </div>
+        </div>
+        <div id="cityNpcBox"></div>
+      </section>
+
       <section class="panel" data-mobile-tab="info">
         <div class="panel-head">
           <div>
-            <h2>상인 길드 & 특수 거래</h2>
+            <h2>상인조합 & 특수 거래</h2>
             <p>시세차익 외에도 계약과 하루짜리 기회를 노릴 수 있습니다.</p>
           </div>
         </div>
         <div class="content-grid">
           <article class="feature-card">
-            <span class="label">상인 길드 게시판 · 3개 중 선택</span>
+            <span class="label">상인조합 게시판 · 3개 중 선택</span>
             <div id="contractBox"></div>
           </article>
           <article class="feature-card">
@@ -303,7 +313,7 @@
 
   <div id="toast" class="toast" aria-live="polite">뉴스를 읽고, 욕심을 조절하고, 억까를 견디십시오.</div>
 </div>
-<script type="module" src="./app.js?v=20261002-world7city1"></script>
+<script type="module" src="./app.js?v=20261002-npc-faction-merc1"></script>
 <!-- late-game-economy-v1 -->
 <!-- contract-risk-v1 -->
 <!-- shared-rank-v1 -->
