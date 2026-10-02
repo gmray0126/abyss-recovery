@@ -1555,3 +1555,18 @@ body.app-tabs-ready .panel-head{border-bottom:1px solid rgba(177,145,103,.34);pa
   .app-tab-links button b{display:inline!important}
   .item-name-line{align-items:flex-start;flex-direction:column;gap:2px}
 }
+
+/* MOBILE HUD OVERLAP FIX 2026-10-02
+   Use the actual measured fixed HUD height instead of a guessed pixel value. */
+:root{--app-hud-height:104px}
+@media(max-width:680px){
+  body.app-tabs-ready .app{
+    padding-top:calc(var(--app-hud-height) + 12px)!important;
+  }
+  body.app-tabs-ready [data-mobile-tab]{
+    scroll-margin-top:calc(var(--app-hud-height) + 14px)!important;
+  }
+  body.app-tabs-ready #marketPanel{
+    margin-top:0!important;
+  }
+}
